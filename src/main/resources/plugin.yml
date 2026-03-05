@@ -1,0 +1,38 @@
+name: NexAuctionHouse
+version: '${version}'
+main: net.nexuby.nexauctionhouse.NexAuctionHouse
+api-version: '1.21'
+prefix: NexAuction
+authors: [ Rynix ]
+description: Modern ve güvenli Auction House eklentisi
+softdepend:
+  - Vault
+  - PlaceholderAPI
+  - HeadDatabase
+  - ItemsAdder
+
+commands:
+  ah:
+    description: Ana auction house komutu
+    usage: /<command> [sell|expired|admin|reload]
+    aliases: [ auctionhouse, nexah ]
+
+permissions:
+  nexauctions.use:
+    description: Auction House menusunu acma yetkisi
+    default: true
+  nexauctions.sell:
+    description: Esya satisa koyma yetkisi
+    default: true
+  nexauctions.admin:
+    description: Yonetim paneli yetkisi
+    default: op
+  nexauctions.reload:
+    description: Konfigurasyonu yenileme yetkisi
+    default: op
+  nexauctions.bypass.blacklist:
+    description: Kara liste kontrolunu atlama yetkisi
+    default: op
+  nexauctions.bypass.tax:
+    description: Vergiyi atlama yetkisi
+    default: false

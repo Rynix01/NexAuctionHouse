@@ -1,0 +1,42 @@
+# NexAuctionHouse - English Language File
+
+prefix: "<gray>[<gradient:#FF6B6B:#FFD93D>NexAuction</gradient><gray>] "
+
+# General messages
+general:
+  reload: "<green>Configuration reloaded successfully."
+  no-permission: "<red>You don't have permission to do that."
+  player-only: "<red>This command can only be used by players."
+  invalid-usage: "<red>Invalid usage. Use <yellow>/ah help <red>for help."
+
+# Auction messages
+auction:
+  listed: "<green>Your item has been listed for <yellow>{price}<green>!"
+  purchased: "<green>You purchased <yellow>{item} <green>for <yellow>{price}<green>."
+  sold: "<green>Your <yellow>{item} <green>has been sold for <yellow>{price}<green>! (Tax: <red>{tax}<green>)"
+  cancelled: "<yellow>Your auction has been cancelled. Item returned."
+  expired: "<red>Your auction for <yellow>{item} <red>has expired."
+  collected: "<green>You collected <yellow>{amount} <green>expired items."
+
+  # Error messages
+  no-item-in-hand: "<red>You must hold an item in your hand."
+  blacklisted-item: "<red>This item cannot be listed on the auction house."
+  price-too-low: "<red>The minimum price is <yellow>{min}<red>."
+  price-too-high: "<red>The maximum price is <yellow>{max}<red>."
+  listing-limit-reached: "<red>You have reached your listing limit of <yellow>{limit}<red> items."
+  not-enough-money: "<red>You don't have enough money. Required: <yellow>{price}"
+  cannot-buy-own: "<red>You cannot buy your own item."
+  auction-not-found: "<red>This auction no longer exists."
+  inventory-full: "<red>Your inventory is full!"
+
+# Admin messages
+admin:
+  removed: "<green>Auction removed. Item returned to <yellow>{player}<green>."
+  force-removed: "<red>An admin removed your auction for <yellow>{item}<red>."
+
+# Time format
+time:
+  hours: "{value}h"
+  minutes: "{value}m"
+  seconds: "{value}s"
+  expired: "Expired"

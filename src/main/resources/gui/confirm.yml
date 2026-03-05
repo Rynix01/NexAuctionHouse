@@ -1,0 +1,33 @@
+# NexAuctionHouse - Purchase Confirmation GUI Configuration
+
+title: "<dark_gray>Confirm Purchase"
+size: 27
+
+buttons:
+  confirm:
+    slot: 11
+    material: LIME_STAINED_GLASS_PANE
+    name: "<green>Confirm Purchase"
+    lore:
+      - ""
+      - "<gray>Item: <white>{item}"
+      - "<gray>Price: <green>{price}"
+      - ""
+      - "<yellow>Click to confirm!"
+
+  cancel:
+    slot: 15
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>Cancel"
+    lore:
+      - ""
+      - "<gray>Go back to the menu."
+
+  # The item being purchased will be displayed here
+  display-item:
+    slot: 13
+
+filler:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+  name: " "

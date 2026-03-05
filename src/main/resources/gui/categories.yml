@@ -1,0 +1,103 @@
+# NexAuctionHouse - Categories GUI Configuration
+
+title: "<dark_gray>Categories"
+size: 36
+
+categories:
+  swords:
+    slot: 10
+    material: DIAMOND_SWORD
+    name: "<red>Swords"
+    lore:
+      - "<gray>Browse all swords."
+    filter:
+      - "_SWORD"
+
+  armor:
+    slot: 11
+    material: DIAMOND_CHESTPLATE
+    name: "<blue>Armor"
+    lore:
+      - "<gray>Browse all armor pieces."
+    filter:
+      - "_HELMET"
+      - "_CHESTPLATE"
+      - "_LEGGINGS"
+      - "_BOOTS"
+
+  tools:
+    slot: 12
+    material: DIAMOND_PICKAXE
+    name: "<aqua>Tools"
+    lore:
+      - "<gray>Browse all tools."
+    filter:
+      - "_PICKAXE"
+      - "_AXE"
+      - "_SHOVEL"
+      - "_HOE"
+      - "SHEARS"
+      - "FLINT_AND_STEEL"
+      - "FISHING_ROD"
+
+  bows:
+    slot: 13
+    material: BOW
+    name: "<yellow>Ranged"
+    lore:
+      - "<gray>Browse bows and crossbows."
+    filter:
+      - "BOW"
+      - "CROSSBOW"
+      - "TRIDENT"
+
+  blocks:
+    slot: 14
+    material: GRASS_BLOCK
+    name: "<green>Blocks"
+    lore:
+      - "<gray>Browse blocks."
+    # Blocks will use a special filter that checks Material.isBlock()
+    filter-type: "block"
+
+  potions:
+    slot: 15
+    material: POTION
+    name: "<light_purple>Potions"
+    lore:
+      - "<gray>Browse potions and tipped arrows."
+    filter:
+      - "POTION"
+      - "SPLASH_POTION"
+      - "LINGERING_POTION"
+      - "TIPPED_ARROW"
+
+  food:
+    slot: 16
+    material: GOLDEN_APPLE
+    name: "<gold>Food"
+    lore:
+      - "<gray>Browse food items."
+    # Food will use a special filter that checks Material.isEdible()
+    filter-type: "food"
+
+  misc:
+    slot: 22
+    material: ENDER_PEARL
+    name: "<white>Miscellaneous"
+    lore:
+      - "<gray>Everything else."
+    filter-type: "misc"
+
+buttons:
+  back:
+    slot: 31
+    material: DARK_OAK_DOOR
+    name: "<red>Back"
+    lore:
+      - "<gray>Return to the main menu."
+
+filler:
+  enabled: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "

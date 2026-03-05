@@ -1,0 +1,73 @@
+# ===============================================
+# NexAuctionHouse Configuration
+# ===============================================
+
+general:
+  # Default language (file must exist in lang/ folder)
+  language: en
+
+  # Default auction duration in hours
+  default-auction-duration: 48
+
+  # Maximum auction duration in hours
+  max-auction-duration: 72
+
+  # Minimum and maximum price limits
+  min-price: 1.0
+  max-price: 1000000.0
+
+  # Default number of items a player can list at once
+  # Override with permission: nexauctions.limit.<number>
+  default-listing-limit: 5
+
+  # Days to keep expired items before permanent deletion
+  expired-item-keep-days: 7
+
+# Database configuration
+database:
+  # Type: 'sqlite' or 'mysql'
+  type: sqlite
+
+  mysql:
+    host: localhost
+    port: 3306
+    database: nexauctionhouse
+    username: root
+    password: ''
+    use-ssl: false
+
+# Tax system
+tax:
+  enabled: true
+  # Default tax percentage taken from sales
+  # Override with permission: nexauctions.tax.<percentage>
+  default-rate: 10.0
+
+# Blacklisted items that cannot be listed
+blacklist:
+  materials:
+    - BEDROCK
+    - BARRIER
+    - COMMAND_BLOCK
+    - CHAIN_COMMAND_BLOCK
+    - REPEATING_COMMAND_BLOCK
+    - COMMAND_BLOCK_MINECART
+    - STRUCTURE_BLOCK
+    - STRUCTURE_VOID
+    - JIGSAW
+    - DEBUG_STICK
+    - SPAWNER
+  lore-keywords:
+    - "Soulbound"
+    - "Untradeable"
+
+# Discord webhook integration
+discord:
+  enabled: false
+  webhook-url: ''
+  # Embed colors (decimal)
+  colors:
+    sale: 5763719       # green
+    listing: 3447003    # blue
+    cancel: 15548997    # red
+    admin: 16776960     # yellow

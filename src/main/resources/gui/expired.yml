@@ -1,0 +1,108 @@
+# NexAuctionHouse - Expired Items GUI Configuration
+
+title: "<dark_gray>Expired Items"
+size: 54
+
+# Slots where expired items will be displayed
+item-slots:
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+
+buttons:
+  previous-page:
+    slot: 48
+    material: ARROW
+    name: "<yellow>Previous Page"
+    lore:
+      - "<gray>Click to go back."
+
+  next-page:
+    slot: 50
+    material: ARROW
+    name: "<yellow>Next Page"
+    lore:
+      - "<gray>Click to go forward."
+
+  collect-all:
+    slot: 49
+    material: CHEST
+    name: "<green>Collect All"
+    lore:
+      - "<gray>Collect all expired items at once."
+
+  back:
+    slot: 45
+    material: DARK_OAK_DOOR
+    name: "<red>Back"
+    lore:
+      - "<gray>Return to the main menu."
+
+  close:
+    slot: 53
+    material: BARRIER
+    name: "<red>Close"
+    lore:
+      - "<gray>Close the menu."
+
+filler:
+  enabled: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "
+  slots:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 17
+    - 18
+    - 26
+    - 27
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
+    - 46
+    - 47
+    - 51
+    - 52
+
+# Lore template for expired items
+expired-item-lore:
+  - ""
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  - "<gray>Original Price: <green>{price}"
+  - "<gray>Expired: <red>{date}"
+  - ""
+  - "<yellow>Click to collect!"
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -1,0 +1,42 @@
+# NexAuctionHouse - Turkce Dil Dosyasi
+
+prefix: "<gray>[<gradient:#FF6B6B:#FFD93D>NexAuction</gradient><gray>] "
+
+# Genel mesajlar
+general:
+  reload: "<green>Konfigurasyon basariyla yeniden yuklendi."
+  no-permission: "<red>Bu islemi yapmaya yetkiniz yok."
+  player-only: "<red>Bu komut sadece oyuncular tarafindan kullanilabilir."
+  invalid-usage: "<red>Gecersiz kullanim. Yardim icin <yellow>/ah help <red>yazin."
+
+# Ihale mesajlari
+auction:
+  listed: "<green>Esyaniz <yellow>{price}<green> fiyatla satisa konuldu!"
+  purchased: "<green><yellow>{item} <green>esyasini <yellow>{price}<green> karsiliginda satin aldiniz."
+  sold: "<green><yellow>{item} <green>esyaniz <yellow>{price}<green> karsiliginda satildi! (Vergi: <red>{tax}<green>)"
+  cancelled: "<yellow>Ihaleniz iptal edildi. Esya iade edildi."
+  expired: "<red><yellow>{item} <red>icin ihalenizin suresi doldu."
+  collected: "<green>Suresi dolmus <yellow>{amount} <green>esya toplandi."
+
+  # Hata mesajlari
+  no-item-in-hand: "<red>Elinizde bir esya tutmalisiniz."
+  blacklisted-item: "<red>Bu esya ihale evinde satisa konulamaz."
+  price-too-low: "<red>Minimum fiyat <yellow>{min}<red>."
+  price-too-high: "<red>Maksimum fiyat <yellow>{max}<red>."
+  listing-limit-reached: "<red>Listeleme limitinize ulastiniz: <yellow>{limit}<red> esya."
+  not-enough-money: "<red>Yeterli paraniz yok. Gereken: <yellow>{price}"
+  cannot-buy-own: "<red>Kendi esyanizi satin alamazsiniz."
+  auction-not-found: "<red>Bu ihale artik mevcut degil."
+  inventory-full: "<red>Envanteriniz dolu!"
+
+# Admin mesajlari
+admin:
+  removed: "<green>Ihale kaldirildi. Esya <yellow>{player}<green> oyuncusuna iade edildi."
+  force-removed: "<red>Bir yonetici <yellow>{item}<red> esyanizin ihalesini kaldirdi."
+
+# Zaman formati
+time:
+  hours: "{value}sa"
+  minutes: "{value}dk"
+  seconds: "{value}sn"
+  expired: "Suresi doldu"
