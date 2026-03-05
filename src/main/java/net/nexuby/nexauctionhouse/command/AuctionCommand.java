@@ -3,6 +3,7 @@ package net.nexuby.nexauctionhouse.command;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.config.LangManager;
+import net.nexuby.nexauctionhouse.gui.AdminGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
@@ -172,7 +173,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         }
 
         // Admin GUI - shows all auctions with admin controls
-        new MainMenu(plugin, player).open();
+        new AdminGui(plugin, player).open();
     }
 
     private void handleReload(CommandSender sender) {

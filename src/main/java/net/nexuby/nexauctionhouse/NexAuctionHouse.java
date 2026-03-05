@@ -6,6 +6,7 @@ import net.nexuby.nexauctionhouse.config.GuiConfig;
 import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.database.DatabaseManager;
 import net.nexuby.nexauctionhouse.economy.EconomyManager;
+import net.nexuby.nexauctionhouse.hook.AuctionPlaceholders;
 import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
@@ -67,6 +68,12 @@ public final class NexAuctionHouse extends JavaPlugin {
         // Register listeners
         Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
         Bukkit.getPluginManager().registerEvents(new GuiListener(this), this);
+
+        // Hook into PlaceholderAPI if available
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new AuctionPlaceholders(this).register();
+            getLogger().info("PlaceholderAPI hook registered.");
+        }
 
         getLogger().info("NexAuctionHouse v" + getDescription().getVersion() + " has been enabled!");
     }

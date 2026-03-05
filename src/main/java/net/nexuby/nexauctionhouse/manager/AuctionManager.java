@@ -3,6 +3,7 @@ package net.nexuby.nexauctionhouse.manager;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.database.AuctionDAO;
+import net.nexuby.nexauctionhouse.hook.DiscordWebhook;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionStatus;
 import org.bukkit.Bukkit;
@@ -19,6 +20,7 @@ public class AuctionManager {
 
     private final NexAuctionHouse plugin;
     private final AuctionDAO dao;
+    private final DiscordWebhook discordWebhook;
 
     // Cache of active auctions keyed by auction id
     private final Map<Integer, AuctionItem> activeAuctions = new ConcurrentHashMap<>();
@@ -26,6 +28,7 @@ public class AuctionManager {
     public AuctionManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
         this.dao = new AuctionDAO(plugin);
+        this.discordWebhook = new DiscordWebhook(plugin);
     }
 
     /**
@@ -98,6 +101,9 @@ public class AuctionManager {
 
             // Log the listing
             dao.logTransaction(id, seller.getUniqueId(), null, itemStack, price, 0, "LIST");
+
+            // Discord notification
+            discordWebhook.sendListingNotification(seller.getName(), itemStack, price);
         }
 
         return id;
@@ -160,6 +166,10 @@ public class AuctionManager {
                     "{tax}", plugin.getEconomyManager().format(taxAmount)));
         }
 
+        // Discord notification
+        discordWebhook.sendSaleNotification(item.getSellerName(), buyer.getName(),
+                item.getItemStack(), item.getPrice(), taxAmount);
+
         return true;
     }
 
@@ -185,6 +195,9 @@ public class AuctionManager {
 
         // Return item to seller's expired items for pickup
         dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "CANCELLED");
+
+        // Discord notification
+        discordWebhook.sendCancelNotification(item.getSellerName(), item.getItemStack(), item.getPrice(), isAdmin);
 
         return true;
     }
