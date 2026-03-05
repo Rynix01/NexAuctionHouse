@@ -26,6 +26,8 @@ general:
 # Economy providers configuration
 # Multiple economies can be active simultaneously.
 # Players choose currency when listing: /ah sell <price> <currency>
+# For multi-currency plugins (CoinsEngine, GemsEconomy, EcoBits, UltraEconomy),
+# set 'plugin-currency' to the currency ID defined in that plugin.
 economy:
   providers:
     vault:
@@ -40,6 +42,26 @@ economy:
       enabled: false
       display-name: "Tokens"
       currency-name: "tokens"
+    coinsengine:
+      enabled: false
+      display-name: "Gems"
+      currency-name: "gems"
+      plugin-currency: "gems"
+    gemseconomy:
+      enabled: false
+      display-name: "Gems"
+      currency-name: "gems"
+      plugin-currency: "gems"
+    ecobits:
+      enabled: false
+      display-name: "Bits"
+      currency-name: "bits"
+      plugin-currency: "bits"
+    ultraeconomy:
+      enabled: false
+      display-name: "Coins"
+      currency-name: "coins"
+      plugin-currency: "coins"
 
 # Database configuration
 database:

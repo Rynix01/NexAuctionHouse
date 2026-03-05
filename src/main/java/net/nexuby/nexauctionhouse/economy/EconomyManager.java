@@ -1,9 +1,7 @@
 package net.nexuby.nexauctionhouse.economy;
 
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
-import net.nexuby.nexauctionhouse.economy.provider.PlayerPointsProvider;
-import net.nexuby.nexauctionhouse.economy.provider.TokenManagerProvider;
-import net.nexuby.nexauctionhouse.economy.provider.VaultProvider;
+import net.nexuby.nexauctionhouse.economy.provider.*;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -62,8 +60,9 @@ public class EconomyManager {
 
             String displayName = providerSection.getString("display-name", key);
             String currencyName = providerSection.getString("currency-name", key).toLowerCase();
+            String pluginCurrency = providerSection.getString("plugin-currency", "");
 
-            EconomyProvider provider = createProvider(key, displayName, currencyName);
+            EconomyProvider provider = createProvider(key, displayName, currencyName, pluginCurrency);
             if (provider == null) {
                 plugin.getLogger().warning("Unknown economy provider type: " + key);
                 continue;
@@ -81,11 +80,15 @@ public class EconomyManager {
         return defaultProvider != null;
     }
 
-    private EconomyProvider createProvider(String type, String displayName, String currencyName) {
+    private EconomyProvider createProvider(String type, String displayName, String currencyName, String pluginCurrency) {
         return switch (type.toLowerCase()) {
             case "vault" -> new VaultProvider(displayName, currencyName);
             case "playerpoints" -> new PlayerPointsProvider(displayName, currencyName);
             case "tokenmanager" -> new TokenManagerProvider(displayName, currencyName);
+            case "coinsengine" -> new CoinsEngineProvider(displayName, currencyName, pluginCurrency);
+            case "gemseconomy" -> new GemsEconomyProvider(displayName, currencyName, pluginCurrency);
+            case "ecobits" -> new EcoBitsProvider(displayName, currencyName, pluginCurrency);
+            case "ultraeconomy" -> new UltraEconomyProvider(displayName, currencyName, pluginCurrency);
             default -> null;
         };
     }
