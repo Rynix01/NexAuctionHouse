@@ -10,10 +10,10 @@ public class AuctionItem {
     private final UUID sellerUuid;
     private final String sellerName;
     private final ItemStack itemStack;
-    private final double price;
+    private double price;
     private final double taxRate;
     private final long createdAt;
-    private final long expiresAt;
+    private long expiresAt;
     private AuctionStatus status;
 
     public AuctionItem(int id, UUID sellerUuid, String sellerName, ItemStack itemStack,
@@ -89,5 +89,13 @@ public class AuctionItem {
 
     public void setStatus(AuctionStatus status) {
         this.status = status;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public void setExpiresAt(long expiresAt) {
+        this.expiresAt = expiresAt;
     }
 }

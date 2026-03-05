@@ -45,16 +45,18 @@ public class DiscordWebhook {
         if (!isEnabled()) return;
 
         String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
         int color = plugin.getConfigManager().getConfig().getInt("discord.colors.listing", 3447003);
 
         JsonObject embed = createEmbed(
-                "New Listing",
-                sellerName + " listed an item on the auction house.",
+                "\uD83D\uDCE6 New Listing",
+                "**" + sellerName + "** listed **" + itemName + " x" + amount + "** on the auction house for **" + plugin.getEconomyManager().format(price) + "**.",
                 color
         );
-        addField(embed, "Item", itemName + " x" + item.getAmount(), true);
+        addField(embed, "Item", itemName + " x" + amount, true);
         addField(embed, "Price", plugin.getEconomyManager().format(price), true);
         addField(embed, "Seller", sellerName, true);
+        addTimestamp(embed);
 
         sendWebhook(embed);
     }
@@ -67,18 +69,22 @@ public class DiscordWebhook {
         if (!isEnabled()) return;
 
         String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
+        double sellerReceives = price - taxAmount;
         int color = plugin.getConfigManager().getConfig().getInt("discord.colors.sale", 5763719);
 
         JsonObject embed = createEmbed(
-                "Item Sold",
-                buyerName + " purchased an item from the auction house.",
+                "\uD83D\uDCB0 Item Sold",
+                "**" + buyerName + "** purchased **" + itemName + " x" + amount + "** from **" + sellerName + "** for **" + plugin.getEconomyManager().format(price) + "**.",
                 color
         );
-        addField(embed, "Item", itemName + " x" + item.getAmount(), true);
+        addField(embed, "Item", itemName + " x" + amount, true);
         addField(embed, "Price", plugin.getEconomyManager().format(price), true);
+        addField(embed, "Tax", plugin.getEconomyManager().format(taxAmount), true);
+        addField(embed, "Seller Receives", plugin.getEconomyManager().format(sellerReceives), true);
         addField(embed, "Seller", sellerName, true);
         addField(embed, "Buyer", buyerName, true);
-        addField(embed, "Tax", plugin.getEconomyManager().format(taxAmount), true);
+        addTimestamp(embed);
 
         sendWebhook(embed);
     }
@@ -90,17 +96,45 @@ public class DiscordWebhook {
         if (!isEnabled()) return;
 
         String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
         int color = byAdmin
                 ? plugin.getConfigManager().getConfig().getInt("discord.colors.admin", 16776960)
                 : plugin.getConfigManager().getConfig().getInt("discord.colors.cancel", 15548997);
 
-        String title = byAdmin ? "Auction Removed (Admin)" : "Auction Cancelled";
-        String description = sellerName + "'s auction was " + (byAdmin ? "removed by an admin." : "cancelled.");
+        String title = byAdmin ? "\u26A0\uFE0F Auction Removed (Admin)" : "\u274C Auction Cancelled";
+        String description = byAdmin
+                ? "An admin removed **" + sellerName + "**'s listing for **" + itemName + " x" + amount + "**."
+                : "**" + sellerName + "** cancelled their listing for **" + itemName + " x" + amount + "**.";
 
         JsonObject embed = createEmbed(title, description, color);
-        addField(embed, "Item", itemName + " x" + item.getAmount(), true);
+        addField(embed, "Item", itemName + " x" + amount, true);
         addField(embed, "Price", plugin.getEconomyManager().format(price), true);
         addField(embed, "Seller", sellerName, true);
+        addTimestamp(embed);
+
+        sendWebhook(embed);
+    }
+
+    /**
+     * Sends a notification when an auction price is updated.
+     */
+    public void sendPriceUpdateNotification(String sellerName, ItemStack item, double oldPrice, double newPrice) {
+        if (!isEnabled()) return;
+
+        String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
+        int color = plugin.getConfigManager().getConfig().getInt("discord.colors.listing", 3447003);
+
+        JsonObject embed = createEmbed(
+                "\u270F\uFE0F Price Updated",
+                "**" + sellerName + "** changed the price of **" + itemName + " x" + amount + "**.",
+                color
+        );
+        addField(embed, "Item", itemName + " x" + amount, true);
+        addField(embed, "Old Price", plugin.getEconomyManager().format(oldPrice), true);
+        addField(embed, "New Price", plugin.getEconomyManager().format(newPrice), true);
+        addField(embed, "Seller", sellerName, true);
+        addTimestamp(embed);
 
         sendWebhook(embed);
     }
@@ -134,6 +168,10 @@ public class DiscordWebhook {
         field.addProperty("value", value);
         field.addProperty("inline", inline);
         fields.add(field);
+    }
+
+    private void addTimestamp(JsonObject embed) {
+        embed.addProperty("timestamp", java.time.Instant.now().toString());
     }
 
     private void sendWebhook(JsonObject embed) {

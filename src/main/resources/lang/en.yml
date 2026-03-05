@@ -17,6 +17,13 @@ auction:
   cancelled: "<yellow>Your auction has been cancelled. Item returned."
   expired: "<red>Your auction for <yellow>{item} <red>has expired."
   collected: "<green>You collected <yellow>{amount} <green>expired items."
+  price-updated: "<green>Auction price updated to <yellow>{price}<green>."
+  duration-extended: "<green>Auction extended by <yellow>{hours} hour(s)<green>."
+  extend-failed: "<red>Cannot extend further. Maximum duration reached."
+  enter-new-price: "<yellow>Enter the new price in chat. <gray>(Min: {min} / Max: {max})"
+  type-cancel: "<gray>Type <yellow>cancel <gray>to go back."
+  price-edit-cancelled: "<yellow>Price edit cancelled."
+  invalid-price: "<red>Invalid price. Please enter a valid number."
 
   # Error messages
   no-item-in-hand: "<red>You must hold an item in your hand."

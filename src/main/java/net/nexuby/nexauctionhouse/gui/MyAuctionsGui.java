@@ -5,6 +5,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
+import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -115,7 +116,7 @@ public class MyAuctionsGui extends PaginatedGui {
             lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
             lore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auction.getTaxRate())));
             lore.add(Component.empty());
-            lore.add(text("<red>Click to cancel this auction!"));
+            lore.add(text("<yellow>Click to manage this auction!"));
             lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
 
             meta.lore(lore);
@@ -132,15 +133,15 @@ public class MyAuctionsGui extends PaginatedGui {
         if (itemIndex >= auctionIds.size()) return;
 
         int auctionId = auctionIds.get(itemIndex);
-        boolean cancelled = plugin.getAuctionManager().cancelAuction(viewer, auctionId, false);
+        AuctionItem auction = plugin.getAuctionManager().getAuction(auctionId);
 
-        if (cancelled) {
-            viewer.sendMessage(plugin.getLangManager().prefixed("auction.cancelled"));
-        } else {
+        if (auction == null) {
             viewer.sendMessage(plugin.getLangManager().prefixed("auction.auction-not-found"));
+            refresh();
+            return;
         }
 
-        refresh();
+        new AuctionEditGui(plugin, viewer, auction).open();
     }
 
     @Override

@@ -209,6 +209,82 @@ public class AuctionManager {
     }
 
     /**
+     * Updates the price of an active auction.
+     * Only the seller can update the price.
+     */
+    public boolean updatePrice(Player seller, int auctionId, double newPrice) {
+        AuctionItem item = activeAuctions.get(auctionId);
+        if (item == null || item.isExpired()) {
+            return false;
+        }
+
+        if (!item.getSellerUuid().equals(seller.getUniqueId())) {
+            return false;
+        }
+
+        ConfigManager config = plugin.getConfigManager();
+        if (newPrice < config.getMinPrice() || newPrice > config.getMaxPrice()) {
+            return false;
+        }
+
+        double oldPrice = item.getPrice();
+        item.setPrice(newPrice);
+
+        if (dao.updateAuctionPrice(auctionId, newPrice)) {
+            dao.logTransaction(auctionId, seller.getUniqueId(), null,
+                    item.getItemStack(), newPrice, 0, "PRICE_UPDATE");
+            discordWebhook.sendPriceUpdateNotification(seller.getName(), item.getItemStack(), oldPrice, newPrice);
+            return true;
+        }
+
+        // Revert on failure
+        item.setPrice(oldPrice);
+        return false;
+    }
+
+    /**
+     * Extends the duration of an active auction.
+     * Only the seller can extend the duration.
+     */
+    public boolean extendDuration(Player seller, int auctionId, int additionalHours) {
+        AuctionItem item = activeAuctions.get(auctionId);
+        if (item == null || item.isExpired()) {
+            return false;
+        }
+
+        if (!item.getSellerUuid().equals(seller.getUniqueId())) {
+            return false;
+        }
+
+        int maxDuration = plugin.getConfigManager().getMaxAuctionDuration();
+        long maxExpiresAt = item.getCreatedAt() + (maxDuration * 3600000L);
+        long newExpiresAt = item.getExpiresAt() + (additionalHours * 3600000L);
+
+        // Cap at max duration
+        if (newExpiresAt > maxExpiresAt) {
+            newExpiresAt = maxExpiresAt;
+        }
+
+        // Already at or past max
+        if (newExpiresAt <= item.getExpiresAt()) {
+            return false;
+        }
+
+        long oldExpiry = item.getExpiresAt();
+        item.setExpiresAt(newExpiresAt);
+
+        if (dao.updateAuctionExpiry(auctionId, newExpiresAt)) {
+            dao.logTransaction(auctionId, seller.getUniqueId(), null,
+                    item.getItemStack(), item.getPrice(), 0, "EXTEND");
+            return true;
+        }
+
+        // Revert on failure
+        item.setExpiresAt(oldExpiry);
+        return false;
+    }
+
+    /**
      * Moves an expired auction out of active list and into expired items.
      */
     private void expireAuction(AuctionItem item) {

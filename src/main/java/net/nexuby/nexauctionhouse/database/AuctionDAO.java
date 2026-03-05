@@ -120,6 +120,32 @@ public class AuctionDAO {
         return null;
     }
 
+    public boolean updateAuctionPrice(int auctionId, double price) {
+        String sql = "UPDATE auctions SET price = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setDouble(1, price);
+            stmt.setInt(2, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to update auction price", e);
+            return false;
+        }
+    }
+
+    public boolean updateAuctionExpiry(int auctionId, long expiresAt) {
+        String sql = "UPDATE auctions SET expires_at = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setLong(1, expiresAt);
+            stmt.setInt(2, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to update auction expiry", e);
+            return false;
+        }
+    }
+
     // -- Expired items --
 
     public void insertExpiredItem(UUID ownerUuid, String ownerName, ItemStack itemStack, String reason) {

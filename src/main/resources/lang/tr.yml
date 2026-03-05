@@ -17,6 +17,13 @@ auction:
   cancelled: "<yellow>Ihaleniz iptal edildi. Esya iade edildi."
   expired: "<red><yellow>{item} <red>icin ihalenizin suresi doldu."
   collected: "<green>Suresi dolmus <yellow>{amount} <green>esya toplandi."
+  price-updated: "<green>Ihale fiyati <yellow>{price}<green> olarak guncellendi."
+  duration-extended: "<green>Ihale suresi <yellow>{hours} saat<green> uzatildi."
+  extend-failed: "<red>Daha fazla uzatilamaz. Maksimum sureye ulasildi."
+  enter-new-price: "<yellow>Yeni fiyati sohbete yazin. <gray>(Min: {min} / Maks: {max})"
+  type-cancel: "<gray>Geri donmek icin <yellow>cancel <gray>yazin."
+  price-edit-cancelled: "<yellow>Fiyat duzenlemesi iptal edildi."
+  invalid-price: "<red>Gecersiz fiyat. Lutfen gecerli bir sayi girin."
 
   # Hata mesajlari
   no-item-in-hand: "<red>Elinizde bir esya tutmalisiniz."
