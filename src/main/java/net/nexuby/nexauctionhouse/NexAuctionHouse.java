@@ -6,6 +6,7 @@ import net.nexuby.nexauctionhouse.config.GuiConfig;
 import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.database.DatabaseManager;
 import net.nexuby.nexauctionhouse.economy.EconomyManager;
+import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import org.bukkit.Bukkit;
@@ -65,6 +66,7 @@ public final class NexAuctionHouse extends JavaPlugin {
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new GuiListener(this), this);
 
         getLogger().info("NexAuctionHouse v" + getDescription().getVersion() + " has been enabled!");
     }

@@ -3,6 +3,8 @@ package net.nexuby.nexauctionhouse.command;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.config.LangManager;
+import net.nexuby.nexauctionhouse.gui.ExpiredGui;
+import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -43,8 +45,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            // TODO: Open main GUI menu
-            player.sendMessage(lang.prefixed("general.invalid-usage"));
+            new MainMenu(plugin, player).open();
             return true;
         }
 
@@ -154,8 +155,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // TODO: Open expired items GUI
-        player.sendMessage(lang.prefixed("general.invalid-usage"));
+        new ExpiredGui(plugin, player).open();
     }
 
     private void handleAdmin(CommandSender sender) {
@@ -171,8 +171,8 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // TODO: Open admin GUI
-        player.sendMessage(lang.prefixed("general.invalid-usage"));
+        // Admin GUI - shows all auctions with admin controls
+        new MainMenu(plugin, player).open();
     }
 
     private void handleReload(CommandSender sender) {
