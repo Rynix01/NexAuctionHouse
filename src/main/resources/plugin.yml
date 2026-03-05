@@ -10,6 +10,19 @@ softdepend:
   - PlaceholderAPI
   - HeadDatabase
   - ItemsAdder
+  - Oraxen
+  - Nexo
+  - MMOItems
+  - MythicMobs
+  - MythicCrucible
+  - ExecutableItems
+  - EcoItems
+  - EcoArmor
+  - Talismans
+  - Slimefun
+  - CrazyEnchantments
+  - ExcellentEnchants
+  - ModelEngine
 
 commands:
   ah:

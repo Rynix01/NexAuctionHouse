@@ -374,6 +374,14 @@ public class AuctionManager {
             return true;
         }
 
+        // Check custom item ID blacklist (e.g. "itemsadder:custom_sword")
+        if (plugin.getItemHookManager() != null) {
+            String customId = plugin.getItemHookManager().getCustomItemId(itemStack);
+            if (customId != null && config.getBlacklistedCustomItems().contains(customId)) {
+                return true;
+            }
+        }
+
         // Check lore keywords
         if (itemStack.hasItemMeta() && itemStack.getItemMeta().hasLore()) {
             List<String> keywords = config.getBlacklistedLoreKeywords();
@@ -411,6 +419,13 @@ public class AuctionManager {
     }
 
     public static String getItemName(ItemStack itemStack) {
+        // Try custom item hooks first
+        NexAuctionHouse instance = NexAuctionHouse.getInstance();
+        if (instance != null && instance.getItemHookManager() != null) {
+            String customName = instance.getItemHookManager().getCustomItemName(itemStack);
+            if (customName != null) return customName;
+        }
+
         if (itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()) {
             return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
                     .serialize(itemStack.getItemMeta().displayName());

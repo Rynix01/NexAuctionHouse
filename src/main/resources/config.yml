@@ -60,6 +60,12 @@ blacklist:
   lore-keywords:
     - "Soulbound"
     - "Untradeable"
+  # Custom item IDs from third-party plugins (format: "plugin:item_id")
+  # Use /ah admin to discover item IDs when listing
+  custom-items: []
+  #  - "itemsadder:forbidden_sword"
+  #  - "mmoitems:SWORD:FORBIDDEN_BLADE"
+  #  - "oraxen:banned_item"
 
 # Discord webhook integration
 discord:

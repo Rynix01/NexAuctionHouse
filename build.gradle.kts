@@ -16,12 +16,16 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://jitpack.io")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    maven("https://mvn.lumine.io/repository/maven-public/") // MythicMobs, ModelEngine
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
+    compileOnly("com.github.LoneDev6:API-ItemsAdder:3.6.3-beta-14")
+    compileOnly("io.lumine:Mythic-Dist:5.7.2")
+    compileOnly("io.lumine:MythicCrucible-Dist:2.1.0")
 }
 
 tasks {

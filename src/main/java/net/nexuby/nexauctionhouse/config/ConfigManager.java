@@ -102,6 +102,10 @@ public class ConfigManager {
         return config.getStringList("blacklist.lore-keywords");
     }
 
+    public List<String> getBlacklistedCustomItems() {
+        return config.getStringList("blacklist.custom-items");
+    }
+
     // -- Discord Webhook --
 
     public boolean isDiscordEnabled() {

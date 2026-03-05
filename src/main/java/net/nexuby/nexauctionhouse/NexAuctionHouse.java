@@ -7,6 +7,7 @@ import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.database.DatabaseManager;
 import net.nexuby.nexauctionhouse.economy.EconomyManager;
 import net.nexuby.nexauctionhouse.hook.AuctionPlaceholders;
+import net.nexuby.nexauctionhouse.hook.item.ItemHookManager;
 import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
@@ -24,6 +25,7 @@ public final class NexAuctionHouse extends JavaPlugin {
     private DatabaseManager databaseManager;
     private EconomyManager economyManager;
     private AuctionManager auctionManager;
+    private ItemHookManager itemHookManager;
 
     @Override
     public void onEnable() {
@@ -56,6 +58,10 @@ public final class NexAuctionHouse extends JavaPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+
+        // Register custom item hooks
+        this.itemHookManager = new ItemHookManager(this);
+        itemHookManager.registerAll();
 
         // Initialize auction manager
         this.auctionManager = new AuctionManager(this);
@@ -119,6 +125,10 @@ public final class NexAuctionHouse extends JavaPlugin {
 
     public AuctionManager getAuctionManager() {
         return auctionManager;
+    }
+
+    public ItemHookManager getItemHookManager() {
+        return itemHookManager;
     }
 
     /**
