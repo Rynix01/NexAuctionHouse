@@ -23,6 +23,24 @@ general:
   # Days to keep expired items before permanent deletion
   expired-item-keep-days: 7
 
+# Economy providers configuration
+# Multiple economies can be active simultaneously.
+# Players choose currency when listing: /ah sell <price> <currency>
+economy:
+  providers:
+    vault:
+      enabled: true
+      display-name: "Money"
+      currency-name: "money"
+    playerpoints:
+      enabled: false
+      display-name: "Points"
+      currency-name: "points"
+    tokenmanager:
+      enabled: false
+      display-name: "Tokens"
+      currency-name: "tokens"
+
 # Database configuration
 database:
   # Type: 'sqlite' or 'mysql'

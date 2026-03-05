@@ -35,6 +35,7 @@ auction:
   cannot-buy-own: "<red>Kendi esyanizi satin alamazsiniz."
   auction-not-found: "<red>Bu ihale artik mevcut degil."
   inventory-full: "<red>Envanteriniz dolu!"
+  invalid-currency: "<red>Gecersiz para birimi! Mevcut: <yellow>{currencies}"
 
 # Admin mesajlari
 admin:

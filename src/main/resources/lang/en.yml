@@ -35,6 +35,7 @@ auction:
   cannot-buy-own: "<red>You cannot buy your own item."
   auction-not-found: "<red>This auction no longer exists."
   inventory-full: "<red>Your inventory is full!"
+  invalid-currency: "<red>Invalid currency! Available: <yellow>{currencies}"
 
 # Admin messages
 admin:

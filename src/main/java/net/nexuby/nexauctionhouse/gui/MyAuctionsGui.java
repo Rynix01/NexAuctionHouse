@@ -112,7 +112,7 @@ public class MyAuctionsGui extends PaginatedGui {
             List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
             lore.add(Component.empty());
             lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice())));
+            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
             lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
             lore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auction.getTaxRate())));
             lore.add(Component.empty());

@@ -11,18 +11,20 @@ public class AuctionItem {
     private final String sellerName;
     private final ItemStack itemStack;
     private double price;
+    private final String currency;
     private final double taxRate;
     private final long createdAt;
     private long expiresAt;
     private AuctionStatus status;
 
     public AuctionItem(int id, UUID sellerUuid, String sellerName, ItemStack itemStack,
-                       double price, double taxRate, long createdAt, long expiresAt, AuctionStatus status) {
+                       double price, String currency, double taxRate, long createdAt, long expiresAt, AuctionStatus status) {
         this.id = id;
         this.sellerUuid = sellerUuid;
         this.sellerName = sellerName;
         this.itemStack = itemStack;
         this.price = price;
+        this.currency = currency;
         this.taxRate = taxRate;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
@@ -47,6 +49,10 @@ public class AuctionItem {
 
     public double getPrice() {
         return price;
+    }
+
+    public String getCurrency() {
+        return currency;
     }
 
     public double getTaxRate() {

@@ -92,17 +92,30 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        // Parse currency (optional, defaults to first enabled provider)
+        String currency;
+        if (args.length >= 3) {
+            currency = args[2].toLowerCase();
+            if (!plugin.getEconomyManager().isValidCurrency(currency)) {
+                player.sendMessage(lang.prefixed("auction.invalid-currency",
+                        "{currencies}", String.join(", ", plugin.getEconomyManager().getCurrencyNames())));
+                return;
+            }
+        } else {
+            currency = plugin.getEconomyManager().getDefaultProvider().getCurrencyName();
+        }
+
         ConfigManager config = plugin.getConfigManager();
 
         if (price < config.getMinPrice()) {
             player.sendMessage(lang.prefixed("auction.price-too-low",
-                    "{min}", plugin.getEconomyManager().format(config.getMinPrice())));
+                    "{min}", plugin.getEconomyManager().format(config.getMinPrice(), currency)));
             return;
         }
 
         if (price > config.getMaxPrice()) {
             player.sendMessage(lang.prefixed("auction.price-too-high",
-                    "{max}", plugin.getEconomyManager().format(config.getMaxPrice())));
+                    "{max}", plugin.getEconomyManager().format(config.getMaxPrice(), currency)));
             return;
         }
 
@@ -134,10 +147,10 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         ItemStack toSell = itemInHand.clone();
         player.getInventory().setItemInMainHand(null);
 
-        int auctionId = auctionManager.listItem(player, toSell, price);
+        int auctionId = auctionManager.listItem(player, toSell, price, currency);
         if (auctionId > 0) {
             player.sendMessage(lang.prefixed("auction.listed",
-                    "{price}", plugin.getEconomyManager().format(price)));
+                    "{price}", plugin.getEconomyManager().format(price, currency)));
         } else {
             // Something went wrong, give the item back
             player.getInventory().setItemInMainHand(toSell);
@@ -285,6 +298,13 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("sell")) {
             return Arrays.asList("<price>");
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("sell")) {
+            List<String> currencies = new ArrayList<>(plugin.getEconomyManager().getCurrencyNames());
+            String input = args[2].toLowerCase();
+            currencies.removeIf(s -> !s.startsWith(input));
+            return currencies;
         }
 
         // Admin sub-tab completion

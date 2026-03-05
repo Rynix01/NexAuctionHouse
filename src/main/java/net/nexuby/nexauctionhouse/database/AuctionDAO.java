@@ -28,18 +28,19 @@ public class AuctionDAO {
     // -- Auction CRUD operations --
 
     public int insertAuction(AuctionItem item) {
-        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, tax_rate, created_at, expires_at, status) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, item.getSellerUuid().toString());
             stmt.setString(2, item.getSellerName());
             stmt.setString(3, ItemSerializer.toBase64(item.getItemStack()));
             stmt.setDouble(4, item.getPrice());
-            stmt.setDouble(5, item.getTaxRate());
-            stmt.setLong(6, item.getCreatedAt());
-            stmt.setLong(7, item.getExpiresAt());
-            stmt.setString(8, item.getStatus().name());
+            stmt.setString(5, item.getCurrency());
+            stmt.setDouble(6, item.getTaxRate());
+            stmt.setLong(7, item.getCreatedAt());
+            stmt.setLong(8, item.getExpiresAt());
+            stmt.setString(9, item.getStatus().name());
             stmt.executeUpdate();
 
             ResultSet keys = stmt.getGeneratedKeys();
@@ -238,6 +239,13 @@ public class AuctionDAO {
             String sellerName = rs.getString("seller_name");
             ItemStack itemStack = ItemSerializer.fromBase64(rs.getString("item_data"));
             double price = rs.getDouble("price");
+            String currency;
+            try {
+                currency = rs.getString("currency");
+                if (currency == null || currency.isEmpty()) currency = "money";
+            } catch (SQLException ignored) {
+                currency = "money";
+            }
             double taxRate = rs.getDouble("tax_rate");
             long createdAt = rs.getLong("created_at");
             long expiresAt = rs.getLong("expires_at");
@@ -248,7 +256,7 @@ public class AuctionDAO {
                 return null;
             }
 
-            return new AuctionItem(id, sellerUuid, sellerName, itemStack, price, taxRate, createdAt, expiresAt, status);
+            return new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status);
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Skipping auction - invalid data: " + e.getMessage());
             return null;

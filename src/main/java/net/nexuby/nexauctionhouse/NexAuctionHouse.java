@@ -54,7 +54,7 @@ public final class NexAuctionHouse extends JavaPlugin {
         // Setup economy
         this.economyManager = new EconomyManager(this);
         if (!economyManager.setup()) {
-            getLogger().severe("Vault not found! Disabling plugin.");
+            getLogger().severe("No economy provider available! At least one economy plugin must be enabled. Disabling plugin.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }

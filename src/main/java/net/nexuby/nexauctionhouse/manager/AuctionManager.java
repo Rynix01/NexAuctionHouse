@@ -75,7 +75,7 @@ public class AuctionManager {
      * Lists a new item on the auction house.
      * Returns the auction id, or -1 if it failed.
      */
-    public int listItem(Player seller, ItemStack itemStack, double price) {
+    public int listItem(Player seller, ItemStack itemStack, double price, String currency) {
         ConfigManager config = plugin.getConfigManager();
 
         // Determine tax rate for this player
@@ -88,14 +88,14 @@ public class AuctionManager {
 
         AuctionItem auctionItem = new AuctionItem(
                 0, seller.getUniqueId(), seller.getName(), itemStack,
-                price, taxRate, now, expiresAt, AuctionStatus.ACTIVE
+                price, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE
         );
 
         int id = dao.insertAuction(auctionItem);
         if (id > 0) {
             AuctionItem withId = new AuctionItem(
                     id, seller.getUniqueId(), seller.getName(), itemStack,
-                    price, taxRate, now, expiresAt, AuctionStatus.ACTIVE
+                    price, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE
             );
             activeAuctions.put(id, withId);
 
@@ -103,7 +103,7 @@ public class AuctionManager {
             dao.logTransaction(id, seller.getUniqueId(), null, itemStack, price, 0, "LIST");
 
             // Discord notification
-            discordWebhook.sendListingNotification(seller.getName(), itemStack, price);
+            discordWebhook.sendListingNotification(seller.getName(), itemStack, price, currency);
         }
 
         return id;
@@ -124,8 +124,10 @@ public class AuctionManager {
             return false;
         }
 
+        String currency = item.getCurrency();
+
         // Check buyer's balance
-        if (!plugin.getEconomyManager().has(buyer, item.getPrice())) {
+        if (!plugin.getEconomyManager().has(buyer, item.getPrice(), currency)) {
             return false;
         }
 
@@ -140,13 +142,13 @@ public class AuctionManager {
         }
 
         // Process economy
-        plugin.getEconomyManager().withdraw(buyer, item.getPrice());
+        plugin.getEconomyManager().withdraw(buyer, item.getPrice(), currency);
 
         double taxAmount = item.getTaxAmount();
         double sellerReceives = item.getSellerReceives();
 
         // Pay the seller (works even if offline)
-        plugin.getEconomyManager().deposit(Bukkit.getOfflinePlayer(item.getSellerUuid()), sellerReceives);
+        plugin.getEconomyManager().deposit(Bukkit.getOfflinePlayer(item.getSellerUuid()), sellerReceives, currency);
 
         // Give item to buyer
         buyer.getInventory().addItem(item.getItemStack());
@@ -162,13 +164,13 @@ public class AuctionManager {
         if (seller != null && seller.isOnline()) {
             seller.sendMessage(plugin.getLangManager().prefixed("auction.sold",
                     "{item}", getItemName(item.getItemStack()),
-                    "{price}", plugin.getEconomyManager().format(item.getPrice()),
-                    "{tax}", plugin.getEconomyManager().format(taxAmount)));
+                    "{price}", plugin.getEconomyManager().format(item.getPrice(), currency),
+                    "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
         }
 
         // Discord notification
         discordWebhook.sendSaleNotification(item.getSellerName(), buyer.getName(),
-                item.getItemStack(), item.getPrice(), taxAmount);
+                item.getItemStack(), item.getPrice(), taxAmount, currency);
 
         return true;
     }
@@ -203,7 +205,7 @@ public class AuctionManager {
         }
 
         // Discord notification
-        discordWebhook.sendCancelNotification(item.getSellerName(), item.getItemStack(), item.getPrice(), isAdmin);
+        discordWebhook.sendCancelNotification(item.getSellerName(), item.getItemStack(), item.getPrice(), isAdmin, item.getCurrency());
 
         return true;
     }
@@ -233,7 +235,7 @@ public class AuctionManager {
         if (dao.updateAuctionPrice(auctionId, newPrice)) {
             dao.logTransaction(auctionId, seller.getUniqueId(), null,
                     item.getItemStack(), newPrice, 0, "PRICE_UPDATE");
-            discordWebhook.sendPriceUpdateNotification(seller.getName(), item.getItemStack(), oldPrice, newPrice);
+            discordWebhook.sendPriceUpdateNotification(seller.getName(), item.getItemStack(), oldPrice, newPrice, item.getCurrency());
             return true;
         }
 

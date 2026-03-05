@@ -39,7 +39,7 @@ public class ConfirmGui extends AbstractGui {
         String rawTitle = cfg.getString("title", "<dark_gray>Confirm Purchase");
         String title = rawTitle
                 .replace("{item}", net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(auctionItem.getItemStack()))
-                .replace("{price}", plugin.getEconomyManager().format(auctionItem.getPrice()));
+                .replace("{price}", plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency()));
 
         int size = cfg.getInt("size", 27);
         inventory = Bukkit.createInventory(this, size, text(title));
@@ -79,7 +79,7 @@ public class ConfirmGui extends AbstractGui {
             if (meta.hasLore()) {
                 var newLore = new java.util.ArrayList<net.kyori.adventure.text.Component>();
                 String itemName = net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(auctionItem.getItemStack());
-                String priceStr = plugin.getEconomyManager().format(auctionItem.getPrice());
+                String priceStr = plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency());
 
                 for (var loreLine : meta.lore()) {
                     String plain = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(loreLine);
@@ -143,9 +143,9 @@ public class ConfirmGui extends AbstractGui {
         }
 
         // Check balance
-        if (!plugin.getEconomyManager().has(viewer, current.getPrice())) {
+        if (!plugin.getEconomyManager().has(viewer, current.getPrice(), current.getCurrency())) {
             viewer.sendMessage(plugin.getLangManager().prefixed("auction.not-enough-money",
-                    "{price}", plugin.getEconomyManager().format(current.getPrice())));
+                    "{price}", plugin.getEconomyManager().format(current.getPrice(), current.getCurrency())));
             viewer.closeInventory();
             return;
         }
@@ -163,7 +163,7 @@ public class ConfirmGui extends AbstractGui {
         if (success) {
             viewer.sendMessage(plugin.getLangManager().prefixed("auction.purchased",
                     "{item}", net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(current.getItemStack()),
-                    "{price}", plugin.getEconomyManager().format(current.getPrice())));
+                    "{price}", plugin.getEconomyManager().format(current.getPrice(), current.getCurrency())));
         } else {
             viewer.sendMessage(plugin.getLangManager().prefixed("auction.auction-not-found"));
         }

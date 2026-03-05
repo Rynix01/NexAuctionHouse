@@ -85,7 +85,7 @@ public class MainMenu extends PaginatedGui {
             for (String line : loreTemplate) {
                 String parsed = line
                         .replace("{seller}", auction.getSellerName())
-                        .replace("{price}", plugin.getEconomyManager().format(auction.getPrice()))
+                        .replace("{price}", plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency()))
                         .replace("{time}", TimeUtil.formatDuration(auction.getRemainingTime()));
                 existingLore.add(text(parsed));
             }

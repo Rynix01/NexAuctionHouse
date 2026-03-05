@@ -116,7 +116,7 @@ public class AdminGui extends PaginatedGui {
             lore.add(Component.empty());
             lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
             lore.add(text("<gray>Seller: <white>" + auction.getSellerName()));
-            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice())));
+            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
             lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
             lore.add(text("<gray>Tax: <red>" + String.format("%.1f%%", auction.getTaxRate())));
             lore.add(text("<gray>Auction ID: <white>#" + auction.getId()));

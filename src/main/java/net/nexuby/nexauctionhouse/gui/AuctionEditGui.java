@@ -50,10 +50,10 @@ public class AuctionEditGui extends AbstractGui {
         List<Component> displayLore = displayMeta.hasLore() ? new ArrayList<>(displayMeta.lore()) : new ArrayList<>();
         displayLore.add(Component.empty());
         displayLore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        displayLore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice())));
+        displayLore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())));
         displayLore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auctionItem.getRemainingTime())));
         displayLore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auctionItem.getTaxRate())));
-        displayLore.add(text("<gray>You receive: <green>" + plugin.getEconomyManager().format(auctionItem.getSellerReceives())));
+        displayLore.add(text("<gray>You receive: <green>" + plugin.getEconomyManager().format(auctionItem.getSellerReceives(), auctionItem.getCurrency())));
         displayLore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
         displayMeta.lore(displayLore);
         display.setItemMeta(displayMeta);
@@ -64,7 +64,7 @@ public class AuctionEditGui extends AbstractGui {
         ItemMeta editPriceMeta = editPrice.getItemMeta();
         editPriceMeta.displayName(text("<yellow>Edit Price"));
         editPriceMeta.lore(List.of(
-                text("<gray>Current: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice())),
+                text("<gray>Current: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())),
                 Component.empty(),
                 text("<gray>Click to type a new price"),
                 text("<gray>in the chat.")
@@ -173,8 +173,8 @@ public class AuctionEditGui extends AbstractGui {
     private void handleEditPrice() {
         viewer.closeInventory();
         viewer.sendMessage(plugin.getLangManager().prefixed("auction.enter-new-price",
-                "{min}", plugin.getEconomyManager().format(plugin.getConfigManager().getMinPrice()),
-                "{max}", plugin.getEconomyManager().format(plugin.getConfigManager().getMaxPrice())));
+                "{min}", plugin.getEconomyManager().format(plugin.getConfigManager().getMinPrice(), auctionItem.getCurrency()),
+                "{max}", plugin.getEconomyManager().format(plugin.getConfigManager().getMaxPrice(), auctionItem.getCurrency())));
         viewer.sendMessage(plugin.getLangManager().prefixed("auction.type-cancel"));
 
         ChatInputListener.awaitInput(viewer, input -> {
@@ -195,14 +195,14 @@ public class AuctionEditGui extends AbstractGui {
 
             if (newPrice < plugin.getConfigManager().getMinPrice()) {
                 viewer.sendMessage(plugin.getLangManager().prefixed("auction.price-too-low",
-                        "{min}", plugin.getEconomyManager().format(plugin.getConfigManager().getMinPrice())));
+                        "{min}", plugin.getEconomyManager().format(plugin.getConfigManager().getMinPrice(), auctionItem.getCurrency())));
                 Bukkit.getScheduler().runTask(plugin, () -> new AuctionEditGui(plugin, viewer, auctionItem).open());
                 return;
             }
 
             if (newPrice > plugin.getConfigManager().getMaxPrice()) {
                 viewer.sendMessage(plugin.getLangManager().prefixed("auction.price-too-high",
-                        "{max}", plugin.getEconomyManager().format(plugin.getConfigManager().getMaxPrice())));
+                        "{max}", plugin.getEconomyManager().format(plugin.getConfigManager().getMaxPrice(), auctionItem.getCurrency())));
                 Bukkit.getScheduler().runTask(plugin, () -> new AuctionEditGui(plugin, viewer, auctionItem).open());
                 return;
             }
@@ -210,7 +210,7 @@ public class AuctionEditGui extends AbstractGui {
             boolean success = plugin.getAuctionManager().updatePrice(viewer, auctionItem.getId(), newPrice);
             if (success) {
                 viewer.sendMessage(plugin.getLangManager().prefixed("auction.price-updated",
-                        "{price}", plugin.getEconomyManager().format(newPrice)));
+                        "{price}", plugin.getEconomyManager().format(newPrice, auctionItem.getCurrency())));
             } else {
                 viewer.sendMessage(plugin.getLangManager().prefixed("auction.auction-not-found"));
             }

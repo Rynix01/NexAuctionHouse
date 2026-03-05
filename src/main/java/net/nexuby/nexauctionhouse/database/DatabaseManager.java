@@ -34,6 +34,7 @@ public class DatabaseManager {
             }
 
             createTables();
+            migrateDatabase();
             plugin.getLogger().info("Database connection established. (" + (usingSQLite ? "SQLite" : "MySQL") + ")");
             return true;
 
@@ -78,6 +79,7 @@ public class DatabaseManager {
                 + "seller_name VARCHAR(16) NOT NULL,"
                 + "item_data LONGTEXT NOT NULL,"
                 + "price DOUBLE NOT NULL,"
+                + "currency VARCHAR(32) NOT NULL DEFAULT 'money',"
                 + "tax_rate DOUBLE NOT NULL DEFAULT 0,"
                 + "created_at BIGINT NOT NULL,"
                 + "expires_at BIGINT NOT NULL,"
@@ -113,6 +115,45 @@ public class DatabaseManager {
             stmt1.executeUpdate();
             stmt2.executeUpdate();
             stmt3.executeUpdate();
+        }
+    }
+
+    /**
+     * Adds missing columns to existing databases (safe migration).
+     */
+    private void migrateDatabase() throws SQLException {
+        // Check if 'currency' column exists in auctions table
+        try {
+            String checkSql = usingSQLite
+                    ? "PRAGMA table_info(auctions)"
+                    : "SHOW COLUMNS FROM auctions LIKE 'currency'";
+
+            boolean hasCurrency = false;
+
+            try (PreparedStatement stmt = connection.prepareStatement(checkSql);
+                 var rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    if (usingSQLite) {
+                        if ("currency".equalsIgnoreCase(rs.getString("name"))) {
+                            hasCurrency = true;
+                            break;
+                        }
+                    } else {
+                        hasCurrency = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!hasCurrency) {
+                String alterSql = "ALTER TABLE auctions ADD COLUMN currency VARCHAR(32) NOT NULL DEFAULT 'money'";
+                try (PreparedStatement stmt = connection.prepareStatement(alterSql)) {
+                    stmt.executeUpdate();
+                }
+                plugin.getLogger().info("Database migrated: added 'currency' column to auctions table.");
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Database migration check failed", e);
         }
     }
 

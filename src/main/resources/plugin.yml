@@ -8,6 +8,8 @@ description: Modern ve güvenli Auction House eklentisi
 softdepend:
   - Vault
   - PlaceholderAPI
+  - PlayerPoints
+  - TokenManager
   - HeadDatabase
   - ItemsAdder
   - Oraxen
