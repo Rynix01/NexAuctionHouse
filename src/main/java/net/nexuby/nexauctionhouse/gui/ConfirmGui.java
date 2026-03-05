@@ -42,7 +42,7 @@ public class ConfirmGui extends AbstractGui {
                 .replace("{price}", plugin.getEconomyManager().format(auctionItem.getPrice()));
 
         int size = cfg.getInt("size", 27);
-        inventory = Bukkit.createInventory(this, size, mm.deserialize(title));
+        inventory = Bukkit.createInventory(this, size, text(title));
 
         ConfigurationSection buttons = cfg.getConfigurationSection("buttons");
         if (buttons != null) {
@@ -93,7 +93,7 @@ public class ConfirmGui extends AbstractGui {
                         String parsed = line
                                 .replace("{item}", itemName)
                                 .replace("{price}", priceStr);
-                        newLore.add(mm.deserialize(parsed));
+                        newLore.add(text(parsed));
                     }
                 }
                 meta.lore(newLore);

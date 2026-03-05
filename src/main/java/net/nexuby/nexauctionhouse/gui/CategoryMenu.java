@@ -41,7 +41,7 @@ public class CategoryMenu extends AbstractGui {
         String title = cfg.getString("title", "<dark_gray>Categories");
         int size = cfg.getInt("size", 36);
 
-        inventory = Bukkit.createInventory(this, size, mm.deserialize(title));
+        inventory = Bukkit.createInventory(this, size, text(title));
 
         // Load categories
         ConfigurationSection categoriesSection = cfg.getConfigurationSection("categories");

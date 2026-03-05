@@ -33,6 +33,17 @@ auction:
 admin:
   removed: "<green>Auction removed. Item returned to <yellow>{player}<green>."
   force-removed: "<red>An admin removed your auction for <yellow>{item}<red>."
+  cleared: "<green>Cleared <yellow>{count}<green> auctions. Items returned to sellers."
+  stats-active: "<gray>Active auctions: <yellow>{count}"
+  stats-value: "<gray>Total value: <green>{value}"
+  search-usage: "<red>Usage: <yellow>/ah admin search <player>"
+  remove-usage: "<red>Usage: <yellow>/ah admin remove <id>"
+  invalid-id: "<red>Invalid auction ID."
+  help: "<yellow>/ah admin <gray>- Open admin panel"
+  help-search: "<yellow>/ah admin search <player> <gray>- Search player's auctions"
+  help-remove: "<yellow>/ah admin remove <id> <gray>- Remove auction by ID"
+  help-clear: "<yellow>/ah admin clear <gray>- Clear all auctions"
+  help-stats: "<yellow>/ah admin stats <gray>- View auction stats"
 
 # Time format
 time:

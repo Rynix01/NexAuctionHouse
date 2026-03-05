@@ -7,6 +7,8 @@ import net.nexuby.nexauctionhouse.gui.AdminGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
+import net.nexuby.nexauctionhouse.model.AuctionItem;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -55,7 +57,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "sell" -> handleSell(sender, args);
             case "expired" -> handleExpired(sender);
-            case "admin" -> handleAdmin(sender);
+            case "admin" -> handleAdmin(sender, args);
             case "reload" -> handleReload(sender);
             default -> sender.sendMessage(lang.prefixed("general.invalid-usage"));
         }
@@ -159,21 +161,94 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         new ExpiredGui(plugin, player).open();
     }
 
-    private void handleAdmin(CommandSender sender) {
+    private void handleAdmin(CommandSender sender, String[] args) {
         LangManager lang = plugin.getLangManager();
 
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(lang.prefixed("general.player-only"));
+        if (!sender.hasPermission("nexauctions.admin")) {
+            sender.sendMessage(lang.prefixed("general.no-permission"));
             return;
         }
 
-        if (!player.hasPermission("nexauctions.admin")) {
-            player.sendMessage(lang.prefixed("general.no-permission"));
+        // /ah admin - open admin GUI (player only)
+        if (args.length == 1) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(lang.prefixed("general.player-only"));
+                return;
+            }
+            new AdminGui(plugin, player).open();
             return;
         }
 
-        // Admin GUI - shows all auctions with admin controls
-        new AdminGui(plugin, player).open();
+        String adminSub = args[1].toLowerCase();
+
+        switch (adminSub) {
+            case "search" -> {
+                // /ah admin search <player> - opens admin GUI filtered to a player
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(lang.prefixed("general.player-only"));
+                    return;
+                }
+                if (args.length < 3) {
+                    sender.sendMessage(lang.prefixed("admin.search-usage"));
+                    return;
+                }
+                new AdminGui(plugin, player, args[2]).open();
+            }
+            case "remove" -> {
+                // /ah admin remove <id> - remove an auction by ID
+                if (args.length < 3) {
+                    sender.sendMessage(lang.prefixed("admin.remove-usage"));
+                    return;
+                }
+                int auctionId;
+                try {
+                    auctionId = Integer.parseInt(args[2]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(lang.prefixed("admin.invalid-id"));
+                    return;
+                }
+                AuctionItem auction = plugin.getAuctionManager().getAuction(auctionId);
+                if (auction == null) {
+                    sender.sendMessage(lang.prefixed("auction.auction-not-found"));
+                    return;
+                }
+                Player requester = sender instanceof Player p ? p : null;
+                boolean removed = plugin.getAuctionManager().cancelAuction(requester, auctionId, true);
+                if (removed) {
+                    sender.sendMessage(lang.prefixed("admin.removed",
+                            "{player}", auction.getSellerName()));
+                    Player seller = Bukkit.getPlayer(auction.getSellerUuid());
+                    if (seller != null && seller.isOnline()) {
+                        seller.sendMessage(lang.prefixed("admin.force-removed",
+                                "{item}", AuctionManager.getItemName(auction.getItemStack())));
+                    }
+                }
+            }
+            case "clear" -> {
+                // /ah admin clear - clear all active auctions, return items
+                int count = 0;
+                for (AuctionItem auction : new ArrayList<>(plugin.getAuctionManager().getActiveAuctionsList())) {
+                    Player requester = sender instanceof Player p ? p : null;
+                    if (plugin.getAuctionManager().cancelAuction(requester, auction.getId(), true)) {
+                        count++;
+                    }
+                }
+                sender.sendMessage(lang.prefixed("admin.cleared", "{count}", String.valueOf(count)));
+            }
+            case "stats" -> {
+                // /ah admin stats - show auction statistics
+                AuctionManager manager = plugin.getAuctionManager();
+                int active = manager.getActiveAuctionsList().size();
+                double totalValue = 0;
+                for (AuctionItem item : manager.getActiveAuctionsList()) {
+                    totalValue += item.getPrice();
+                }
+                sender.sendMessage(lang.prefixed("admin.stats-active", "{count}", String.valueOf(active)));
+                sender.sendMessage(lang.prefixed("admin.stats-value",
+                        "{value}", plugin.getEconomyManager().format(totalValue)));
+            }
+            default -> sender.sendMessage(lang.prefixed("admin.help"));
+        }
     }
 
     private void handleReload(CommandSender sender) {
@@ -210,6 +285,30 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("sell")) {
             return Arrays.asList("<price>");
+        }
+
+        // Admin sub-tab completion
+        if (args[0].equalsIgnoreCase("admin") && sender.hasPermission("nexauctions.admin")) {
+            if (args.length == 2) {
+                List<String> subs = new ArrayList<>(List.of("search", "remove", "clear", "stats"));
+                String input = args[1].toLowerCase();
+                subs.removeIf(s -> !s.startsWith(input));
+                return subs;
+            }
+            if (args.length == 3) {
+                if (args[1].equalsIgnoreCase("search")) {
+                    List<String> names = new ArrayList<>();
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        names.add(p.getName());
+                    }
+                    String input = args[2].toLowerCase();
+                    names.removeIf(s -> !s.toLowerCase().startsWith(input));
+                    return names;
+                }
+                if (args[1].equalsIgnoreCase("remove")) {
+                    return List.of("<id>");
+                }
+            }
         }
 
         return List.of();

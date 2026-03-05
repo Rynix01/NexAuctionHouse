@@ -47,7 +47,7 @@ public class MyAuctionsGui extends PaginatedGui {
 
         int size = cfg.getInt("size", 54);
         inventory = Bukkit.createInventory(this, size,
-                mm.deserialize("<dark_gray>My Auctions"));
+                text("<dark_gray>My Auctions"));
 
         itemSlots = cfg.getIntegerList("item-slots");
 
@@ -110,13 +110,13 @@ public class MyAuctionsGui extends PaginatedGui {
 
             List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
             lore.add(Component.empty());
-            lore.add(mm.deserialize("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-            lore.add(mm.deserialize("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice())));
-            lore.add(mm.deserialize("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
-            lore.add(mm.deserialize("<gray>Tax rate: <red>" + String.format("%.1f%%", auction.getTaxRate())));
+            lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice())));
+            lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
+            lore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auction.getTaxRate())));
             lore.add(Component.empty());
-            lore.add(mm.deserialize("<red>Click to cancel this auction!"));
-            lore.add(mm.deserialize("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+            lore.add(text("<red>Click to cancel this auction!"));
+            lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
 
             meta.lore(lore);
             display.setItemMeta(meta);
@@ -156,8 +156,8 @@ public class MyAuctionsGui extends PaginatedGui {
                 org.bukkit.Material mat = org.bukkit.Material.DARK_OAK_DOOR;
                 ItemStack back = new ItemStack(mat);
                 ItemMeta meta = back.getItemMeta();
-                meta.displayName(mm.deserialize("<red>Back"));
-                meta.lore(List.of(mm.deserialize("<gray>Return to the main menu.")));
+                meta.displayName(text("<red>Back"));
+                meta.lore(List.of(text("<gray>Return to the main menu.")));
                 back.setItemMeta(meta);
                 inventory.setItem(closeSlot, back);
                 backSlot = closeSlot;

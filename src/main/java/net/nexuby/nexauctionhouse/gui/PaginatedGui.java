@@ -64,7 +64,8 @@ public abstract class PaginatedGui extends AbstractGui {
 
         inventory = Bukkit.createInventory(this,
                 size,
-                net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(title));
+                net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(title)
+                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
 
         // Load item slots from config
         itemSlots = cfg.getIntegerList("item-slots");

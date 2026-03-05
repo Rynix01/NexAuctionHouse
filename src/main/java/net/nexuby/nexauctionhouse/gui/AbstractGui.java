@@ -1,5 +1,7 @@
 package net.nexuby.nexauctionhouse.gui;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import org.bukkit.Bukkit;
@@ -60,16 +62,22 @@ public abstract class AbstractGui implements InventoryHolder {
     }
 
     /**
-     * Opens the GUI for the viewer. Cancels if another GUI is being opened.
+     * Opens the GUI for the viewer.
      */
     public void open() {
-        if (!OPEN_GUIS.add(viewer.getUniqueId())) {
-            // Player already has a GUI transition in progress, skip to avoid dupe
-            return;
-        }
-
+        OPEN_GUIS.add(viewer.getUniqueId());
         build();
         viewer.openInventory(inventory);
+    }
+
+    /**
+     * Parses a MiniMessage string and strips the default italic decoration.
+     * Minecraft applies italic by default to custom names/lore; this resets it
+     * so users can opt-in with <italic> if they want.
+     */
+    protected static Component text(String miniMessage) {
+        return MiniMessage.miniMessage().deserialize(miniMessage)
+                .decoration(TextDecoration.ITALIC, false);
     }
 
     /**
@@ -119,14 +127,14 @@ public abstract class AbstractGui implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
 
         if (section.contains("name")) {
-            meta.displayName(MiniMessage.miniMessage().deserialize(section.getString("name")));
+            meta.displayName(text(section.getString("name")));
         }
 
         if (section.contains("lore")) {
             List<String> rawLore = section.getStringList("lore");
-            List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
+            List<Component> lore = new ArrayList<>();
             for (String line : rawLore) {
-                lore.add(MiniMessage.miniMessage().deserialize(line));
+                lore.add(text(line));
             }
             meta.lore(lore);
         }
@@ -149,7 +157,7 @@ public abstract class AbstractGui implements InventoryHolder {
 
         ItemStack pane = new ItemStack(material);
         ItemMeta meta = pane.getItemMeta();
-        meta.displayName(MiniMessage.miniMessage().deserialize(filler.getString("name", " ")));
+        meta.displayName(text(filler.getString("name", " ")));
         pane.setItemMeta(meta);
 
         if (filler.contains("slots")) {

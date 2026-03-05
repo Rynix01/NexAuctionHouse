@@ -7,7 +7,6 @@ import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -21,18 +20,24 @@ import java.util.List;
 
 /**
  * Admin GUI - Shows all active auctions with the ability to remove/return any item.
- * Uses the main-menu layout but adds admin-specific click behavior.
+ * Optionally filtered by a specific player name.
  */
 public class AdminGui extends PaginatedGui {
 
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final List<Integer> auctionIds = new ArrayList<>();
+    private final String targetPlayer; // null = show all
 
     private int closeSlot = -1;
     private int refreshSlot = -1;
 
     public AdminGui(NexAuctionHouse plugin, Player viewer) {
+        this(plugin, viewer, null);
+    }
+
+    public AdminGui(NexAuctionHouse plugin, Player viewer, String targetPlayer) {
         super(plugin, viewer);
+        this.targetPlayer = targetPlayer;
     }
 
     @Override
@@ -46,8 +51,12 @@ public class AdminGui extends PaginatedGui {
         if (cfg == null) return;
 
         int size = cfg.getInt("size", 54);
-        inventory = Bukkit.createInventory(this, size,
-                mm.deserialize("<dark_red>Admin <dark_gray>- Auction House"));
+
+        String title = targetPlayer != null
+                ? "<dark_red>Admin <dark_gray>- " + targetPlayer
+                : "<dark_red>Admin <dark_gray>- Auction House";
+
+        inventory = Bukkit.createInventory(this, size, text(title));
 
         itemSlots = cfg.getIntegerList("item-slots");
 
@@ -89,6 +98,12 @@ public class AdminGui extends PaginatedGui {
         AuctionManager manager = plugin.getAuctionManager();
         List<AuctionItem> auctions = new ArrayList<>(manager.getActiveAuctionsList());
         auctions.removeIf(AuctionItem::isExpired);
+
+        // Filter by player if specified
+        if (targetPlayer != null) {
+            auctions.removeIf(a -> !a.getSellerName().equalsIgnoreCase(targetPlayer));
+        }
+
         auctions.sort(Comparator.comparingLong(AuctionItem::getCreatedAt).reversed());
 
         List<ItemStack> displayItems = new ArrayList<>();
@@ -99,15 +114,15 @@ public class AdminGui extends PaginatedGui {
 
             List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
             lore.add(Component.empty());
-            lore.add(mm.deserialize("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-            lore.add(mm.deserialize("<gray>Seller: <white>" + auction.getSellerName()));
-            lore.add(mm.deserialize("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice())));
-            lore.add(mm.deserialize("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
-            lore.add(mm.deserialize("<gray>Tax: <red>" + String.format("%.1f%%", auction.getTaxRate())));
-            lore.add(mm.deserialize("<gray>Auction ID: <white>#" + auction.getId()));
+            lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+            lore.add(text("<gray>Seller: <white>" + auction.getSellerName()));
+            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice())));
+            lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
+            lore.add(text("<gray>Tax: <red>" + String.format("%.1f%%", auction.getTaxRate())));
+            lore.add(text("<gray>Auction ID: <white>#" + auction.getId()));
             lore.add(Component.empty());
-            lore.add(mm.deserialize("<red><bold>LEFT CLICK</bold> <red>to remove and return to seller"));
-            lore.add(mm.deserialize("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+            lore.add(text("<red><bold>LEFT CLICK</bold> <red>to remove and return to seller"));
+            lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
 
             meta.lore(lore);
             display.setItemMeta(meta);
@@ -131,7 +146,7 @@ public class AdminGui extends PaginatedGui {
             return;
         }
 
-        // Admin force-remove
+        // Admin force-remove: item is returned to seller directly or via expired items
         boolean removed = plugin.getAuctionManager().cancelAuction(viewer, auctionId, true);
 
         if (removed) {
@@ -154,14 +169,12 @@ public class AdminGui extends PaginatedGui {
         ConfigurationSection buttons = cfg.getConfigurationSection("buttons");
         if (buttons == null) return;
 
-        // Refresh button
         if (buttons.contains("refresh")) {
             refreshSlot = buttons.getInt("refresh.slot", -1);
             if (refreshSlot >= 0)
                 inventory.setItem(refreshSlot, createButton(buttons.getConfigurationSection("refresh")));
         }
 
-        // Close button
         if (buttons.contains("close")) {
             closeSlot = buttons.getInt("close.slot", -1);
             if (closeSlot >= 0)

@@ -87,7 +87,7 @@ public class MainMenu extends PaginatedGui {
                         .replace("{seller}", auction.getSellerName())
                         .replace("{price}", plugin.getEconomyManager().format(auction.getPrice()))
                         .replace("{time}", TimeUtil.formatDuration(auction.getRemainingTime()));
-                existingLore.add(mm.deserialize(parsed));
+                existingLore.add(text(parsed));
             }
 
             meta.lore(existingLore);

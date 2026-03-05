@@ -59,7 +59,7 @@ public class ExpiredGui extends PaginatedGui {
                 String parsed = line
                         .replace("{price}", "N/A")
                         .replace("{date}", dateFormat.format(new Date(expired.getCreatedAt())));
-                existingLore.add(mm.deserialize(parsed));
+                existingLore.add(text(parsed));
             }
 
             meta.lore(existingLore);

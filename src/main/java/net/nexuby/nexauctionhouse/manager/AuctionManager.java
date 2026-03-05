@@ -183,7 +183,7 @@ public class AuctionManager {
         }
 
         // Only the seller or an admin can cancel
-        if (!isAdmin && !item.getSellerUuid().equals(requester.getUniqueId())) {
+        if (!isAdmin && (requester == null || !item.getSellerUuid().equals(requester.getUniqueId()))) {
             return false;
         }
 
@@ -193,8 +193,14 @@ public class AuctionManager {
         dao.logTransaction(auctionId, item.getSellerUuid(), null,
                 item.getItemStack(), item.getPrice(), 0, isAdmin ? "ADMIN_CANCEL" : "CANCEL");
 
-        // Return item to seller's expired items for pickup
-        dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "CANCELLED");
+        // Try to give the item directly to the seller if they're online
+        Player seller = Bukkit.getPlayer(item.getSellerUuid());
+        if (seller != null && seller.isOnline() && seller.getInventory().firstEmpty() != -1) {
+            seller.getInventory().addItem(item.getItemStack());
+        } else {
+            // Seller offline or inventory full - store for later pickup
+            dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "CANCELLED");
+        }
 
         // Discord notification
         discordWebhook.sendCancelNotification(item.getSellerName(), item.getItemStack(), item.getPrice(), isAdmin);

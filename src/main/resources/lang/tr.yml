@@ -33,6 +33,17 @@ auction:
 admin:
   removed: "<green>Ihale kaldirildi. Esya <yellow>{player}<green> oyuncusuna iade edildi."
   force-removed: "<red>Bir yonetici <yellow>{item}<red> esyanizin ihalesini kaldirdi."
+  cleared: "<green><yellow>{count}<green> ihale temizlendi. Esyalar sahiplerine iade edildi."
+  stats-active: "<gray>Aktif ihaleler: <yellow>{count}"
+  stats-value: "<gray>Toplam deger: <green>{value}"
+  search-usage: "<red>Kullanim: <yellow>/ah admin search <oyuncu>"
+  remove-usage: "<red>Kullanim: <yellow>/ah admin remove <id>"
+  invalid-id: "<red>Gecersiz ihale ID."
+  help: "<yellow>/ah admin <gray>- Yonetim panelini ac"
+  help-search: "<yellow>/ah admin search <oyuncu> <gray>- Oyuncunun ihalelerini ara"
+  help-remove: "<yellow>/ah admin remove <id> <gray>- Ihaleyi ID ile kaldir"
+  help-clear: "<yellow>/ah admin clear <gray>- Tum ihaleleri temizle"
+  help-stats: "<yellow>/ah admin stats <gray>- Ihale istatistiklerini gor"
 
 # Zaman formati
 time:
