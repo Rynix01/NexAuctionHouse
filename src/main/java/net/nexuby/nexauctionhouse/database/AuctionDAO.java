@@ -4,6 +4,7 @@ import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionStatus;
 import net.nexuby.nexauctionhouse.model.ExpiredItem;
+import net.nexuby.nexauctionhouse.model.PendingRevenue;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
 import org.bukkit.inventory.ItemStack;
 
@@ -230,6 +231,69 @@ public class AuctionDAO {
         }
     }
 
+    // -- Pending revenue queue --
+
+    public void insertPendingRevenue(UUID playerUuid, String playerName, double amount,
+                                     String currency, int sourceAuctionId, String itemName, String buyerName) {
+        String sql = "INSERT INTO pending_revenue (player_uuid, player_name, amount, currency, source_auction_id, item_name, buyer_name, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            stmt.setString(2, playerName);
+            stmt.setDouble(3, amount);
+            stmt.setString(4, currency);
+            stmt.setInt(5, sourceAuctionId);
+            stmt.setString(6, itemName);
+            stmt.setString(7, buyerName);
+            stmt.setLong(8, System.currentTimeMillis());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to insert pending revenue", e);
+        }
+    }
+
+    public List<PendingRevenue> getPendingRevenue(UUID playerUuid) {
+        List<PendingRevenue> entries = new ArrayList<>();
+        String sql = "SELECT * FROM pending_revenue WHERE player_uuid = ? ORDER BY created_at ASC";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                entries.add(parsePendingRevenue(rs));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load pending revenue", e);
+        }
+        return entries;
+    }
+
+    public boolean deletePendingRevenue(int id) {
+        String sql = "DELETE FROM pending_revenue WHERE id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to delete pending revenue", e);
+            return false;
+        }
+    }
+
+    public int deleteAllPendingRevenue(UUID playerUuid) {
+        String sql = "DELETE FROM pending_revenue WHERE player_uuid = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            return stmt.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to delete all pending revenue", e);
+            return 0;
+        }
+    }
+
     // -- Parsing helpers --
 
     private AuctionItem parseAuction(ResultSet rs) throws SQLException {
@@ -282,5 +346,20 @@ public class AuctionDAO {
             plugin.getLogger().warning("Skipping expired item - invalid data: " + e.getMessage());
             return null;
         }
+    }
+
+    private PendingRevenue parsePendingRevenue(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        UUID playerUuid = UUID.fromString(rs.getString("player_uuid"));
+        String playerName = rs.getString("player_name");
+        double amount = rs.getDouble("amount");
+        String currency = rs.getString("currency");
+        int sourceAuctionId = rs.getInt("source_auction_id");
+        String itemName = rs.getString("item_name");
+        String buyerName = rs.getString("buyer_name");
+        long createdAt = rs.getLong("created_at");
+
+        return new PendingRevenue(id, playerUuid, playerName, amount, currency,
+                sourceAuctionId, itemName, buyerName, createdAt);
     }
 }

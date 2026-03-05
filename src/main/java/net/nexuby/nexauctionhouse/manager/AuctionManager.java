@@ -147,8 +147,15 @@ public class AuctionManager {
         double taxAmount = item.getTaxAmount();
         double sellerReceives = item.getSellerReceives();
 
-        // Pay the seller (works even if offline)
-        plugin.getEconomyManager().deposit(Bukkit.getOfflinePlayer(item.getSellerUuid()), sellerReceives, currency);
+        // Pay the seller - direct deposit if online, queue if offline
+        Player seller = Bukkit.getPlayer(item.getSellerUuid());
+        if (seller != null && seller.isOnline()) {
+            plugin.getEconomyManager().deposit(seller, sellerReceives, currency);
+        } else {
+            // Seller is offline - queue revenue for delivery on login
+            dao.insertPendingRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives,
+                    currency, auctionId, getItemName(item.getItemStack()), buyer.getName());
+        }
 
         // Give item to buyer
         buyer.getInventory().addItem(item.getItemStack());
@@ -160,7 +167,6 @@ public class AuctionManager {
                 item.getItemStack(), item.getPrice(), taxAmount, "SALE");
 
         // Notify seller if online
-        Player seller = Bukkit.getPlayer(item.getSellerUuid());
         if (seller != null && seller.isOnline()) {
             seller.sendMessage(plugin.getLangManager().prefixed("auction.sold",
                     "{item}", getItemName(item.getItemStack()),

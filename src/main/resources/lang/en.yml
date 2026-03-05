@@ -25,6 +25,11 @@ auction:
   price-edit-cancelled: "<yellow>Price edit cancelled."
   invalid-price: "<red>Invalid price. Please enter a valid number."
 
+  # Offline queue messages
+  offline-revenue-single: "<green>Your <yellow>{item} <green>was sold to <yellow>{buyer}<green>! Revenue: <yellow>{amount}"
+  offline-revenue-summary: "<green>You earned revenue from <yellow>{count} <green>sales while offline! Total: <yellow>{total}"
+  offline-items-waiting: "<yellow>You have <green>{amount} <yellow>item(s) waiting to be collected. Use <green>/ah expired<yellow>."
+
   # Error messages
   no-item-in-hand: "<red>You must hold an item in your hand."
   blacklisted-item: "<red>This item cannot be listed on the auction house."

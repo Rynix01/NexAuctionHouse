@@ -5,6 +5,8 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 ## Features
 
 - **Full Auction System** — List, browse, buy, and cancel auctions through an intuitive GUI
+- **Multi-Economy Support** — 7 economy providers: Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, UltraEconomy. Multiple economies active simultaneously with per-listing currency selection
+- **Offline Player Sync** — Queued revenue delivery and item returns when players log in. No money or items lost while offline
 - **Configurable GUI** — Every menu is driven by YAML configs (slot layout, buttons, filler, lore templates)
 - **Category Filtering** — Browse auctions by material type (Blocks, Food, Weapons, Armor, etc.)
 - **Pagination** — Smooth page navigation for large auction lists
@@ -15,22 +17,30 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - **Multi-Language** — Ships with English and Turkish; add your own by dropping a YAML file in `lang/`
 - **Dual Database** — SQLite out of the box, MySQL/MariaDB for networks
 - **Expired Item Recovery** — Expired and cancelled items are stored and can be collected later
-- **Offline Notifications** — Players are notified on join if they have expired items waiting
+- **Offline Notifications** — Players are notified on join about pending revenue and uncollected items
 - **Discord Webhooks** — Send listing, sale, and cancellation notifications to a Discord channel
 - **PlaceholderAPI** — Expose auction data to scoreboards, holograms, and other plugins
 - **Admin GUI** — Admins can browse all auctions and force-remove any listing, returning the item to the seller
-- **HeadDatabase / ItemsAdder Compatible** — Custom items are preserved through Base64 ItemStack serialization
+- **Custom Item Compatibility** — Full support for ItemsAdder, Oraxen, MMOItems, MythicMobs, ExecutableItems, EcoItems, Slimefun, ModelEngine, HeadDatabase, CrazyEnchantments, ExcellentEnchants, and more
 
 ## Requirements
 
 - Paper 1.21+ (or any fork: Purpur, Folia-compatible coming soon)
 - Java 21+
-- [Vault](https://www.spigotmc.org/resources/vault.34315/) + an economy provider (EssentialsX, CMI, etc.)
+- At least one economy plugin (Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, or UltraEconomy)
 
 ### Optional
+- [Vault](https://www.spigotmc.org/resources/vault.34315/) + an economy provider (EssentialsX, CMI, etc.)
 - [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/)
+- [PlayerPoints](https://www.spigotmc.org/resources/playerpoints.80745/)
+- [TokenManager](https://www.spigotmc.org/resources/tokenmanager.8610/)
+- [CoinsEngine](https://www.spigotmc.org/resources/coinsengine.84121/) (multi-currency)
+- [GemsEconomy](https://www.spigotmc.org/resources/gemseconomy.19655/) (multi-currency)
+- [EcoBits](https://www.spigotmc.org/resources/ecobits.94672/) (multi-currency)
+- [UltraEconomy](https://www.spigotmc.org/resources/ultraeconomy.83374/) (multi-currency)
 - [HeadDatabase](https://www.spigotmc.org/resources/head-database.14280/)
 - [ItemsAdder](https://www.spigotmc.org/resources/itemsadder.73355/)
+- And many more custom item plugins
 
 ## Installation
 
@@ -47,6 +57,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 |---|---|---|
 | `/ah` | Open the auction house | `nexauctions.use` |
 | `/ah sell <price>` | List the item in your hand | `nexauctions.sell` |
+| `/ah sell <price> <currency>` | List with a specific currency | `nexauctions.sell` |
 | `/ah expired` | View & collect expired items | `nexauctions.use` |
 | `/ah admin` | Open admin panel | `nexauctions.admin` |
 | `/ah reload` | Reload all configs | `nexauctions.reload` |
@@ -78,6 +89,32 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 | `%nexauction_player_tax%` | Player's tax rate |
 
 ## Configuration
+
+### Economy Providers
+
+Multiple economy providers can be active at the same time. Players choose their currency when listing:
+
+```yaml
+economy:
+  providers:
+    vault:
+      enabled: true
+      display-name: "Money"
+      currency-name: "money"
+    playerpoints:
+      enabled: false
+      display-name: "Points"
+      currency-name: "points"
+    coinsengine:
+      enabled: false
+      display-name: "Gems"
+      currency-name: "gems"
+      plugin-currency: "gems"  # Currency ID from CoinsEngine config
+```
+
+Supported providers: `vault`, `playerpoints`, `tokenmanager`, `coinsengine`, `gemseconomy`, `ecobits`, `ultraeconomy`
+
+For multi-currency plugins (CoinsEngine, GemsEconomy, EcoBits, UltraEconomy), set `plugin-currency` to match the currency ID in that plugin's config.
 
 ### Database (MySQL)
 

@@ -109,12 +109,27 @@ public class DatabaseManager {
                 + "timestamp BIGINT NOT NULL"
                 + ")";
 
+        // Pending revenue queue for offline players
+        String revenueTable = "CREATE TABLE IF NOT EXISTS pending_revenue ("
+                + "id INTEGER PRIMARY KEY " + (usingSQLite ? "AUTOINCREMENT" : "AUTO_INCREMENT") + ","
+                + "player_uuid VARCHAR(36) NOT NULL,"
+                + "player_name VARCHAR(16) NOT NULL,"
+                + "amount DOUBLE NOT NULL,"
+                + "currency VARCHAR(32) NOT NULL DEFAULT 'money',"
+                + "source_auction_id INTEGER NOT NULL,"
+                + "item_name VARCHAR(128) NOT NULL,"
+                + "buyer_name VARCHAR(16) NOT NULL,"
+                + "created_at BIGINT NOT NULL"
+                + ")";
+
         try (PreparedStatement stmt1 = connection.prepareStatement(auctionsTable);
              PreparedStatement stmt2 = connection.prepareStatement(expiredTable);
-             PreparedStatement stmt3 = connection.prepareStatement(logsTable)) {
+             PreparedStatement stmt3 = connection.prepareStatement(logsTable);
+             PreparedStatement stmt4 = connection.prepareStatement(revenueTable)) {
             stmt1.executeUpdate();
             stmt2.executeUpdate();
             stmt3.executeUpdate();
+            stmt4.executeUpdate();
         }
     }
 
