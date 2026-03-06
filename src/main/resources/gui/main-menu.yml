@@ -114,6 +114,16 @@ buttons:
       - "<gray>Configure your notification"
       - "<gray>preferences and sounds."
 
+  bulk-sell:
+    slot: 41
+    material: CHEST
+    name: "<green>Bulk Sell"
+    lore:
+      - "<gray>Select multiple items from"
+      - "<gray>your inventory to list at once."
+      - ""
+      - "<yellow>Click <gray>to open bulk sell."
+
   close:
     slot: 53
     material: BARRIER

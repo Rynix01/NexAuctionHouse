@@ -157,12 +157,12 @@
 - [x] Yenileme başarısız olursa (bakiye yetersiz) normal expired akışı
 
 ## Aşama 15: Toplu İşlemler (Bulk Operations)
-- [ ] /ah sell-all <fiyat> [currency] → envanterdeki aynı türden eşyaları grupla satışa koy
-- [ ] GUI'de "Toplu Sat" butonu → özel satış GUI'si (envanter eşyaları seçme)
-- [ ] Seçilen eşyaların tek seferde satışa konulması
-- [ ] Toplu satışta ilan limiti kontrolü
-- [ ] Admin: /ah admin clear --player=<isim> → belirli oyuncunun ilanlarını temizle
-- [ ] Admin: /ah admin clear --all → tüm ilanları temizle (onay gerektirir)
+- [x] /ah sell-all <fiyat> [currency] → envanterdeki aynı türden eşyaları grupla satışa koy
+- [x] GUI'de "Toplu Sat" butonu → özel satış GUI'si (envanter eşyaları seçme)
+- [x] Seçilen eşyaların tek seferde satışa konulması
+- [x] Toplu satışta ilan limiti kontrolü
+- [x] Admin: /ah admin clear --player=<isim> → belirli oyuncunun ilanlarını temizle
+- [x] Admin: /ah admin clear --all → tüm ilanları temizle (onay gerektirir)
 
 ## Aşama 16: Gelişmiş Kara Liste (Advanced Blacklist)
 - [ ] Enchantment bazlı kara liste (belirli büyülü eşyalar engellenebilir)

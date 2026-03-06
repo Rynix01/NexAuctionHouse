@@ -46,6 +46,7 @@ public class MainMenu extends PaginatedGui {
     private int favoritesSlot = -1;
     private int historySlot = -1;
     private int settingsSlot = -1;
+    private int bulkSellSlot = -1;
 
     // Maps item slot index -> auction id for click handling
     private final List<Integer> auctionIds = new ArrayList<>();
@@ -329,6 +330,14 @@ public class MainMenu extends PaginatedGui {
                 inventory.setItem(settingsSlot, createButton(buttons.getConfigurationSection("settings")));
             }
         }
+
+        // Bulk Sell button
+        if (buttons.contains("bulk-sell")) {
+            bulkSellSlot = buttons.getInt("bulk-sell.slot", -1);
+            if (bulkSellSlot >= 0) {
+                inventory.setItem(bulkSellSlot, createButton(buttons.getConfigurationSection("bulk-sell")));
+            }
+        }
     }
 
     @Override
@@ -353,6 +362,8 @@ public class MainMenu extends PaginatedGui {
             new HistoryGui(plugin, viewer).open();
         } else if (slot == settingsSlot) {
             new NotificationSettingsGui(plugin, viewer, () -> new MainMenu(plugin, viewer).open()).open();
+        } else if (slot == bulkSellSlot) {
+            handleBulkSellClick();
         }
     }
 
@@ -389,6 +400,59 @@ public class MainMenu extends PaginatedGui {
         sortType = sortType.next();
         currentPage = 0;
         refresh();
+    }
+
+    private void handleBulkSellClick() {
+        if (!viewer.hasPermission("nexauctions.sell")) {
+            viewer.sendMessage(plugin.getLangManager().prefixed("general.no-permission"));
+            return;
+        }
+
+        viewer.closeInventory();
+        viewer.sendMessage(plugin.getLangManager().prefixed("bulk.enter-price"));
+        viewer.sendMessage(plugin.getLangManager().prefixed("auction.type-cancel"));
+
+        ChatInputListener.awaitInput(viewer, input -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (input.equalsIgnoreCase("cancel")) {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("search.search-cancelled"));
+                    new MainMenu(plugin, viewer).open();
+                    return;
+                }
+
+                // Parse price and optional currency
+                String[] parts = input.trim().split("\\s+");
+                double price;
+                try {
+                    price = Double.parseDouble(parts[0]);
+                } catch (NumberFormatException e) {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("auction.invalid-price"));
+                    new MainMenu(plugin, viewer).open();
+                    return;
+                }
+
+                if (price < plugin.getConfigManager().getMinPrice() || price > plugin.getConfigManager().getMaxPrice()) {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("auction.invalid-price"));
+                    new MainMenu(plugin, viewer).open();
+                    return;
+                }
+
+                String currency;
+                if (parts.length >= 2) {
+                    currency = parts[1].toLowerCase();
+                    if (!plugin.getEconomyManager().isValidCurrency(currency)) {
+                        viewer.sendMessage(plugin.getLangManager().prefixed("auction.invalid-currency",
+                                "{currencies}", String.join(", ", plugin.getEconomyManager().getCurrencyNames())));
+                        new MainMenu(plugin, viewer).open();
+                        return;
+                    }
+                } else {
+                    currency = plugin.getEconomyManager().getDefaultProvider().getCurrencyName();
+                }
+
+                new BulkSellGui(plugin, viewer, price, currency).open();
+            });
+        });
     }
 
     private String formatAvgPrice(AuctionItem auction) {

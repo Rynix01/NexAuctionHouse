@@ -49,15 +49,18 @@ admin:
   removed: "<green>Ihale kaldirildi. Esya <yellow>{player}<green> oyuncusuna iade edildi."
   force-removed: "<red>Bir yonetici <yellow>{item}<red> esyanizin ihalesini kaldirdi."
   cleared: "<green><yellow>{count}<green> ihale temizlendi. Esyalar sahiplerine iade edildi."
+  cleared-player: "<green><yellow>{player}<green> oyuncusuna ait <yellow>{count}<green> ihale temizlendi."
   stats-active: "<gray>Aktif ihaleler: <yellow>{count}"
   stats-value: "<gray>Toplam deger: <green>{value}"
   search-usage: "<red>Kullanim: <yellow>/ah admin search <oyuncu>"
   remove-usage: "<red>Kullanim: <yellow>/ah admin remove <id>"
+  clear-usage: "<red>Kullanim: <yellow>/ah admin clear --all <red>veya <yellow>/ah admin clear --player=<isim>"
   invalid-id: "<red>Gecersiz ihale ID."
   help: "<yellow>/ah admin <gray>- Yonetim panelini ac"
   help-search: "<yellow>/ah admin search <oyuncu> <gray>- Oyuncunun ihalelerini ara"
   help-remove: "<yellow>/ah admin remove <id> <gray>- Ihaleyi ID ile kaldir"
-  help-clear: "<yellow>/ah admin clear <gray>- Tum ihaleleri temizle"
+  help-clear: "<yellow>/ah admin clear --all <gray>- Tum ihaleleri temizle"
+  help-clear-player: "<yellow>/ah admin clear --player=<isim> <gray>- Oyuncunun ihalelerini temizle"
   help-stats: "<yellow>/ah admin stats <gray>- Ihale istatistiklerini gor"
 
 # Arama ve siralama mesajlari
@@ -129,6 +132,15 @@ auto-relist:
   limit-reached: "<red><yellow>{item}<red> icin otomatik listeleme limitine ulasildi. Suresi dolmus esyalara tasinildi."
   failed-balance: "<red><yellow>{item}<red> icin otomatik listeleme basarisiz! Yetersiz bakiye. Ucret: <yellow>{cost}"
   feature-disabled: "<red>Otomatik yeniden listeleme ozelligi su anda devre disi."
+
+# Toplu satis mesajlari
+bulk:
+  sell-all-usage: "<red>Kullanim: <yellow>/ah sell-all <fiyat> [para-birimi]"
+  listed: "<green>Basariyla <yellow>{count}<green> esya <yellow>{price}<green> fiyatla satisa konuldu!"
+  skipped: "<yellow>{count}<yellow> esya atlandi (kara listede veya basarisiz)."
+  limit-warning: "<yellow>{count}<yellow> esya ilan limitiniz nedeniyle listelenemedi (<yellow>{limit}<yellow>)."
+  no-items-selected: "<red>Esya secilmedi! Once esyalari tiklayarak secin."
+  enter-price: "<yellow>Esya basina fiyat girin (istege bagli para birimi). <gray>Ornek: 100 money"
 
 # Zaman formati
 time:

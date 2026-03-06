@@ -11,6 +11,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - **Item Preview System** — Right-click any listing to open a detailed preview GUI. Shows full enchantment list, attribute modifiers, durability, custom item info, and average market price. Shulker box contents are displayed in-GUI. Written book pages can be browsed. Armor pieces show their slot position visually. Preview works from all GUIs (main menu, favorites, admin, history)
 - **Notification Preferences** — Per-player notification settings stored in database. Toggle sale, bid, login, favorite notifications and sound effects independently. Settings GUI accessible from main menu or `/ah notifications`. Configurable default preferences and sound effects per event type. Settings cached in memory and cleaned on logout
 - **Auto-Relist** — Automatically relist expired auctions with `--autorelist` flag. Configurable max relist count and optional cost percentage. Relist counter displayed in item lore. Discord webhook notification on auto-relist. Falls back to normal expired flow when relist limit is reached or seller has insufficient balance. Permission-gated with `nexauctions.autorelist`
+- **Bulk Operations** — Select multiple inventory items for listing at once via `/ah sell-all <price>` or the GUI "Bulk Sell" button. Listing limit enforced per batch. Admin clear operations support `--player=<name>` and `--all` flags for targeted or global auction removal
 - **Search & Sort** — Search auctions by item name, material, or seller. Sort by price, date, or name with a single click
 - **Multi-Economy Support** — 7 economy providers: Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, UltraEconomy. Multiple economies active simultaneously with per-listing currency selection
 - **Offline Player Sync** — Queued revenue delivery and item returns when players log in. No money or items lost while offline
@@ -77,11 +78,14 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 | `/ah sell <price> <currency>` | List with a specific currency | `nexauctions.sell` |
 | `/ah sell <price> --bid` | List as a bid auction | `nexauctions.sell` |
 | `/ah sell <price> <currency> --bid` | Bid auction with specific currency | `nexauctions.sell` |
+| `/ah sell-all <price> [currency]` | Open bulk sell GUI to list multiple items | `nexauctions.sell` |
 | `/ah favorites` | View your favorites list | `nexauctions.use` |
 | `/ah history` | View your transaction history | `nexauctions.use` |
 | `/ah history <player>` | View a player's history (admin) | `nexauctions.admin` |
 | `/ah expired` | View & collect expired items | `nexauctions.use` |
 | `/ah admin` | Open admin panel | `nexauctions.admin` |
+| `/ah admin clear --all` | Clear all auctions | `nexauctions.admin` |
+| `/ah admin clear --player=<name>` | Clear a player's auctions | `nexauctions.admin` |
 | `/ah reload` | Reload all configs | `nexauctions.reload` |
 
 **Aliases:** `/auctionhouse`, `/nexah`

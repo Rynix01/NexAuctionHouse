@@ -5,6 +5,7 @@ import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.gui.AdminGui;
 import net.nexuby.nexauctionhouse.gui.AdminStatsGui;
+import net.nexuby.nexauctionhouse.gui.BulkSellGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.FavoritesGui;
 import net.nexuby.nexauctionhouse.gui.HistoryGui;
@@ -60,6 +61,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         switch (sub) {
             case "sell" -> handleSell(sender, args);
+            case "sell-all" -> handleSellAll(sender, args);
             case "search" -> handleSearch(sender, args);
             case "favorites" -> handleFavorites(sender);
             case "history" -> handleHistory(sender, args);
@@ -215,6 +217,61 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             player.getInventory().setItemInMainHand(toSell);
             player.sendMessage(lang.prefixed("auction.auction-not-found"));
         }
+    }
+
+    private void handleSellAll(CommandSender sender, String[] args) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.sell")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        if (args.length < 2) {
+            player.sendMessage(lang.prefixed("bulk.sell-all-usage"));
+            return;
+        }
+
+        double price;
+        try {
+            price = Double.parseDouble(args[1]);
+        } catch (NumberFormatException e) {
+            player.sendMessage(lang.prefixed("auction.invalid-price"));
+            return;
+        }
+
+        ConfigManager config = plugin.getConfigManager();
+
+        if (price < config.getMinPrice()) {
+            player.sendMessage(lang.prefixed("auction.price-too-low",
+                    "{min}", String.valueOf(config.getMinPrice())));
+            return;
+        }
+
+        if (price > config.getMaxPrice()) {
+            player.sendMessage(lang.prefixed("auction.price-too-high",
+                    "{max}", String.valueOf(config.getMaxPrice())));
+            return;
+        }
+
+        String currency;
+        if (args.length >= 3) {
+            currency = args[2].toLowerCase();
+            if (!plugin.getEconomyManager().isValidCurrency(currency)) {
+                player.sendMessage(lang.prefixed("auction.invalid-currency",
+                        "{currencies}", String.join(", ", plugin.getEconomyManager().getCurrencyNames())));
+                return;
+            }
+        } else {
+            currency = plugin.getEconomyManager().getDefaultProvider().getCurrencyName();
+        }
+
+        new BulkSellGui(plugin, player, price, currency).open();
     }
 
     private void handleHistory(CommandSender sender, String[] args) {
@@ -381,15 +438,46 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 }
             }
             case "clear" -> {
-                // /ah admin clear - clear all active auctions, return items
-                int count = 0;
-                for (AuctionItem auction : new ArrayList<>(plugin.getAuctionManager().getActiveAuctionsList())) {
-                    Player requester = sender instanceof Player p ? p : null;
-                    if (plugin.getAuctionManager().cancelAuction(requester, auction.getId(), true)) {
-                        count++;
+                // Parse flags: --player=<name> or --all
+                String targetPlayer = null;
+                boolean clearAll = false;
+                for (int i = 2; i < args.length; i++) {
+                    if (args[i].toLowerCase().startsWith("--player=")) {
+                        targetPlayer = args[i].substring("--player=".length());
+                    } else if (args[i].equalsIgnoreCase("--all")) {
+                        clearAll = true;
                     }
                 }
-                sender.sendMessage(lang.prefixed("admin.cleared", "{count}", String.valueOf(count)));
+
+                if (targetPlayer != null) {
+                    // Clear specific player's auctions
+                    String playerName = targetPlayer;
+                    int count = 0;
+                    for (AuctionItem auction : new ArrayList<>(plugin.getAuctionManager().getActiveAuctionsList())) {
+                        if (auction.getSellerName().equalsIgnoreCase(playerName)) {
+                            Player requester = sender instanceof Player p ? p : null;
+                            if (plugin.getAuctionManager().cancelAuction(requester, auction.getId(), true)) {
+                                count++;
+                            }
+                        }
+                    }
+                    sender.sendMessage(lang.prefixed("admin.cleared-player",
+                            "{player}", playerName,
+                            "{count}", String.valueOf(count)));
+                } else if (clearAll) {
+                    // Clear all auctions
+                    int count = 0;
+                    for (AuctionItem auction : new ArrayList<>(plugin.getAuctionManager().getActiveAuctionsList())) {
+                        Player requester = sender instanceof Player p ? p : null;
+                        if (plugin.getAuctionManager().cancelAuction(requester, auction.getId(), true)) {
+                            count++;
+                        }
+                    }
+                    sender.sendMessage(lang.prefixed("admin.cleared", "{count}", String.valueOf(count)));
+                } else {
+                    // No flag specified - show usage
+                    sender.sendMessage(lang.prefixed("admin.clear-usage"));
+                }
             }
             case "stats" -> {
                 // /ah admin stats - open statistics GUI (player only)
@@ -421,6 +509,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> completions = new ArrayList<>();
             completions.add("sell");
+            completions.add("sell-all");
             completions.add("search");
             completions.add("favorites");
             completions.add("history");
@@ -441,6 +530,14 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("sell")) {
             return Arrays.asList("<price>");
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("sell-all")) {
+            return Arrays.asList("<price>");
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("sell-all")) {
+            return new ArrayList<>(plugin.getEconomyManager().getCurrencyNames());
         }
 
         if (args.length == 2 && args[0].equalsIgnoreCase("search")) {
@@ -505,6 +602,17 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 }
                 if (args[1].equalsIgnoreCase("remove")) {
                     return List.of("<id>");
+                }
+                if (args[1].equalsIgnoreCase("clear")) {
+                    List<String> clearOptions = new ArrayList<>();
+                    clearOptions.add("--all");
+                    // Build --player= with online player names
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        clearOptions.add("--player=" + p.getName());
+                    }
+                    String input = args[2].toLowerCase();
+                    clearOptions.removeIf(s -> !s.toLowerCase().startsWith(input));
+                    return clearOptions;
                 }
             }
         }

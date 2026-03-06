@@ -49,15 +49,18 @@ admin:
   removed: "<green>Auction removed. Item returned to <yellow>{player}<green>."
   force-removed: "<red>An admin removed your auction for <yellow>{item}<red>."
   cleared: "<green>Cleared <yellow>{count}<green> auctions. Items returned to sellers."
+  cleared-player: "<green>Cleared <yellow>{count}<green> auctions for player <yellow>{player}<green>."
   stats-active: "<gray>Active auctions: <yellow>{count}"
   stats-value: "<gray>Total value: <green>{value}"
   search-usage: "<red>Usage: <yellow>/ah admin search <player>"
   remove-usage: "<red>Usage: <yellow>/ah admin remove <id>"
+  clear-usage: "<red>Usage: <yellow>/ah admin clear --all <red>or <yellow>/ah admin clear --player=<name>"
   invalid-id: "<red>Invalid auction ID."
   help: "<yellow>/ah admin <gray>- Open admin panel"
   help-search: "<yellow>/ah admin search <player> <gray>- Search player's auctions"
   help-remove: "<yellow>/ah admin remove <id> <gray>- Remove auction by ID"
-  help-clear: "<yellow>/ah admin clear <gray>- Clear all auctions"
+  help-clear: "<yellow>/ah admin clear --all <gray>- Clear all auctions"
+  help-clear-player: "<yellow>/ah admin clear --player=<name> <gray>- Clear player's auctions"
   help-stats: "<yellow>/ah admin stats <gray>- View auction stats"
 
 # Search and sort messages
@@ -129,6 +132,15 @@ auto-relist:
   limit-reached: "<red>Auto-relist limit reached for <yellow>{item}<red>. Moved to expired items."
   failed-balance: "<red>Auto-relist failed for <yellow>{item}<red>! Insufficient balance. Cost: <yellow>{cost}"
   feature-disabled: "<red>Auto-relist feature is currently disabled."
+
+# Bulk sell messages
+bulk:
+  sell-all-usage: "<red>Usage: <yellow>/ah sell-all <price> [currency]"
+  listed: "<green>Successfully listed <yellow>{count}<green> item(s) for <yellow>{price}<green> each!"
+  skipped: "<yellow>{count}<yellow> item(s) were skipped (blacklisted or failed)."
+  limit-warning: "<yellow>{count}<yellow> item(s) could not be listed due to your listing limit (<yellow>{limit}<yellow>)."
+  no-items-selected: "<red>No items selected! Click items to select them first."
+  enter-price: "<yellow>Enter the price per item (and optionally a currency). <gray>Example: 100 money"
 
 # Time format
 time:
