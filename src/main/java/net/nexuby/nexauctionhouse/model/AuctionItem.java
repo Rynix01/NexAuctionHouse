@@ -20,6 +20,9 @@ public class AuctionItem {
     private double highestBid;
     private UUID highestBidderUuid;
     private String highestBidderName;
+    private boolean autoRelist;
+    private int relistCount;
+    private int maxRelists;
 
     public AuctionItem(int id, UUID sellerUuid, String sellerName, ItemStack itemStack,
                        double price, String currency, double taxRate, long createdAt, long expiresAt, AuctionStatus status) {
@@ -43,6 +46,9 @@ public class AuctionItem {
         this.highestBid = highestBid;
         this.highestBidderUuid = highestBidderUuid;
         this.highestBidderName = highestBidderName;
+        this.autoRelist = false;
+        this.relistCount = 0;
+        this.maxRelists = 0;
     }
 
     public int getId() {
@@ -161,5 +167,29 @@ public class AuctionItem {
             return highestBid;
         }
         return price;
+    }
+
+    public boolean isAutoRelist() {
+        return autoRelist;
+    }
+
+    public void setAutoRelist(boolean autoRelist) {
+        this.autoRelist = autoRelist;
+    }
+
+    public int getRelistCount() {
+        return relistCount;
+    }
+
+    public void setRelistCount(int relistCount) {
+        this.relistCount = relistCount;
+    }
+
+    public int getMaxRelists() {
+        return maxRelists;
+    }
+
+    public void setMaxRelists(int maxRelists) {
+        this.maxRelists = maxRelists;
     }
 }

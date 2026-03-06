@@ -147,14 +147,14 @@
 - [x] Varsayılan tercihlerin config'den ayarlanabilmesi
 
 ## Aşama 14: Otomatik Yenileme (Auto-Relist)
-- [ ] Config: auto-relist.enabled, max-times, cost ayarları
-- [ ] Permission: nexauctions.autorelist yetkisi
-- [ ] İlan oluştururken Auto-Relist toggle seçeneği
-- [ ] Süre dolduğunda otomatik yenileme (ücretli/ücretsiz)
-- [ ] Maksimum yenileme sayısı kontrolü
-- [ ] Yenileme sayacı lore'da gösterimi
-- [ ] Otomatik yenilendiğinde Discord webhook bildirimi
-- [ ] Yenileme başarısız olursa (bakiye yetersiz) normal expired akışı
+- [x] Config: auto-relist.enabled, max-times, cost ayarları
+- [x] Permission: nexauctions.autorelist yetkisi
+- [x] İlan oluştururken Auto-Relist toggle seçeneği
+- [x] Süre dolduğunda otomatik yenileme (ücretli/ücretsiz)
+- [x] Maksimum yenileme sayısı kontrolü
+- [x] Yenileme sayacı lore'da gösterimi
+- [x] Otomatik yenilendiğinde Discord webhook bildirimi
+- [x] Yenileme başarısız olursa (bakiye yetersiz) normal expired akışı
 
 ## Aşama 15: Toplu İşlemler (Bulk Operations)
 - [ ] /ah sell-all <fiyat> [currency] → envanterdeki aynı türden eşyaları grupla satışa koy

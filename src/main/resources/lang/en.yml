@@ -122,6 +122,14 @@ notifications:
   login: "<white>Login Notifications"
   favorite: "<light_purple>Favorite Notifications"
 
+# Auto-relist messages
+auto-relist:
+  enabled: "<green>Auto-Relist enabled! Your item will be relisted up to <yellow>{max}<green> times."
+  relisted: "<green>Your <yellow>{item} <green>has been automatically relisted! <gray>(Relist #{count})"
+  limit-reached: "<red>Auto-relist limit reached for <yellow>{item}<red>. Moved to expired items."
+  failed-balance: "<red>Auto-relist failed for <yellow>{item}<red>! Insufficient balance. Cost: <yellow>{cost}"
+  feature-disabled: "<red>Auto-relist feature is currently disabled."
+
 # Time format
 time:
   hours: "{value}h"

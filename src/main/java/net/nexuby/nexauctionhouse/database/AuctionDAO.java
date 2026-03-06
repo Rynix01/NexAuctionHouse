@@ -33,8 +33,8 @@ public class AuctionDAO {
     // -- Auction CRUD operations --
 
     public int insertAuction(AuctionItem item) {
-        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status, auction_type, highest_bid, highest_bidder_uuid, highest_bidder_name) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status, auction_type, highest_bid, highest_bidder_uuid, highest_bidder_name, auto_relist, relist_count, max_relists) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, item.getSellerUuid().toString());
@@ -50,6 +50,9 @@ public class AuctionDAO {
             stmt.setDouble(11, item.getHighestBid());
             stmt.setString(12, item.getHighestBidderUuid() != null ? item.getHighestBidderUuid().toString() : null);
             stmt.setString(13, item.getHighestBidderName());
+            stmt.setBoolean(14, item.isAutoRelist());
+            stmt.setInt(15, item.getRelistCount());
+            stmt.setInt(16, item.getMaxRelists());
             stmt.executeUpdate();
 
             ResultSet keys = stmt.getGeneratedKeys();
@@ -561,11 +564,39 @@ public class AuctionDAO {
                 return null;
             }
 
-            return new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status,
+            AuctionItem item = new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status,
                     auctionType, highestBid, highestBidderUuid, highestBidderName);
+            applyAutoRelistFields(item, rs);
+            return item;
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Skipping auction - invalid data: " + e.getMessage());
             return null;
+        }
+    }
+
+    // -- Auto-relist data --
+
+    private void applyAutoRelistFields(AuctionItem item, ResultSet rs) {
+        try {
+            item.setAutoRelist(rs.getBoolean("auto_relist"));
+            item.setRelistCount(rs.getInt("relist_count"));
+            item.setMaxRelists(rs.getInt("max_relists"));
+        } catch (SQLException ignored) {
+            // Column may not exist yet in older databases
+        }
+    }
+
+    public boolean updateAutoRelistData(int auctionId, int relistCount, long newExpiresAt) {
+        String sql = "UPDATE auctions SET relist_count = ?, expires_at = ?, status = 'ACTIVE' WHERE id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, relistCount);
+            stmt.setLong(2, newExpiresAt);
+            stmt.setInt(3, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to update auto-relist data", e);
+            return false;
         }
     }
 

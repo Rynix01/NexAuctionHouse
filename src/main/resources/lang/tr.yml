@@ -122,6 +122,14 @@ notifications:
   login: "<white>Giris Bildirimleri"
   favorite: "<light_purple>Favori Bildirimleri"
 
+# Otomatik yeniden listeleme mesajlari
+auto-relist:
+  enabled: "<green>Otomatik Yeniden Listeleme aktif! Esyaniz en fazla <yellow>{max}<green> kez yeniden listelenecek."
+  relisted: "<green><yellow>{item} <green>esyaniz otomatik olarak yeniden listelendi! <gray>(Listeleme #{count})"
+  limit-reached: "<red><yellow>{item}<red> icin otomatik listeleme limitine ulasildi. Suresi dolmus esyalara tasinildi."
+  failed-balance: "<red><yellow>{item}<red> icin otomatik listeleme basarisiz! Yetersiz bakiye. Ucret: <yellow>{cost}"
+  feature-disabled: "<red>Otomatik yeniden listeleme ozelligi su anda devre disi."
+
 # Zaman formati
 time:
   hours: "{value}sa"

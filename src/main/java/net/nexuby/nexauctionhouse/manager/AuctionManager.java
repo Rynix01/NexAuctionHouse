@@ -77,11 +77,15 @@ public class AuctionManager {
         }.runTaskTimerAsynchronously(plugin, 20L * 60, 20L * 60); // every 60 seconds
     }
 
+    public int listItem(Player seller, ItemStack itemStack, double price, String currency) {
+        return listItem(seller, itemStack, price, currency, false);
+    }
+
     /**
      * Lists a new item on the auction house.
      * Returns the auction id, or -1 if it failed.
      */
-    public int listItem(Player seller, ItemStack itemStack, double price, String currency) {
+    public int listItem(Player seller, ItemStack itemStack, double price, String currency, boolean autoRelist) {
         ConfigManager config = plugin.getConfigManager();
 
         // Determine tax rate for this player
@@ -97,12 +101,21 @@ public class AuctionManager {
                 price, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE
         );
 
+        if (autoRelist && config.isAutoRelistEnabled()) {
+            auctionItem.setAutoRelist(true);
+            auctionItem.setMaxRelists(config.getMaxAutoRelists());
+        }
+
         int id = dao.insertAuction(auctionItem);
         if (id > 0) {
             AuctionItem withId = new AuctionItem(
                     id, seller.getUniqueId(), seller.getName(), itemStack,
                     price, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE
             );
+            if (auctionItem.isAutoRelist()) {
+                withId.setAutoRelist(true);
+                withId.setMaxRelists(auctionItem.getMaxRelists());
+            }
             activeAuctions.put(id, withId);
 
             // Log the listing
@@ -115,11 +128,15 @@ public class AuctionManager {
         return id;
     }
 
+    public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency) {
+        return listBidItem(seller, itemStack, startingPrice, currency, false);
+    }
+
     /**
      * Lists a new bid auction (auction type) on the auction house.
      * Returns the auction id, or -1 if it failed.
      */
-    public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency) {
+    public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency, boolean autoRelist) {
         double taxRate = getPlayerTaxRate(seller);
         int durationHours = plugin.getConfigManager().getBidDefaultDuration();
         long now = System.currentTimeMillis();
@@ -131,6 +148,11 @@ public class AuctionManager {
                 AuctionType.AUCTION, 0, null, null
         );
 
+        if (autoRelist && plugin.getConfigManager().isAutoRelistEnabled()) {
+            auctionItem.setAutoRelist(true);
+            auctionItem.setMaxRelists(plugin.getConfigManager().getMaxAutoRelists());
+        }
+
         int id = dao.insertAuction(auctionItem);
         if (id > 0) {
             AuctionItem withId = new AuctionItem(
@@ -138,6 +160,10 @@ public class AuctionManager {
                     startingPrice, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE,
                     AuctionType.AUCTION, 0, null, null
             );
+            if (auctionItem.isAutoRelist()) {
+                withId.setAutoRelist(true);
+                withId.setMaxRelists(auctionItem.getMaxRelists());
+            }
             activeAuctions.put(id, withId);
             dao.logTransaction(id, seller.getUniqueId(), null, itemStack, startingPrice, 0, "LIST_AUCTION");
             discordWebhook.sendListingNotification(seller.getName(), itemStack, startingPrice, currency);
@@ -471,6 +497,11 @@ public class AuctionManager {
             // Bid auction with a winner - complete the sale
             completeAuction(item);
         } else {
+            // Try auto-relist before moving to expired
+            if (tryAutoRelist(item)) {
+                return;
+            }
+
             // BIN auction expired with no buyer, or bid auction with no bids
             item.setStatus(AuctionStatus.EXPIRED);
             dao.updateAuctionStatus(item.getId(), AuctionStatus.EXPIRED);
@@ -483,9 +514,80 @@ public class AuctionManager {
                 dao.deleteBidsByAuction(item.getId());
             }
 
+            // Notify seller if online
+            Player seller = Bukkit.getPlayer(item.getSellerUuid());
+            if (seller != null && seller.isOnline() && item.isAutoRelist()) {
+                seller.sendMessage(plugin.getLangManager().prefixed("auto-relist.limit-reached",
+                        "{item}", getItemName(item.getItemStack())));
+            }
+
             // Notify favorite watchers
             notifyFavoriteWatchers(item, "expired");
         }
+    }
+
+    /**
+     * Attempts to auto-relist an expired auction.
+     * Returns true if the item was successfully relisted.
+     */
+    private boolean tryAutoRelist(AuctionItem item) {
+        if (!plugin.getConfigManager().isAutoRelistEnabled()) return false;
+        if (!item.isAutoRelist()) return false;
+        if (item.getRelistCount() >= item.getMaxRelists()) return false;
+
+        double costPercent = plugin.getConfigManager().getAutoRelistCostPercent();
+        double cost = item.getPrice() * (costPercent / 100.0);
+
+        if (cost > 0) {
+            Player seller = Bukkit.getPlayer(item.getSellerUuid());
+            if (seller == null || !seller.isOnline()) return false;
+            if (!plugin.getEconomyManager().has(seller, cost, item.getCurrency())) {
+                seller.sendMessage(plugin.getLangManager().prefixed("auto-relist.failed-balance",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{cost}", plugin.getEconomyManager().format(cost, item.getCurrency())));
+                return false;
+            }
+            plugin.getEconomyManager().withdraw(seller, cost, item.getCurrency());
+        }
+
+        int newRelistCount = item.getRelistCount() + 1;
+        item.setRelistCount(newRelistCount);
+
+        int durationHours = plugin.getConfigManager().getDefaultAuctionDuration();
+        long newExpiresAt = System.currentTimeMillis() + (durationHours * 3600000L);
+        item.setExpiresAt(newExpiresAt);
+        item.setStatus(AuctionStatus.ACTIVE);
+
+        // Reset bid data for bid auctions with no winner
+        if (item.isBidAuction()) {
+            item.setHighestBid(0);
+            item.setHighestBidderUuid(null);
+            item.setHighestBidderName(null);
+            dao.deleteBidsByAuction(item.getId());
+        }
+
+        dao.updateAutoRelistData(item.getId(), newRelistCount, newExpiresAt);
+        activeAuctions.put(item.getId(), item);
+
+        dao.logTransaction(item.getId(), item.getSellerUuid(), null,
+                item.getItemStack(), item.getPrice(), cost, "AUTO_RELIST");
+
+        // Discord notification
+        discordWebhook.sendAutoRelistNotification(item.getSellerName(), item.getItemStack(),
+                item.getPrice(), newRelistCount, item.getCurrency());
+
+        // Notify seller if online
+        Player seller = Bukkit.getPlayer(item.getSellerUuid());
+        if (seller != null && seller.isOnline()) {
+            if (plugin.getNotificationManager().canReceiveSaleNotification(seller.getUniqueId())) {
+                seller.sendMessage(plugin.getLangManager().prefixed("auto-relist.relisted",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{count}", String.valueOf(newRelistCount)));
+                plugin.getNotificationManager().playSaleSound(seller);
+            }
+        }
+
+        return true;
     }
 
     /**

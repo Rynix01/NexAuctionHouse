@@ -91,13 +91,16 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // Check for --bid flag anywhere in args
+        // Check for --bid and --autorelist flags anywhere in args
         boolean isBidAuction = false;
+        boolean isAutoRelist = false;
         List<String> cleanArgs = new ArrayList<>();
         cleanArgs.add(args[0]); // "sell"
         for (int i = 1; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("--bid")) {
                 isBidAuction = true;
+            } else if (args[i].equalsIgnoreCase("--autorelist")) {
+                isAutoRelist = true;
             } else {
                 cleanArgs.add(args[i]);
             }
@@ -106,6 +109,17 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         if (isBidAuction && !plugin.getConfigManager().isBidEnabled()) {
             player.sendMessage(lang.prefixed("bid.bid-disabled"));
             return;
+        }
+
+        if (isAutoRelist) {
+            if (!plugin.getConfigManager().isAutoRelistEnabled()) {
+                player.sendMessage(lang.prefixed("auto-relist.feature-disabled"));
+                return;
+            }
+            if (!player.hasPermission("nexauctions.autorelist")) {
+                player.sendMessage(lang.prefixed("general.no-permission"));
+                return;
+            }
         }
 
         if (cleanArgs.size() < 2) {
@@ -179,9 +193,9 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         int auctionId;
         if (isBidAuction) {
-            auctionId = auctionManager.listBidItem(player, toSell, price, currency);
+            auctionId = auctionManager.listBidItem(player, toSell, price, currency, isAutoRelist);
         } else {
-            auctionId = auctionManager.listItem(player, toSell, price, currency);
+            auctionId = auctionManager.listItem(player, toSell, price, currency, isAutoRelist);
         }
 
         if (auctionId > 0) {
@@ -191,6 +205,10 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             } else {
                 player.sendMessage(lang.prefixed("auction.listed",
                         "{price}", plugin.getEconomyManager().format(price, currency)));
+            }
+            if (isAutoRelist) {
+                player.sendMessage(lang.prefixed("auto-relist.enabled",
+                        "{max}", String.valueOf(plugin.getConfigManager().getMaxAutoRelists())));
             }
         } else {
             // Something went wrong, give the item back
@@ -443,6 +461,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && args[0].equalsIgnoreCase("sell")) {
             List<String> currencies = new ArrayList<>(plugin.getEconomyManager().getCurrencyNames());
             currencies.add("--bid");
+            currencies.add("--autorelist");
             String input = args[2].toLowerCase();
             currencies.removeIf(s -> !s.toLowerCase().startsWith(input));
             return currencies;
@@ -451,7 +470,17 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         if (args.length == 4 && args[0].equalsIgnoreCase("sell")) {
             List<String> options = new ArrayList<>();
             options.add("--bid");
+            options.add("--autorelist");
             String input = args[3].toLowerCase();
+            options.removeIf(s -> !s.toLowerCase().startsWith(input));
+            return options;
+        }
+
+        if (args.length == 5 && args[0].equalsIgnoreCase("sell")) {
+            List<String> options = new ArrayList<>();
+            options.add("--bid");
+            options.add("--autorelist");
+            String input = args[4].toLowerCase();
             options.removeIf(s -> !s.toLowerCase().startsWith(input));
             return options;
         }

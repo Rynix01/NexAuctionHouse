@@ -150,6 +150,20 @@ public class ConfigManager {
         return config.getString("discord.webhook-url", "");
     }
 
+    // -- Auto-Relist settings --
+
+    public boolean isAutoRelistEnabled() {
+        return config.getBoolean("auto-relist.enabled", true);
+    }
+
+    public int getMaxAutoRelists() {
+        return config.getInt("auto-relist.max-relists", 3);
+    }
+
+    public double getAutoRelistCostPercent() {
+        return config.getDouble("auto-relist.cost-percent", 0.0);
+    }
+
     public FileConfiguration getConfig() {
         return config;
     }

@@ -188,6 +188,30 @@ public class DiscordWebhook {
         sendWebhook(embed);
     }
 
+    /**
+     * Sends a notification when an item is automatically relisted.
+     */
+    public void sendAutoRelistNotification(String sellerName, ItemStack item, double price, int relistCount, String currency) {
+        if (!isEnabled()) return;
+
+        String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
+        int color = plugin.getConfigManager().getConfig().getInt("discord.colors.listing", 3447003);
+
+        JsonObject embed = createEmbed(
+                "\uD83D\uDD04 Auto-Relisted",
+                "**" + sellerName + "**'s listing for **" + itemName + " x" + amount + "** was automatically relisted for **" + plugin.getEconomyManager().format(price, currency) + "**.",
+                color
+        );
+        addField(embed, "Item", itemName + " x" + amount, true);
+        addField(embed, "Price", plugin.getEconomyManager().format(price, currency), true);
+        addField(embed, "Relist #", String.valueOf(relistCount), true);
+        addField(embed, "Seller", sellerName, true);
+        addTimestamp(embed);
+
+        sendWebhook(embed);
+    }
+
     // -- JSON builders --
 
     private JsonObject createEmbed(String title, String description, int color) {

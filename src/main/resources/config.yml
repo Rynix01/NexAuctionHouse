@@ -156,3 +156,12 @@ notifications:
     bid: "ENTITY_ARROW_HIT_PLAYER"
     favorite: "BLOCK_NOTE_BLOCK_CHIME"
     rescued: "ENTITY_ITEM_PICKUP"
+
+# Auto-relist system
+auto-relist:
+  # Enable the auto-relist feature globally
+  enabled: true
+  # Maximum number of times an item can be automatically relisted
+  max-relists: 3
+  # Cost percentage of the listing price charged per relist (0 = free)
+  cost-percent: 0.0

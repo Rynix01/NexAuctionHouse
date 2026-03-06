@@ -148,8 +148,16 @@ public class MainMenu extends PaginatedGui {
                         .replace("{current_bid}", currentBidStr)
                         .replace("{bidder}", bidderName)
                         .replace("{type}", auction.isBidAuction() ? "Auction" : "BIN")
-                        .replace("{avg_price}", formatAvgPrice(auction));
+                        .replace("{avg_price}", formatAvgPrice(auction))
+                        .replace("{relist}", auction.isAutoRelist()
+                                ? auction.getRelistCount() + "/" + auction.getMaxRelists()
+                                : "");
                 existingLore.add(text(parsed));
+            }
+
+            // Show auto-relist info if enabled
+            if (auction.isAutoRelist()) {
+                existingLore.add(text("<gray>Auto-Relist: <yellow>" + auction.getRelistCount() + "/" + auction.getMaxRelists()));
             }
 
             meta.lore(existingLore);

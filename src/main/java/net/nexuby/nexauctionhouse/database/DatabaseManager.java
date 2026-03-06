@@ -83,7 +83,10 @@ public class DatabaseManager {
                 + "tax_rate DOUBLE NOT NULL DEFAULT 0,"
                 + "created_at BIGINT NOT NULL,"
                 + "expires_at BIGINT NOT NULL,"
-                + "status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE'"
+                + "status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',"
+                + "auto_relist BOOLEAN NOT NULL DEFAULT 0,"
+                + "relist_count INT NOT NULL DEFAULT 0,"
+                + "max_relists INT NOT NULL DEFAULT 0"
                 + ")";
 
         // Expired/uncollected items waiting for pickup
@@ -190,6 +193,9 @@ public class DatabaseManager {
         migrateColumn("highest_bid", "DOUBLE NOT NULL DEFAULT 0");
         migrateColumn("highest_bidder_uuid", "VARCHAR(36) DEFAULT NULL");
         migrateColumn("highest_bidder_name", "VARCHAR(16) DEFAULT NULL");
+        migrateColumn("auto_relist", "BOOLEAN NOT NULL DEFAULT 0");
+        migrateColumn("relist_count", "INT NOT NULL DEFAULT 0");
+        migrateColumn("max_relists", "INT NOT NULL DEFAULT 0");
     }
 
     private void migrateColumn(String columnName, String columnDef) {
