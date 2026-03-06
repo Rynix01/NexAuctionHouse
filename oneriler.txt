@@ -1,0 +1,410 @@
+================================================================================
+                    NexAuctionHouse - Eklenebilecek Ozellikler
+                         Detayli Oneri ve Analiz Dokumani
+================================================================================
+
+Mevcut plugin 51 Java sinifi, 7 ekonomi saglayici, 12 item hook, 5 veritabani
+tablosu, Discord webhook, PlaceholderAPI, GUI sistemi, crash korumasi ve
+cevrimdisi senkronizasyon ile oldukca kapsamli. Asagidakiler "premium plugin"
+seviyesine tasiyacak, rekabette fark yaratacak ozellikler:
+
+================================================================================
+1. ARAMA VE SIRALAMA SISTEMI
+================================================================================
+
+Simdi: Oyuncular sadece kategori filtresiyle gezebiliyor. Belirli bir esya
+aramak icin sayfalarca scroll etmek gerekiyor.
+
+Onerimiz:
+- /ah search <kelime> komutu veya GUI icinde anvil/sign arama
+- Ana menude arama butonu (slot 51 gibi) → tiklayinca ChatInput ile arama
+- Siralama secenekleri: Fiyat (artan/azalan), Tarih (yeni/eski), Isim (A-Z)
+- Siralama butonu GUI'de toggle olarak calisir
+- Arama sonuclari ayri bir PaginatedGui'de gosterilir
+
+Neden onemli: Buyuk sunucularda 100+ ilan olabilir. Arama olmadan kullanici
+deneyimi cok kotu olur. Hemen hemen tum rakip pluginlerde var.
+
+Zorluk: Orta
+Oncelik: YUKSEK
+
+================================================================================
+2. TEKLIF (BID/AUCTION) SISTEMI
+================================================================================
+
+Simdi: Sadece sabit fiyat (Buy It Now) destegi var.
+
+Onerimiz:
+- Iki satis modu: "BIN" (sabit fiyat) ve "AUCTION" (acik artirma)
+- /ah sell <baslangic_fiyat> --bid komutu
+- Minimum artis miktari (config: bid-increment: 10%)
+- Ilan suresi boyunca oyuncular teklif verir
+- Son 5 dakikada teklif gelirse sure uzar (anti-snipe korumasi)
+- Sure bitince en yuksek teklif veren kazanir
+- Kaybeden teklifcilerin paralari otomatik iade edilir
+- GUI'de ayri "Acik Artirmalar" kategorisi
+- Teklif gecmisi (son 5 teklif) item lore'da gosterilir
+
+Neden onemli: Acik artirma sistemi AH pluginlerinin en cok istenen ozelligi.
+Bunu eklemek plugini premium segmentte yukari tasiyor.
+
+Zorluk: Yuksek
+Oncelik: YUKSEK
+
+================================================================================
+3. FAVORI / IZLEME LISTESI
+================================================================================
+
+Simdi: Oyuncu istegi bir esyayi takip edemiyor.
+
+Onerimiz:
+- Oyuncular ilanlari "favori"ye ekleyebilir (GUI'de shift+click)
+- /ah favorites komutu veya ana menude favori butonu
+- Favori bir ilan satildiginda/iptal edildiginde bildirim
+- Veritabaninda favorites tablosu (player_uuid, auction_id)
+- Favori limiti (config: max-favorites: 20)
+
+Neden onemli: Oyuncu bagliligi artirir, sunucuda daha fazla vakit gecirmeye
+tesvik eder.
+
+Zorluk: Orta
+Oncelik: ORTA
+
+================================================================================
+4. FIYAT GECMISI VE ISTATISTIKLER
+================================================================================
+
+Simdi: transaction_logs tablosu var ama oyunculara gosterilmiyor.
+
+Onerimiz:
+- /ah history komutu → son 50 islem gecmisi (satis/alis)
+- /ah history <oyuncu> (admin) → belirli oyuncun gecmisi
+- Item bazli fiyat gecmisi: "Diamond Sword son 7 gunde ortalama 500$"
+- GUI'de item'a hover yapinca "Ortalama Fiyat: X" bilgisi
+- Yeni PAPI placeholder'lar:
+  %nexauction_player_total_sales% → toplam satis sayisi
+  %nexauction_player_total_revenue% → toplam kazanc
+  %nexauction_player_total_purchases% → toplam alis
+  %nexauction_avg_price_DIAMOND_SWORD% → materyal bazli ortalama fiyat
+- Admin icin istatistik GUI'si: en cok satan oyuncular, en pahali satislar
+
+Neden onemli: Oyunculara fiyat referansi verir, ekonomiyi dengeler.
+Adminler icin sunucu ekonomisini izlemek kolaylasir.
+
+Zorluk: Orta
+Oncelik: ORTA
+
+================================================================================
+5. BILDIRIM TERCIHLERI (NOTIFICATION SETTINGS)
+================================================================================
+
+Simdi: Tum bildirimler herkese otomatik gonderiliyor.
+
+Onerimiz:
+- /ah notifications komutu veya GUI butonu
+- Oyuncu bazli tercihler:
+  * Satis bildirimi: Acik/Kapali
+  * Teklif bildirimi: Acik/Kapali
+  * Sesi (pling sound): Acik/Kapali
+  * Giris bildirimi: Acik/Kapali
+- Veritabaninda player_settings tablosu
+- Ses efektleri: satis yapildiginda, teklif geldiginde, esya kurtarildiginda
+
+Neden onemli: Bazi oyuncular spam olarak gorebilir. Kissilestirme = premium his.
+
+Zorluk: Dusuk-Orta
+Oncelik: DUSUK
+
+================================================================================
+6. SATILIK ESYA ONIZLEME (ITEM PREVIEW)
+================================================================================
+
+Simdi: Lore'da bilgiler var ama item'in tam detaylari gorunmuyor.
+
+Onerimiz:
+- GUI'de esyaya sag tiklayinca ayri bir Preview GUI acilir
+- Tam enchant listesi, attribute'lar, lore satir satir gosterilir
+- Zırhlar icin "Zirh Onizleme" (armor stand ile render - opsiyonel)
+- Kitaplar icin icerik onizleme
+- Shulker kutulari icin icerik onizleme (kutu icindeki itemlar listelenir)
+
+Neden onemli: Ozellikle enchantli, custom item'li, shulker box icin cok onemli.
+AuctionMaster ve CrazyAuctions gibi buyuk pluginlerde var.
+
+Zorluk: Orta
+Oncelik: ORTA
+
+================================================================================
+7. API SISTEMI (DEVELOPER API)
+================================================================================
+
+Simdi: Plugin disariya hicbir API sunmuyor.
+
+Onerimiz:
+- NexAuctionHouseAPI sinifi (public, static erisim)
+- Custom event'ler:
+  * AuctionListEvent (cancellable) → ilan acilmadan once
+  * AuctionPurchaseEvent (cancellable) → satin almadan once
+  * AuctionExpireEvent → ilan suresi dolunca
+  * AuctionCancelEvent → ilan iptal edilince
+  * BidPlaceEvent (cancellable) → teklif verilmeden once
+- API metotlari:
+  * getActiveAuctions()
+  * getAuctionsByPlayer(UUID)
+  * forceCreateAuction(player, item, price, currency)
+  * forceRemoveAuction(id)
+  * getPlayerStats(UUID)
+- Maven/Gradle dependency olarak sunulabilir
+
+Neden onemli: Diger plugin gelistiricileri entegrasyon yapabilir.
+Premium pluginlerin olmazsa olmazi. Spigot sayfasinda "Developer API" yazmak
+buyuk avantaj.
+
+Zorluk: Orta
+Oncelik: ORTA
+
+================================================================================
+8. SURE UZATMA OTOMASYONU / AUTO-RELIST
+================================================================================
+
+Simdi: Süresi dolan ilanlar expired_items'a tasinir, oyuncu tekrar satisa koymali.
+
+Onerimiz:
+- Config: auto-relist.enabled: true
+- auto-relist.max-times: 3 (en fazla 3 kez otomatik yenileme)
+- auto-relist.cost: 0 (yenileme ucreti, 0 = ucretsiz)
+- Permission: nexauctions.autorelist
+- GUI'de ilan acilirken "Auto-Relist: Acik/Kapali" toggle
+- Otomatik yenilendiginde Discord bildirimi
+
+Neden onemli: AFK oyuncularin ilanlari kaybolmaz. Sunucu aktivitesini arttirir.
+
+Zorluk: Dusuk
+Oncelik: DUSUK
+
+================================================================================
+9. TOPLU ISLEMLER (BULK OPERATIONS)
+================================================================================
+
+Simdi: Esyalar tek tek satisa konuluyor.
+
+Onerimiz:
+- /ah sell-all <fiyat> [currency] → envanterdeki tum ayni turden esyayi grupla
+- GUI'de "Toplu Sat" butonu → ozel bir GUI acar, envanterdeki esyalar gosterilir,
+  secilen esyalar tek seferde satisa konur
+- "Toplu Al" → ayni satici, ayni fiyattaki esyalari tek tiklama ile al
+- Admin: /ah admin clear --player=Rynix → belirli oyuncunun ilanlarini temizle
+
+Neden onemli: Takas sunuculari ve skyblock'ta tonla esya satilir. Tek tek
+satisa koymak cok zahmetli.
+
+Zorluk: Orta
+Oncelik: ORTA
+
+================================================================================
+10. GELISMIS BLACKLIST SISTEMI
+================================================================================
+
+Simdi: Materyal, lore keyword ve custom item ID bazli blacklist var.
+
+Onerimiz:
+- Enchantment bazli blacklist (orn: MENDING enchant'li esya satilamaz)
+- NBT tag bazli blacklist (belirli tag iceren esyalar engellenir)
+- Fiyat limiti per-material (Diamond Sword min 100, max 50000)
+- Per-world blacklist (bazi dunya'larda AH kullanilamaz)
+- Whitelist modu (sadece belirtilen esyalar satilabilir)
+- Blacklist GUI (admin) → gorsel olarak yonet, komut gerekmez
+
+Neden onemli: Sunucu adminleri ekonomiyi daha iyi kontrol edebilir.
+Ozellikle OP sunucularda ve ozel esya agirlikli sunucularda sart.
+
+Zorluk: Dusuk-Orta
+Oncelik: DUSUK
+
+================================================================================
+11. ESYA MAIL SISTEMI
+================================================================================
+
+Simdi: Esyalar sadece AH uzerinden alisveris yapilabiliyor.
+
+Onerimiz:
+- /ah send <oyuncu> → elindeki esyayi baska oyuncuya gonder (hediye)
+- Alici icin onay GUI'si (kabul/reddet)
+- Gonderim ucreti (config: mail-fee: 50)
+- Cevrimdisi oyuncuya gonderme → pending_mail tablosu, giriste teslim
+- Discord bildirimi
+
+Neden onemli: AH plugin'i sadece satis degil, esya transferi icin de
+kullanilabilir. Topluluk etkilesimini arttirir.
+
+Zorluk: Orta
+Oncelik: DUSUK
+
+================================================================================
+12. GUI TEMASI / TEMA SISTEMI
+================================================================================
+
+Simdi: Tek bir GUI tema'si var (YAML config uzerinden).
+
+Onerimiz:
+- Birden fazla tema dosyasi (themes/default.yml, themes/dark.yml, themes/nether.yml)
+- /ah theme <tema_adi> komutu veya ayarlar GUI'sinde tema secimi
+- Her tema farkli renkler, cam desenleri, buton materyalleri kullanir
+- Animasyonlu GUI (her X tick'te border rengi degistir) - opsiyonel
+
+Neden onemli: Gorsel cekicilik premium his verir. YouTube tanitimlarinda
+gorseller cok onemli.
+
+Zorluk: Dusuk
+Oncelik: DUSUK
+
+================================================================================
+13. BUNNY / PAKET SATIS
+================================================================================
+
+Simdi: Her esya tekil olarak satiliyor.
+
+Onerimiz:
+- "Paket" olusturma: birden fazla esyayi tek ilan olarak sat
+- /ah bundle <fiyat> → ozel GUI acar, envanterdeki esyalari secersin
+- Alici paketteki tum esyalari tek seferde alir
+- Paket onizleme GUI'si (icerik listelenir)
+- Paket ilan limiti ayri olabilir (config: bundle-limit: 2)
+
+Neden onemli: Skyblock/survival sunucularinda "baslangic seti", "farm paketi"
+gibi paketler cok populer.
+
+Zorluk: Yuksek
+Oncelik: DUSUK
+
+================================================================================
+14. ZAMANA BAGLI INDIRIM / PROMOSYON
+================================================================================
+
+Simdi: Fiyatlar sabittir.
+
+Onerimiz:
+- Config'den "Happy Hour" tanimla: belirli saatlerde vergi %0
+- Admin komutu: /ah promo start <sure> <indirim%> → genel indirim
+- Ilan sahipleri icin otomatik fiyat dusumu: son 12 saatte satilmamissa %10
+  indirim uygula (config: price-decay.enabled, price-decay.percent: 10,
+  price-decay.after-hours: 12)
+
+Neden onemli: Ekonomiyi canli tutar, oyunculari belirli saatlerde cevirimici
+olmaya tesvik eder.
+
+Zorluk: Orta
+Oncelik: DUSUK
+
+================================================================================
+15. MIGRATION / GOCTURME ARACI
+================================================================================
+
+Simdi: Baska bir AH plugininden goc destegi yok.
+
+Onerimiz:
+- /ah migrate <plugin> komutu
+  * AuctionHouse (klip) → NexAuctionHouse
+  * CrazyAuctions → NexAuctionHouse
+  * zAuctionHouse → NexAuctionHouse
+  * AuctionMaster → NexAuctionHouse
+- Veritabani yapisini okur, esyalari ve gecmisi tasir
+- Gocturme raporu: X ilan, Y expired, Z log tasindi
+
+Neden onemli: Sunucu sahipleri mevcut pluginlerinden gecis yapabilir.
+"Migration support" premium plugin satislarinda cok etkili bir satis argumani.
+
+Zorluk: Yuksek
+Oncelik: ORTA
+
+================================================================================
+16. GELISMIS LOGLAMA VE AUDIT
+================================================================================
+
+Simdi: transaction_logs tablosu var ama sadece temel bilgiler kaydediliyor.
+
+Onerimiz:
+- Her islemi dosyaya loglama (logs/auction-YYYY-MM-DD.log)
+- Admin web paneli veya /ah admin log <oyuncu> <islem> <tarih>
+- Supheli aktivite tespiti:
+  * Ayni IP'den farkli hesaplarla alisveris (kara para aklama)
+  * Cok dusuk fiyatla satip baska hesapla alma
+  * Dakikada X'den fazla islem (bot tespiti)
+- Alert sistemi: supheli islem → admin'e otomatik bildirim
+
+Neden onemli: Buyuk sunucular icin ekonomi guvenligi kritik. Admin'lerin
+eline guclu bir izleme araci vermek = premium deger.
+
+Zorluk: Yuksek
+Oncelik: DUSUK
+
+================================================================================
+17. REDIS / BUNGEECORD DESTEGI
+================================================================================
+
+Simdi: Sadece tek sunucu destegi var (SQLite/MySQL).
+
+Onerimiz:
+- MySQL zorunlu modda coklu sunucu senkronizasyonu
+- Redis pub/sub ile anlik guncelleme (sunucu A'da ilan acildi → sunucu B
+  aninda guncellenir)
+- BungeeCord/Velocity mesajlasma destegi
+- Sunucular arasi bildirimler
+
+Neden onemli: Network sunuculari icin olmazsa olmaz. Premium AH pluginleri
+genelde multi-server desteklemiyor, bu buyuk fark yaratir.
+
+Zorluk: Cok Yuksek
+Oncelik: DUSUK (ama fark yaratir)
+
+================================================================================
+18. CONFIRMASYON GUI IYILESTIRMELERI
+================================================================================
+
+Simdi: Basit 3 buton (onayla/item/iptal) var.
+
+Onerimiz:
+- Miktar secimi (1x, 16x, 32x, 64x) → oyuncu esyanin kaçtanesini alacagini secer
+  (stackable item'lar icin, satici 64 elmas koymus, alici 16 tane alabilsin)
+- Fiyat detay bilgisi: "Fiyat: 500$, Vergi: 50$, Toplam: 550$"
+- Satin alma gecmisi: "Bu esyayi daha once 3 kez aldiniz"
+
+Neden onemli: Kismi alis ozellikle ekonomi sunucularinda cok istenen bir ozellik.
+
+Zorluk: Yuksek (item bolme mantigi)
+Oncelik: ORTA
+
+================================================================================
+
+OZET - ONCELIK SIRASI
+================================================================================
+
+YUKSEK ONCELIK (ilk eklenmeli):
+  1. Arama ve Siralama Sistemi
+  2. Teklif (Bid/Auction) Sistemi
+
+ORTA ONCELIK (sonraki asamada):
+  3. Favori / Izleme Listesi
+  4. Fiyat Gecmisi ve Istatistikler
+  6. Esya Onizleme (Shulker Box vb.)
+  7. Developer API
+  9. Toplu Islemler
+  15. Migration Araci
+  18. Kismi Alis (Confirmation GUI)
+
+DUSUK ONCELIK (zaman kalirsa):
+  5. Bildirim Tercihleri
+  8. Auto-Relist
+  10. Gelismis Blacklist
+  11. Esya Mail Sistemi
+  12. GUI Tema Sistemi
+  13. Paket Satis
+  14. Zamana Bagli Indirim
+  16. Gelismis Loglama
+  17. Redis / BungeeCord Destegi
+
+================================================================================
+Not: Bu onerilerin hepsini eklemek gerekmez. Ozellikle "Yuksek Oncelik"
+olanlari eklemek plugini rakiplerden ayiracaktir. Bid sistemi ve arama
+ozelligi tek basina satislari 2x artirabilir.
+================================================================================

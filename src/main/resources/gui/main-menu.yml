@@ -71,6 +71,25 @@ buttons:
     lore:
       - "<gray>Refresh the auction list."
 
+  search:
+    slot: 51
+    material: OAK_SIGN
+    name: "<yellow>Search"
+    lore:
+      - "<gray>Search for items by name,"
+      - "<gray>material, or seller."
+      - ""
+      - "<yellow>Click <gray>to search."
+
+  sort:
+    slot: 52
+    material: HOPPER
+    name: "<gold>Sort"
+    lore:
+      - "<gray>Change the display order."
+      - ""
+      - "<yellow>Click <gray>to cycle sort mode."
+
   close:
     slot: 53
     material: BARRIER
@@ -98,6 +117,16 @@ filler:
     - 18
     - 26
     - 27
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
     - 35
     - 36
     - 37

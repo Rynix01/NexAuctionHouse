@@ -56,6 +56,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         switch (sub) {
             case "sell" -> handleSell(sender, args);
+            case "search" -> handleSearch(sender, args);
             case "expired" -> handleExpired(sender);
             case "admin" -> handleAdmin(sender, args);
             case "reload" -> handleReload(sender);
@@ -174,6 +175,29 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         new ExpiredGui(plugin, player).open();
     }
 
+    private void handleSearch(CommandSender sender, String[] args) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.use")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        if (args.length < 2) {
+            player.sendMessage(lang.prefixed("search.search-usage"));
+            return;
+        }
+
+        // Join all args after "search" as the query
+        String query = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+        new MainMenu(plugin, player, query).open();
+    }
+
     private void handleAdmin(CommandSender sender, String[] args) {
         LangManager lang = plugin.getLangManager();
 
@@ -282,6 +306,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> completions = new ArrayList<>();
             completions.add("sell");
+            completions.add("search");
             completions.add("expired");
 
             if (sender.hasPermission("nexauctions.admin")) {
@@ -298,6 +323,10 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("sell")) {
             return Arrays.asList("<price>");
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("search")) {
+            return Arrays.asList("<keyword>");
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("sell")) {

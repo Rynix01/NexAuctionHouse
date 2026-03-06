@@ -3,9 +3,13 @@ package net.nexuby.nexauctionhouse.gui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
+import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
+import net.nexuby.nexauctionhouse.model.SortType;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -26,12 +30,18 @@ public class MainMenu extends PaginatedGui {
     private Predicate<AuctionItem> filter;
     private String categoryName;
 
+    // Search and sort state
+    private String searchQuery;
+    private SortType sortType = SortType.NEWEST_FIRST;
+
     // Button slot positions loaded from config
     private int categoriesSlot = -1;
     private int myAuctionsSlot = -1;
     private int expiredSlot = -1;
     private int refreshSlot = -1;
     private int closeSlot = -1;
+    private int searchSlot = -1;
+    private int sortSlot = -1;
 
     // Maps item slot index -> auction id for click handling
     private final List<Integer> auctionIds = new ArrayList<>();
@@ -44,6 +54,24 @@ public class MainMenu extends PaginatedGui {
         super(plugin, viewer);
         this.filter = filter;
         this.categoryName = categoryName;
+    }
+
+    public MainMenu(NexAuctionHouse plugin, Player viewer, String searchQuery) {
+        super(plugin, viewer);
+        this.searchQuery = searchQuery;
+    }
+
+    public void setSearchQuery(String searchQuery) {
+        this.searchQuery = searchQuery;
+        this.currentPage = 0;
+    }
+
+    public void setSortType(SortType sortType) {
+        this.sortType = sortType;
+    }
+
+    public SortType getSortType() {
+        return sortType;
     }
 
     @Override
@@ -63,11 +91,29 @@ public class MainMenu extends PaginatedGui {
             auctions.removeIf(item -> !filter.test(item));
         }
 
+        // Apply search filter if set
+        if (searchQuery != null && !searchQuery.isBlank()) {
+            String query = searchQuery.toLowerCase();
+            auctions.removeIf(item -> {
+                String itemName = AuctionManager.getItemName(item.getItemStack()).toLowerCase();
+                String materialName = item.getItemStack().getType().name().toLowerCase().replace("_", " ");
+                String sellerName = item.getSellerName().toLowerCase();
+                return !itemName.contains(query) && !materialName.contains(query) && !sellerName.contains(query);
+            });
+        }
+
         // Remove expired items from the display
         auctions.removeIf(AuctionItem::isExpired);
 
-        // Sort by newest first
-        auctions.sort(Comparator.comparingLong(AuctionItem::getCreatedAt).reversed());
+        // Sort based on current sort type
+        switch (sortType) {
+            case NEWEST_FIRST -> auctions.sort(Comparator.comparingLong(AuctionItem::getCreatedAt).reversed());
+            case OLDEST_FIRST -> auctions.sort(Comparator.comparingLong(AuctionItem::getCreatedAt));
+            case PRICE_LOW_TO_HIGH -> auctions.sort(Comparator.comparingDouble(AuctionItem::getPrice));
+            case PRICE_HIGH_TO_LOW -> auctions.sort(Comparator.comparingDouble(AuctionItem::getPrice).reversed());
+            case NAME_A_TO_Z -> auctions.sort(Comparator.comparing(a -> AuctionManager.getItemName(a.getItemStack()).toLowerCase()));
+            case NAME_Z_TO_A -> auctions.sort(Comparator.comparing((AuctionItem a) -> AuctionManager.getItemName(a.getItemStack()).toLowerCase()).reversed());
+        }
 
         // Read lore template from config
         FileConfiguration cfg = plugin.getGuiConfig().getGui(getGuiConfigName());
@@ -161,6 +207,49 @@ public class MainMenu extends PaginatedGui {
                 inventory.setItem(closeSlot, createButton(buttons.getConfigurationSection("close")));
             }
         }
+
+        // Search button
+        if (buttons.contains("search")) {
+            searchSlot = buttons.getInt("search.slot", -1);
+            if (searchSlot >= 0) {
+                ItemStack searchButton = createButton(buttons.getConfigurationSection("search"));
+                // Show active search in lore if a query is set
+                if (searchQuery != null && !searchQuery.isBlank()) {
+                    ItemMeta meta = searchButton.getItemMeta();
+                    List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+                    lore.add(text(""));
+                    lore.add(text(plugin.getLangManager().getRaw("search.active-query", "{query}", searchQuery)));
+                    lore.add(text(plugin.getLangManager().getRaw("search.click-to-clear")));
+                    meta.lore(lore);
+                    searchButton.setItemMeta(meta);
+                }
+                inventory.setItem(searchSlot, searchButton);
+            }
+        }
+
+        // Sort button
+        if (buttons.contains("sort")) {
+            sortSlot = buttons.getInt("sort.slot", -1);
+            if (sortSlot >= 0) {
+                ItemStack sortButton = createButton(buttons.getConfigurationSection("sort"));
+                ItemMeta meta = sortButton.getItemMeta();
+                List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+                lore.add(text(""));
+                // Show all sort options with indicator for current
+                for (SortType type : SortType.values()) {
+                    String langKey = "search.sort-" + type.getConfigKey();
+                    String label = plugin.getLangManager().getRaw(langKey);
+                    if (type == sortType) {
+                        lore.add(text("<green>▸ " + label));
+                    } else {
+                        lore.add(text("<gray>  " + label));
+                    }
+                }
+                meta.lore(lore);
+                sortButton.setItemMeta(meta);
+                inventory.setItem(sortSlot, sortButton);
+            }
+        }
     }
 
     @Override
@@ -175,6 +264,45 @@ public class MainMenu extends PaginatedGui {
             refresh();
         } else if (slot == closeSlot) {
             viewer.closeInventory();
+        } else if (slot == searchSlot) {
+            handleSearchClick();
+        } else if (slot == sortSlot) {
+            handleSortClick();
         }
+    }
+
+    private void handleSearchClick() {
+        // If there's already a search query, right-click clears it
+        if (searchQuery != null && !searchQuery.isBlank()) {
+            searchQuery = null;
+            currentPage = 0;
+            refresh();
+            return;
+        }
+
+        // Close menu and await search input from chat
+        viewer.closeInventory();
+        viewer.sendMessage(plugin.getLangManager().prefixed("search.enter-query"));
+        viewer.sendMessage(plugin.getLangManager().prefixed("auction.type-cancel"));
+
+        MainMenu self = this;
+        ChatInputListener.awaitInput(viewer, input -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (input.equalsIgnoreCase("cancel")) {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("search.search-cancelled"));
+                    new MainMenu(plugin, viewer).open();
+                    return;
+                }
+
+                self.setSearchQuery(input.trim());
+                self.open();
+            });
+        });
+    }
+
+    private void handleSortClick() {
+        sortType = sortType.next();
+        currentPage = 0;
+        refresh();
     }
 }
