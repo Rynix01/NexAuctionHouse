@@ -16,6 +16,10 @@ import org.jetbrains.annotations.Nullable;
  *   %nexauction_player_limit%        - Player's listing limit
  *   %nexauction_player_expired%      - Player's uncollected expired items count
  *   %nexauction_player_tax%          - Player's tax rate
+ *   %nexauction_player_total_sales%  - Player's total completed sale count
+ *   %nexauction_player_total_revenue% - Player's total revenue earned
+ *   %nexauction_player_total_purchases% - Player's total purchase count
+ *   %nexauction_avg_price_<MATERIAL>% - Average price for a material (last 7 days)
  */
 public class AuctionPlaceholders extends PlaceholderExpansion {
 
@@ -54,6 +58,13 @@ public class AuctionPlaceholders extends PlaceholderExpansion {
             return String.valueOf(manager.getActiveAuctionsList().size());
         }
 
+        // Average price by material: avg_price_DIAMOND_SWORD
+        if (params.toLowerCase().startsWith("avg_price_")) {
+            String material = params.substring("avg_price_".length()).toUpperCase();
+            double avg = manager.getAveragePrice(material);
+            return avg > 0 ? plugin.getEconomyManager().format(avg) : "0";
+        }
+
         // Player-specific placeholders require a valid player
         if (player == null) return null;
 
@@ -76,6 +87,16 @@ public class AuctionPlaceholders extends PlaceholderExpansion {
                     return String.format("%.1f%%", manager.getPlayerTaxRate(player.getPlayer()));
                 }
                 return String.format("%.1f%%", plugin.getConfigManager().getDefaultTaxRate());
+
+            case "player_total_sales":
+                return String.valueOf(manager.getDao().getPlayerTotalSales(player.getUniqueId()));
+
+            case "player_total_revenue":
+                return plugin.getEconomyManager().format(
+                        manager.getDao().getPlayerTotalRevenue(player.getUniqueId()));
+
+            case "player_total_purchases":
+                return String.valueOf(manager.getDao().getPlayerTotalPurchases(player.getUniqueId()));
 
             default:
                 return null;

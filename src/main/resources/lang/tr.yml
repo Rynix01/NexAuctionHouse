@@ -102,6 +102,11 @@ favorites:
   notify-cancelled: "<light_purple>★ <yellow>Favori esyaniz <yellow>{item} <yellow>(<yellow>{seller}<yellow>) iptal edildi."
   notify-expired: "<light_purple>★ <gray>Favori esyaniz <yellow>{item} <gray>(<yellow>{seller}<gray>) suresi doldu."
 
+# Islem Gecmisi mesajlari
+history:
+  empty: "<yellow>Islem gecmisiniz bulunamadi."
+  player-not-found: "<red>Oyuncu bulunamadi veya bu sunucuda hic oynamamis."
+
 # Zaman formati
 time:
   hours: "{value}sa"

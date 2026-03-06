@@ -44,6 +44,7 @@ public class MainMenu extends PaginatedGui {
     private int searchSlot = -1;
     private int sortSlot = -1;
     private int favoritesSlot = -1;
+    private int historySlot = -1;
 
     // Maps item slot index -> auction id for click handling
     private final List<Integer> auctionIds = new ArrayList<>();
@@ -145,7 +146,8 @@ public class MainMenu extends PaginatedGui {
                         .replace("{time}", TimeUtil.formatDuration(auction.getRemainingTime()))
                         .replace("{current_bid}", currentBidStr)
                         .replace("{bidder}", bidderName)
-                        .replace("{type}", auction.isBidAuction() ? "Auction" : "BIN");
+                        .replace("{type}", auction.isBidAuction() ? "Auction" : "BIN")
+                        .replace("{avg_price}", formatAvgPrice(auction));
                 existingLore.add(text(parsed));
             }
 
@@ -295,6 +297,14 @@ public class MainMenu extends PaginatedGui {
                 inventory.setItem(favoritesSlot, createButton(buttons.getConfigurationSection("favorites")));
             }
         }
+
+        // History button
+        if (buttons.contains("history")) {
+            historySlot = buttons.getInt("history.slot", -1);
+            if (historySlot >= 0) {
+                inventory.setItem(historySlot, createButton(buttons.getConfigurationSection("history")));
+            }
+        }
     }
 
     @Override
@@ -315,6 +325,8 @@ public class MainMenu extends PaginatedGui {
             handleSortClick();
         } else if (slot == favoritesSlot) {
             new FavoritesGui(plugin, viewer).open();
+        } else if (slot == historySlot) {
+            new HistoryGui(plugin, viewer).open();
         }
     }
 
@@ -351,5 +363,10 @@ public class MainMenu extends PaginatedGui {
         sortType = sortType.next();
         currentPage = 0;
         refresh();
+    }
+
+    private String formatAvgPrice(AuctionItem auction) {
+        double avg = plugin.getAuctionManager().getAveragePrice(auction.getItemStack().getType().name());
+        return avg > 0 ? plugin.getEconomyManager().format(avg) : "-";
     }
 }

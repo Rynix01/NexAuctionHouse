@@ -99,6 +99,13 @@ favorites:
   # Maximum number of favorites per player
   max-favorites: 50
 
+# Price History & Statistics
+stats:
+  # How often (in minutes) to refresh the average price cache
+  cache-duration-minutes: 10
+  # Maximum number of transactions shown in /ah history
+  history-limit: 50
+
 # Blacklisted items that cannot be listed
 blacklist:
   materials:

@@ -27,6 +27,10 @@ public class AuctionManager {
     // Cache of active auctions keyed by auction id
     private final Map<Integer, AuctionItem> activeAuctions = new ConcurrentHashMap<>();
 
+    // Cache of average prices by material name
+    private final Map<String, Double> avgPriceCache = new ConcurrentHashMap<>();
+    private long lastStatsCacheRefresh = 0;
+
     public AuctionManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
         this.dao = new AuctionDAO(plugin);
@@ -761,5 +765,47 @@ public class AuctionManager {
             formatted.append(word.charAt(0)).append(word.substring(1).toLowerCase());
         }
         return formatted.toString();
+    }
+
+    // -- Price History & Statistics --
+
+    /**
+     * Returns the cached average price for a material. Refreshes cache if stale.
+     */
+    public double getAveragePrice(String materialName) {
+        refreshStatsCacheIfNeeded();
+        return avgPriceCache.getOrDefault(materialName.toUpperCase(), 0.0);
+    }
+
+    /**
+     * Refreshes the average price cache if it has expired.
+     */
+    private void refreshStatsCacheIfNeeded() {
+        long cacheDuration = plugin.getConfigManager().getStatsCacheDurationMinutes() * 60000L;
+        if (System.currentTimeMillis() - lastStatsCacheRefresh < cacheDuration) return;
+
+        refreshStatsCache();
+    }
+
+    /**
+     * Forces a refresh of the statistics cache.
+     */
+    public void refreshStatsCache() {
+        avgPriceCache.clear();
+
+        // Get all active auction materials and compute avg from transaction history
+        Set<String> materials = new HashSet<>();
+        for (AuctionItem item : activeAuctions.values()) {
+            materials.add(item.getItemStack().getType().name());
+        }
+
+        for (String material : materials) {
+            double avg = dao.getAveragePrice(material, 7);
+            if (avg > 0) {
+                avgPriceCache.put(material.toUpperCase(), avg);
+            }
+        }
+
+        lastStatsCacheRefresh = System.currentTimeMillis();
     }
 }

@@ -4,8 +4,10 @@ import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.gui.AdminGui;
+import net.nexuby.nexauctionhouse.gui.AdminStatsGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.FavoritesGui;
+import net.nexuby.nexauctionhouse.gui.HistoryGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
@@ -59,6 +61,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             case "sell" -> handleSell(sender, args);
             case "search" -> handleSearch(sender, args);
             case "favorites" -> handleFavorites(sender);
+            case "history" -> handleHistory(sender, args);
             case "expired" -> handleExpired(sender);
             case "admin" -> handleAdmin(sender, args);
             case "reload" -> handleReload(sender);
@@ -194,6 +197,35 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void handleHistory(CommandSender sender, String[] args) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.use")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        // /ah history <player> - admin view
+        if (args.length >= 2 && player.hasPermission("nexauctions.admin")) {
+            String targetName = args[1];
+            @SuppressWarnings("deprecation")
+            org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+            if (!target.hasPlayedBefore() && !target.isOnline()) {
+                player.sendMessage(lang.prefixed("history.player-not-found"));
+                return;
+            }
+            new HistoryGui(plugin, player, target.getUniqueId(), target.getName()).open();
+            return;
+        }
+
+        new HistoryGui(plugin, player).open();
+    }
+
     private void handleExpired(CommandSender sender) {
         LangManager lang = plugin.getLangManager();
 
@@ -324,16 +356,12 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(lang.prefixed("admin.cleared", "{count}", String.valueOf(count)));
             }
             case "stats" -> {
-                // /ah admin stats - show auction statistics
-                AuctionManager manager = plugin.getAuctionManager();
-                int active = manager.getActiveAuctionsList().size();
-                double totalValue = 0;
-                for (AuctionItem item : manager.getActiveAuctionsList()) {
-                    totalValue += item.getPrice();
+                // /ah admin stats - open statistics GUI (player only)
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(lang.prefixed("general.player-only"));
+                    return;
                 }
-                sender.sendMessage(lang.prefixed("admin.stats-active", "{count}", String.valueOf(active)));
-                sender.sendMessage(lang.prefixed("admin.stats-value",
-                        "{value}", plugin.getEconomyManager().format(totalValue)));
+                new AdminStatsGui(plugin, player).open();
             }
             default -> sender.sendMessage(lang.prefixed("admin.help"));
         }
@@ -359,6 +387,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             completions.add("sell");
             completions.add("search");
             completions.add("favorites");
+            completions.add("history");
             completions.add("expired");
 
             if (sender.hasPermission("nexauctions.admin")) {
@@ -379,6 +408,17 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("search")) {
             return Arrays.asList("<keyword>");
+        }
+
+        // /ah history <player> tab completion for admins
+        if (args.length == 2 && args[0].equalsIgnoreCase("history") && sender.hasPermission("nexauctions.admin")) {
+            List<String> names = new ArrayList<>();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                names.add(p.getName());
+            }
+            String input = args[1].toLowerCase();
+            names.removeIf(s -> !s.toLowerCase().startsWith(input));
+            return names;
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("sell")) {

@@ -99,6 +99,13 @@ buttons:
       - ""
       - "<yellow>Shift+Click <gray>items to favorite."
 
+  history:
+    slot: 39
+    material: WRITABLE_BOOK
+    name: "<yellow>Transaction History"
+    lore:
+      - "<gray>View your buy/sell history."
+
   close:
     slot: 53
     material: BARRIER
@@ -129,7 +136,6 @@ filler:
     - 35
     - 36
     - 37
-    - 39
     - 40
     - 41
     - 42
@@ -142,6 +148,7 @@ auction-item-lore:
   - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
   - "<gray>Seller: <white>{seller}"
   - "<gray>Price: <green>{price}"
+  - "<gray>Avg Market Price: <aqua>{avg_price}"
   - "<gray>Expires in: <yellow>{time}"
   - ""
   - "<yellow>Click to purchase!"
@@ -154,6 +161,7 @@ bid-item-lore:
   - "<gold>[AUCTION]"
   - "<gray>Seller: <white>{seller}"
   - "<gray>Starting Price: <green>{price}"
+  - "<gray>Avg Market Price: <aqua>{avg_price}"
   - "<gray>Current Bid: <yellow>{current_bid}"
   - "<gray>Highest Bidder: <white>{bidder}"
   - "<gray>Expires in: <yellow>{time}"

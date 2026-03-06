@@ -7,6 +7,7 @@ import net.nexuby.nexauctionhouse.model.AuctionType;
 import net.nexuby.nexauctionhouse.model.Bid;
 import net.nexuby.nexauctionhouse.model.ExpiredItem;
 import net.nexuby.nexauctionhouse.model.PendingRevenue;
+import net.nexuby.nexauctionhouse.model.TransactionLog;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
 import org.bukkit.inventory.ItemStack;
 
@@ -611,5 +612,207 @@ public class AuctionDAO {
         double amount = rs.getDouble("amount");
         long timestamp = rs.getLong("timestamp");
         return new Bid(id, auctionId, bidderUuid, bidderName, amount, timestamp);
+    }
+
+    // -- Transaction history queries --
+
+    /**
+     * Gets recent transaction logs involving a specific player (as seller or buyer).
+     * Only returns SALE, AUCTION_COMPLETE actions for history display.
+     */
+    public List<TransactionLog> getPlayerHistory(UUID playerUuid, int limit) {
+        List<TransactionLog> logs = new ArrayList<>();
+        String sql = "SELECT * FROM transaction_logs WHERE (seller_uuid = ? OR buyer_uuid = ?) "
+                + "AND action IN ('SALE', 'AUCTION_COMPLETE') ORDER BY timestamp DESC LIMIT ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            stmt.setString(2, playerUuid.toString());
+            stmt.setInt(3, limit);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                TransactionLog log = parseTransactionLog(rs);
+                if (log != null) logs.add(log);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load player history", e);
+        }
+        return logs;
+    }
+
+    /**
+     * Gets the total number of successful sales by a player.
+     */
+    public int getPlayerTotalSales(UUID playerUuid) {
+        String sql = "SELECT COUNT(*) FROM transaction_logs WHERE seller_uuid = ? AND action IN ('SALE', 'AUCTION_COMPLETE')";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to count player sales", e);
+        }
+        return 0;
+    }
+
+    /**
+     * Gets the total revenue earned by a player from sales.
+     */
+    public double getPlayerTotalRevenue(UUID playerUuid) {
+        String sql = "SELECT COALESCE(SUM(price - tax_amount), 0) FROM transaction_logs WHERE seller_uuid = ? AND action IN ('SALE', 'AUCTION_COMPLETE')";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getDouble(1);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to sum player revenue", e);
+        }
+        return 0;
+    }
+
+    /**
+     * Gets the total number of purchases made by a player.
+     */
+    public int getPlayerTotalPurchases(UUID playerUuid) {
+        String sql = "SELECT COUNT(*) FROM transaction_logs WHERE buyer_uuid = ? AND action IN ('SALE', 'AUCTION_COMPLETE')";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to count player purchases", e);
+        }
+        return 0;
+    }
+
+    /**
+     * Gets the average sale price for a specific material over the last N days.
+     */
+    public double getAveragePrice(String materialName, int days) {
+        long since = System.currentTimeMillis() - (days * 86400000L);
+        String sql = "SELECT t.price, t.item_data FROM transaction_logs t "
+                + "WHERE t.action IN ('SALE', 'AUCTION_COMPLETE') AND t.timestamp > ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setLong(1, since);
+            ResultSet rs = stmt.executeQuery();
+
+            double total = 0;
+            int count = 0;
+            while (rs.next()) {
+                ItemStack item = ItemSerializer.fromBase64(rs.getString("item_data"));
+                if (item != null && item.getType().name().equalsIgnoreCase(materialName)) {
+                    total += rs.getDouble("price");
+                    count++;
+                }
+            }
+            return count > 0 ? Math.round(total / count * 100.0) / 100.0 : 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to calculate average price for " + materialName, e);
+        }
+        return 0;
+    }
+
+    // -- Admin statistics queries --
+
+    /**
+     * Gets total sale count in the last N hours.
+     */
+    public int getSaleCountSince(long since) {
+        String sql = "SELECT COUNT(*) FROM transaction_logs WHERE action IN ('SALE', 'AUCTION_COMPLETE') AND timestamp > ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setLong(1, since);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to count sales since timestamp", e);
+        }
+        return 0;
+    }
+
+    /**
+     * Gets total revenue volume since a given timestamp.
+     */
+    public double getTotalVolumeSince(long since) {
+        String sql = "SELECT COALESCE(SUM(price), 0) FROM transaction_logs WHERE action IN ('SALE', 'AUCTION_COMPLETE') AND timestamp > ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setLong(1, since);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getDouble(1);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to sum sales volume", e);
+        }
+        return 0;
+    }
+
+    /**
+     * Gets the most expensive sale ever recorded.
+     */
+    public TransactionLog getMostExpensiveSale() {
+        String sql = "SELECT * FROM transaction_logs WHERE action IN ('SALE', 'AUCTION_COMPLETE') ORDER BY price DESC LIMIT 1";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) return parseTransactionLog(rs);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to get most expensive sale", e);
+        }
+        return null;
+    }
+
+    /**
+     * Gets top sellers by total sales count.
+     */
+    public List<String[]> getTopSellers(int limit) {
+        List<String[]> results = new ArrayList<>();
+        String sql = "SELECT seller_uuid, COUNT(*) as sale_count, SUM(price) as total_value "
+                + "FROM transaction_logs WHERE action IN ('SALE', 'AUCTION_COMPLETE') "
+                + "GROUP BY seller_uuid ORDER BY sale_count DESC LIMIT ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, limit);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                String uuid = rs.getString("seller_uuid");
+                String count = String.valueOf(rs.getInt("sale_count"));
+                String value = String.valueOf(rs.getDouble("total_value"));
+                results.add(new String[]{uuid, count, value});
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to get top sellers", e);
+        }
+        return results;
+    }
+
+    private TransactionLog parseTransactionLog(ResultSet rs) throws SQLException {
+        try {
+            int id = rs.getInt("id");
+            int auctionId = rs.getInt("auction_id");
+            UUID sellerUuid = UUID.fromString(rs.getString("seller_uuid"));
+            String buyerStr = rs.getString("buyer_uuid");
+            UUID buyerUuid = (buyerStr != null && !buyerStr.isEmpty()) ? UUID.fromString(buyerStr) : null;
+            ItemStack itemStack = ItemSerializer.fromBase64(rs.getString("item_data"));
+            double price = rs.getDouble("price");
+            double taxAmount = rs.getDouble("tax_amount");
+            String action = rs.getString("action");
+            long timestamp = rs.getLong("timestamp");
+
+            if (itemStack == null) {
+                plugin.getLogger().warning("Skipping transaction log #" + id + " - item data is corrupted.");
+                return null;
+            }
+
+            return new TransactionLog(id, auctionId, sellerUuid, buyerUuid, itemStack, price, taxAmount, action, timestamp);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Skipping transaction log - invalid data: " + e.getMessage());
+            return null;
+        }
     }
 }

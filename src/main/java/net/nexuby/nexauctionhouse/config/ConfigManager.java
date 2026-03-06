@@ -116,6 +116,16 @@ public class ConfigManager {
         return config.getInt("favorites.max-favorites", 50);
     }
 
+    // -- Statistics settings --
+
+    public int getStatsCacheDurationMinutes() {
+        return config.getInt("stats.cache-duration-minutes", 10);
+    }
+
+    public int getHistoryLimit() {
+        return config.getInt("stats.history-limit", 50);
+    }
+
     // -- Blacklist --
 
     public List<String> getBlacklistedMaterials() {

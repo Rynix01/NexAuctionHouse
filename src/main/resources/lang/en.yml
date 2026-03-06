@@ -102,6 +102,11 @@ favorites:
   notify-cancelled: "<light_purple>★ <yellow>A favorited item <yellow>{item} <yellow>by <yellow>{seller} <yellow>has been cancelled."
   notify-expired: "<light_purple>★ <gray>A favorited item <yellow>{item} <gray>by <yellow>{seller} <gray>has expired."
 
+# Transaction History messages
+history:
+  empty: "<yellow>No transaction history found."
+  player-not-found: "<red>Player not found or has never played on this server."
+
 # Time format
 time:
   hours: "{value}h"

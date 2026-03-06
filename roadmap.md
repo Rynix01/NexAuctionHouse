@@ -112,17 +112,17 @@
 - [x] Favori listesi PaginatedGui desteği
 
 ## Aşama 11: Fiyat Geçmişi ve İstatistikler
-- [ ] /ah history komutu → kişisel işlem geçmişi GUI'si (son 50 alış/satış)
-- [ ] /ah history <oyuncu> (admin yetkisi) → belirli oyuncunun geçmişi
-- [ ] Materyal bazlı ortalama fiyat hesaplama (son 7 gün)
-- [ ] GUI'de item hover'ında "Ortalama Piyasa Fiyatı" bilgisi
-- [ ] Yeni PlaceholderAPI placeholder'ları:
-  - [ ] %nexauction_player_total_sales% (toplam satış sayısı)
-  - [ ] %nexauction_player_total_revenue% (toplam kazanç)
-  - [ ] %nexauction_player_total_purchases% (toplam alış)
-  - [ ] %nexauction_avg_price_<MATERIAL>% (materyal bazlı ortalama)
-- [ ] Admin istatistik GUI'si (en çok satan oyuncular, en pahalı satışlar, günlük hacim)
-- [ ] İstatistik verileri cache sistemi (performans optimizasyonu)
+- [x] /ah history komutu → kişisel işlem geçmişi GUI'si (son 50 alış/satış)
+- [x] /ah history <oyuncu> (admin yetkisi) → belirli oyuncunun geçmişi
+- [x] Materyal bazlı ortalama fiyat hesaplama (son 7 gün)
+- [x] GUI'de item hover'ında "Ortalama Piyasa Fiyatı" bilgisi
+- [x] Yeni PlaceholderAPI placeholder'ları:
+  - [x] %nexauction_player_total_sales% (toplam satış sayısı)
+  - [x] %nexauction_player_total_revenue% (toplam kazanç)
+  - [x] %nexauction_player_total_purchases% (toplam alış)
+  - [x] %nexauction_avg_price_<MATERIAL>% (materyal bazlı ortalama)
+- [x] Admin istatistik GUI'si (en çok satan oyuncular, en pahalı satışlar, günlük hacim)
+- [x] İstatistik verileri cache sistemi (performans optimizasyonu)
 
 ## Aşama 12: Eşya Önizleme Sistemi
 - [ ] GUI'de eşyaya sağ tıkla → ayrı Preview GUI açılması
