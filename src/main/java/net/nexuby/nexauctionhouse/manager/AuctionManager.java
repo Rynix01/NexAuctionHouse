@@ -205,10 +205,13 @@ public class AuctionManager {
 
         // Notify seller if online
         if (seller != null && seller.isOnline()) {
-            seller.sendMessage(plugin.getLangManager().prefixed("auction.sold",
-                    "{item}", getItemName(item.getItemStack()),
-                    "{price}", plugin.getEconomyManager().format(item.getPrice(), currency),
-                    "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
+            if (plugin.getNotificationManager().canReceiveSaleNotification(seller.getUniqueId())) {
+                seller.sendMessage(plugin.getLangManager().prefixed("auction.sold",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{price}", plugin.getEconomyManager().format(item.getPrice(), currency),
+                        "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
+                plugin.getNotificationManager().playSaleSound(seller);
+            }
         }
 
         // Discord notification
@@ -272,10 +275,13 @@ public class AuctionManager {
             Player previousBidder = Bukkit.getPlayer(previousBidderUuid);
             if (previousBidder != null && previousBidder.isOnline()) {
                 plugin.getEconomyManager().deposit(previousBidder, previousBidAmount, currency);
-                previousBidder.sendMessage(plugin.getLangManager().prefixed("bid.outbid",
-                        "{item}", getItemName(item.getItemStack()),
-                        "{amount}", plugin.getEconomyManager().format(amount, currency),
-                        "{bidder}", bidder.getName()));
+                if (plugin.getNotificationManager().canReceiveBidNotification(previousBidderUuid)) {
+                    previousBidder.sendMessage(plugin.getLangManager().prefixed("bid.outbid",
+                            "{item}", getItemName(item.getItemStack()),
+                            "{amount}", plugin.getEconomyManager().format(amount, currency),
+                            "{bidder}", bidder.getName()));
+                    plugin.getNotificationManager().playBidSound(previousBidder);
+                }
             } else {
                 // Queue refund for offline player
                 dao.insertPendingRevenue(previousBidderUuid, item.getHighestBidderName(), previousBidAmount,
@@ -304,10 +310,13 @@ public class AuctionManager {
         // Notify seller if online
         Player seller = Bukkit.getPlayer(item.getSellerUuid());
         if (seller != null && seller.isOnline()) {
-            seller.sendMessage(plugin.getLangManager().prefixed("bid.new-bid-seller",
-                    "{item}", getItemName(item.getItemStack()),
-                    "{bidder}", bidder.getName(),
-                    "{amount}", plugin.getEconomyManager().format(amount, currency)));
+            if (plugin.getNotificationManager().canReceiveBidNotification(seller.getUniqueId())) {
+                seller.sendMessage(plugin.getLangManager().prefixed("bid.new-bid-seller",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{bidder}", bidder.getName(),
+                        "{amount}", plugin.getEconomyManager().format(amount, currency)));
+                plugin.getNotificationManager().playBidSound(seller);
+            }
         }
 
         // Discord notification
@@ -495,11 +504,14 @@ public class AuctionManager {
         Player seller = Bukkit.getPlayer(item.getSellerUuid());
         if (seller != null && seller.isOnline()) {
             plugin.getEconomyManager().deposit(seller, sellerReceives, currency);
-            seller.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-seller",
-                    "{item}", getItemName(item.getItemStack()),
-                    "{winner}", item.getHighestBidderName(),
-                    "{price}", plugin.getEconomyManager().format(salePrice, currency),
-                    "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
+            if (plugin.getNotificationManager().canReceiveSaleNotification(seller.getUniqueId())) {
+                seller.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-seller",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{winner}", item.getHighestBidderName(),
+                        "{price}", plugin.getEconomyManager().format(salePrice, currency),
+                        "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
+                plugin.getNotificationManager().playSaleSound(seller);
+            }
         } else {
             dao.insertPendingRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives,
                     currency, item.getId(), getItemName(item.getItemStack()), item.getHighestBidderName());
@@ -509,9 +521,12 @@ public class AuctionManager {
         Player winner = Bukkit.getPlayer(item.getHighestBidderUuid());
         if (winner != null && winner.isOnline() && winner.getInventory().firstEmpty() != -1) {
             winner.getInventory().addItem(item.getItemStack());
-            winner.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-buyer",
-                    "{item}", getItemName(item.getItemStack()),
-                    "{price}", plugin.getEconomyManager().format(salePrice, currency)));
+            if (plugin.getNotificationManager().canReceiveSaleNotification(winner.getUniqueId())) {
+                winner.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-buyer",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{price}", plugin.getEconomyManager().format(salePrice, currency)));
+                plugin.getNotificationManager().playSaleSound(winner);
+            }
         } else {
             // Winner offline or full inventory - store for later pickup
             dao.insertExpiredItem(item.getHighestBidderUuid(), item.getHighestBidderName(),
@@ -724,6 +739,9 @@ public class AuctionManager {
             // Don't notify the seller
             if (watcherUuid.equals(item.getSellerUuid())) continue;
 
+            // Check if this player wants favorite notifications
+            if (!plugin.getNotificationManager().canReceiveFavoriteNotification(watcherUuid)) continue;
+
             Player watcher = Bukkit.getPlayer(watcherUuid);
             if (watcher != null && watcher.isOnline()) {
                 if ("sold".equals(reason)) {
@@ -739,6 +757,7 @@ public class AuctionManager {
                             "{item}", getItemName(item.getItemStack()),
                             "{seller}", item.getSellerName()));
                 }
+                plugin.getNotificationManager().playFavoriteSound(watcher);
             }
         }
         // Clean up favorites for this auction

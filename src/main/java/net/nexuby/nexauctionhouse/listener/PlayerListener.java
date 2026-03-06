@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
@@ -31,6 +32,9 @@ public class PlayerListener implements Listener {
             AuctionDAO dao = plugin.getAuctionManager().getDao();
             CursorProtectionManager cpm = plugin.getCursorProtectionManager();
 
+            boolean canReceiveLogin = plugin.getNotificationManager().canReceiveLoginNotification(player.getUniqueId());
+            boolean hasSounds = plugin.getNotificationManager().hasSoundEnabled(player.getUniqueId());
+
             // Process rescued items (crash/disconnect protection)
             List<CursorProtectionManager.RescuedItem> rescuedItems = cpm.getRescuedItems(player.getUniqueId());
             if (!rescuedItems.isEmpty()) {
@@ -52,13 +56,18 @@ public class PlayerListener implements Listener {
                         }
                     }
 
-                    if (returned > 0) {
-                        player.sendMessage(plugin.getLangManager().prefixed("auction.rescued-items",
-                                "{amount}", String.valueOf(returned)));
-                    }
-                    if (stored > 0) {
-                        player.sendMessage(plugin.getLangManager().prefixed("auction.rescued-items-stored",
-                                "{amount}", String.valueOf(stored)));
+                    if (canReceiveLogin) {
+                        if (returned > 0) {
+                            player.sendMessage(plugin.getLangManager().prefixed("auction.rescued-items",
+                                    "{amount}", String.valueOf(returned)));
+                        }
+                        if (stored > 0) {
+                            player.sendMessage(plugin.getLangManager().prefixed("auction.rescued-items-stored",
+                                    "{amount}", String.valueOf(stored)));
+                        }
+                        if (returned > 0 && hasSounds) {
+                            plugin.getNotificationManager().playRescuedSound(player);
+                        }
                     }
                 });
 
@@ -84,22 +93,27 @@ public class PlayerListener implements Listener {
                     }
 
                     // Send notifications
-                    if (pendingRevenues.size() == 1) {
-                        PendingRevenue revenue = pendingRevenues.get(0);
-                        player.sendMessage(plugin.getLangManager().prefixed("auction.offline-revenue-single",
-                                "{item}", revenue.getItemName(),
-                                "{buyer}", revenue.getBuyerName(),
-                                "{amount}", plugin.getEconomyManager().format(revenue.getAmount(), revenue.getCurrency())));
-                    } else {
-                        // Multiple sales - send summary
-                        StringBuilder details = new StringBuilder();
-                        for (Map.Entry<String, Double> entry : totalByCurrency.entrySet()) {
-                            if (!details.isEmpty()) details.append(", ");
-                            details.append(plugin.getEconomyManager().format(entry.getValue(), entry.getKey()));
+                    if (canReceiveLogin) {
+                        if (pendingRevenues.size() == 1) {
+                            PendingRevenue revenue = pendingRevenues.get(0);
+                            player.sendMessage(plugin.getLangManager().prefixed("auction.offline-revenue-single",
+                                    "{item}", revenue.getItemName(),
+                                    "{buyer}", revenue.getBuyerName(),
+                                    "{amount}", plugin.getEconomyManager().format(revenue.getAmount(), revenue.getCurrency())));
+                        } else {
+                            // Multiple sales - send summary
+                            StringBuilder details = new StringBuilder();
+                            for (Map.Entry<String, Double> entry : totalByCurrency.entrySet()) {
+                                if (!details.isEmpty()) details.append(", ");
+                                details.append(plugin.getEconomyManager().format(entry.getValue(), entry.getKey()));
+                            }
+                            player.sendMessage(plugin.getLangManager().prefixed("auction.offline-revenue-summary",
+                                    "{count}", String.valueOf(pendingRevenues.size()),
+                                    "{total}", details.toString()));
                         }
-                        player.sendMessage(plugin.getLangManager().prefixed("auction.offline-revenue-summary",
-                                "{count}", String.valueOf(pendingRevenues.size()),
-                                "{total}", details.toString()));
+                        if (hasSounds) {
+                            plugin.getNotificationManager().playSaleSound(player);
+                        }
                     }
                 });
 
@@ -109,7 +123,7 @@ public class PlayerListener implements Listener {
 
             // Notify about uncollected expired items
             List<ExpiredItem> expiredItems = dao.getExpiredItems(player.getUniqueId());
-            if (!expiredItems.isEmpty()) {
+            if (!expiredItems.isEmpty() && canReceiveLogin) {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (player.isOnline()) {
                         player.sendMessage(plugin.getLangManager().prefixed("auction.offline-items-waiting",
@@ -118,5 +132,10 @@ public class PlayerListener implements Listener {
                 });
             }
         }, 40L); // 2 second delay after join
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        plugin.getNotificationManager().unloadSettings(event.getPlayer().getUniqueId());
     }
 }

@@ -151,13 +151,25 @@ public class DatabaseManager {
                 + "UNIQUE(player_uuid, auction_id)"
                 + ")";
 
+        // Player notification settings
+        String settingsTable = "CREATE TABLE IF NOT EXISTS player_settings ("
+                + "player_uuid VARCHAR(36) PRIMARY KEY,"
+                + "notification_sale BOOLEAN NOT NULL DEFAULT 1,"
+                + "notification_bid BOOLEAN NOT NULL DEFAULT 1,"
+                + "sound_enabled BOOLEAN NOT NULL DEFAULT 1,"
+                + "notification_login BOOLEAN NOT NULL DEFAULT 1,"
+                + "notification_favorite BOOLEAN NOT NULL DEFAULT 1,"
+                + "updated_at BIGINT NOT NULL"
+                + ")";
+
         try (PreparedStatement stmt1 = connection.prepareStatement(auctionsTable);
              PreparedStatement stmt2 = connection.prepareStatement(expiredTable);
              PreparedStatement stmt3 = connection.prepareStatement(logsTable);
              PreparedStatement stmt4 = connection.prepareStatement(revenueTable);
              PreparedStatement stmt5 = connection.prepareStatement(rescuedTable);
              PreparedStatement stmt6 = connection.prepareStatement(bidsTable);
-             PreparedStatement stmt7 = connection.prepareStatement(favoritesTable)) {
+             PreparedStatement stmt7 = connection.prepareStatement(favoritesTable);
+             PreparedStatement stmt8 = connection.prepareStatement(settingsTable)) {
             stmt1.executeUpdate();
             stmt2.executeUpdate();
             stmt3.executeUpdate();
@@ -165,6 +177,7 @@ public class DatabaseManager {
             stmt5.executeUpdate();
             stmt6.executeUpdate();
             stmt7.executeUpdate();
+            stmt8.executeUpdate();
         }
     }
 

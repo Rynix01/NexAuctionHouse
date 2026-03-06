@@ -45,6 +45,7 @@ public class MainMenu extends PaginatedGui {
     private int sortSlot = -1;
     private int favoritesSlot = -1;
     private int historySlot = -1;
+    private int settingsSlot = -1;
 
     // Maps item slot index -> auction id for click handling
     private final List<Integer> auctionIds = new ArrayList<>();
@@ -312,6 +313,14 @@ public class MainMenu extends PaginatedGui {
                 inventory.setItem(historySlot, createButton(buttons.getConfigurationSection("history")));
             }
         }
+
+        // Settings button
+        if (buttons.contains("settings")) {
+            settingsSlot = buttons.getInt("settings.slot", -1);
+            if (settingsSlot >= 0) {
+                inventory.setItem(settingsSlot, createButton(buttons.getConfigurationSection("settings")));
+            }
+        }
     }
 
     @Override
@@ -334,6 +343,8 @@ public class MainMenu extends PaginatedGui {
             new FavoritesGui(plugin, viewer).open();
         } else if (slot == historySlot) {
             new HistoryGui(plugin, viewer).open();
+        } else if (slot == settingsSlot) {
+            new NotificationSettingsGui(plugin, viewer, () -> new MainMenu(plugin, viewer).open()).open();
         }
     }
 

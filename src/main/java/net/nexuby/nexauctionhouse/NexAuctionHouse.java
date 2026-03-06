@@ -13,6 +13,7 @@ import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
+import net.nexuby.nexauctionhouse.manager.NotificationManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -28,6 +29,7 @@ public final class NexAuctionHouse extends JavaPlugin {
     private AuctionManager auctionManager;
     private ItemHookManager itemHookManager;
     private CursorProtectionManager cursorProtectionManager;
+    private NotificationManager notificationManager;
 
     @Override
     public void onEnable() {
@@ -71,6 +73,9 @@ public final class NexAuctionHouse extends JavaPlugin {
         // Initialize auction manager
         this.auctionManager = new AuctionManager(this);
         auctionManager.loadActiveAuctions();
+
+        // Initialize notification manager
+        this.notificationManager = new NotificationManager(this);
 
         // Register commands
         AuctionCommand auctionCommand = new AuctionCommand(this);
@@ -143,6 +148,10 @@ public final class NexAuctionHouse extends JavaPlugin {
 
     public CursorProtectionManager getCursorProtectionManager() {
         return cursorProtectionManager;
+    }
+
+    public NotificationManager getNotificationManager() {
+        return notificationManager;
     }
 
     /**

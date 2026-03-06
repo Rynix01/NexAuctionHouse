@@ -6,6 +6,7 @@ import net.nexuby.nexauctionhouse.model.AuctionStatus;
 import net.nexuby.nexauctionhouse.model.AuctionType;
 import net.nexuby.nexauctionhouse.model.Bid;
 import net.nexuby.nexauctionhouse.model.ExpiredItem;
+import net.nexuby.nexauctionhouse.model.NotificationSettings;
 import net.nexuby.nexauctionhouse.model.PendingRevenue;
 import net.nexuby.nexauctionhouse.model.TransactionLog;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
@@ -813,6 +814,81 @@ public class AuctionDAO {
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Skipping transaction log - invalid data: " + e.getMessage());
             return null;
+        }
+    }
+
+    // -- Notification Settings --
+
+    public NotificationSettings getNotificationSettings(UUID playerUuid) {
+        String sql = "SELECT * FROM player_settings WHERE player_uuid = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new NotificationSettings(
+                        playerUuid,
+                        rs.getBoolean("notification_sale"),
+                        rs.getBoolean("notification_bid"),
+                        rs.getBoolean("sound_enabled"),
+                        rs.getBoolean("notification_login"),
+                        rs.getBoolean("notification_favorite")
+                );
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load notification settings", e);
+        }
+        return null;
+    }
+
+    public void saveNotificationSettings(NotificationSettings settings) {
+        String sql = "INSERT INTO player_settings (player_uuid, notification_sale, notification_bid, sound_enabled, notification_login, notification_favorite, updated_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                + "ON CONFLICT(player_uuid) DO UPDATE SET "
+                + "notification_sale = excluded.notification_sale, "
+                + "notification_bid = excluded.notification_bid, "
+                + "sound_enabled = excluded.sound_enabled, "
+                + "notification_login = excluded.notification_login, "
+                + "notification_favorite = excluded.notification_favorite, "
+                + "updated_at = excluded.updated_at";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, settings.getPlayerUuid().toString());
+            stmt.setBoolean(2, settings.isSaleNotifications());
+            stmt.setBoolean(3, settings.isBidNotifications());
+            stmt.setBoolean(4, settings.isSoundEffects());
+            stmt.setBoolean(5, settings.isLoginNotifications());
+            stmt.setBoolean(6, settings.isFavoriteNotifications());
+            stmt.setLong(7, System.currentTimeMillis());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to save notification settings", e);
+        }
+    }
+
+    public void saveNotificationSettingsMySQL(NotificationSettings settings) {
+        String sql = "INSERT INTO player_settings (player_uuid, notification_sale, notification_bid, sound_enabled, notification_login, notification_favorite, updated_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE "
+                + "notification_sale = VALUES(notification_sale), "
+                + "notification_bid = VALUES(notification_bid), "
+                + "sound_enabled = VALUES(sound_enabled), "
+                + "notification_login = VALUES(notification_login), "
+                + "notification_favorite = VALUES(notification_favorite), "
+                + "updated_at = VALUES(updated_at)";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, settings.getPlayerUuid().toString());
+            stmt.setBoolean(2, settings.isSaleNotifications());
+            stmt.setBoolean(3, settings.isBidNotifications());
+            stmt.setBoolean(4, settings.isSoundEffects());
+            stmt.setBoolean(5, settings.isLoginNotifications());
+            stmt.setBoolean(6, settings.isFavoriteNotifications());
+            stmt.setLong(7, System.currentTimeMillis());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to save notification settings (MySQL)", e);
         }
     }
 }

@@ -9,6 +9,7 @@ import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.FavoritesGui;
 import net.nexuby.nexauctionhouse.gui.HistoryGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
+import net.nexuby.nexauctionhouse.gui.NotificationSettingsGui;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import org.bukkit.Bukkit;
@@ -62,6 +63,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             case "search" -> handleSearch(sender, args);
             case "favorites" -> handleFavorites(sender);
             case "history" -> handleHistory(sender, args);
+            case "notifications" -> handleNotifications(sender);
             case "expired" -> handleExpired(sender);
             case "admin" -> handleAdmin(sender, args);
             case "reload" -> handleReload(sender);
@@ -258,6 +260,22 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         new FavoritesGui(plugin, player).open();
     }
 
+    private void handleNotifications(CommandSender sender) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.use")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        new NotificationSettingsGui(plugin, player, () -> new MainMenu(plugin, player).open()).open();
+    }
+
     private void handleSearch(CommandSender sender, String[] args) {
         LangManager lang = plugin.getLangManager();
 
@@ -388,6 +406,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             completions.add("search");
             completions.add("favorites");
             completions.add("history");
+            completions.add("notifications");
             completions.add("expired");
 
             if (sender.hasPermission("nexauctions.admin")) {

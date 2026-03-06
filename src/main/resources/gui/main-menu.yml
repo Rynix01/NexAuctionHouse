@@ -106,6 +106,14 @@ buttons:
     lore:
       - "<gray>View your buy/sell history."
 
+  settings:
+    slot: 40
+    material: COMPARATOR
+    name: "<gold>Notification Settings"
+    lore:
+      - "<gray>Configure your notification"
+      - "<gray>preferences and sounds."
+
   close:
     slot: 53
     material: BARRIER
@@ -136,7 +144,6 @@ filler:
     - 35
     - 36
     - 37
-    - 40
     - 41
     - 42
     - 43

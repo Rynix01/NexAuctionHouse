@@ -140,3 +140,19 @@ discord:
     listing: 3447003    # blue
     cancel: 15548997    # red
     admin: 16776960     # yellow
+
+# Notification preferences
+notifications:
+  # Default preference states for new players (can be overridden per player)
+  defaults:
+    sale-notifications: true
+    bid-notifications: true
+    sound-effects: true
+    login-notifications: true
+    favorite-notifications: true
+  # Sound effects played for various events
+  sounds:
+    sale: "ENTITY_EXPERIENCE_ORB_PICKUP"
+    bid: "ENTITY_ARROW_HIT_PLAYER"
+    favorite: "BLOCK_NOTE_BLOCK_CHIME"
+    rescued: "ENTITY_ITEM_PICKUP"

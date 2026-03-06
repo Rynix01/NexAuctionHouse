@@ -134,17 +134,17 @@
 - [x] Önizleme GUI'sinden geri dönüş (önceki sayfaya/menüye)
 
 ## Aşama 13: Bildirim Tercihleri
-- [ ] Veritabanında player_settings tablosu
-- [ ] /ah notifications komutu veya GUI'de ayarlar butonu
-- [ ] Oyuncu bazlı bildirim tercihleri:
-  - [ ] Satış bildirimi (Açık/Kapalı)
-  - [ ] Teklif bildirimi (Açık/Kapalı)
-  - [ ] Ses efektleri (Açık/Kapalı)
-  - [ ] Giriş bildirimi (Açık/Kapalı)
-  - [ ] Favori bildirimi (Açık/Kapalı)
-- [ ] Ses efektleri: satış, teklif, eşya kurtarma, favori satış
-- [ ] Bildirim tercih GUI'si (toggle butonları ile)
-- [ ] Varsayılan tercihlerin config'den ayarlanabilmesi
+- [x] Veritabanında player_settings tablosu
+- [x] /ah notifications komutu veya GUI'de ayarlar butonu
+- [x] Oyuncu bazlı bildirim tercihleri:
+  - [x] Satış bildirimi (Açık/Kapalı)
+  - [x] Teklif bildirimi (Açık/Kapalı)
+  - [x] Ses efektleri (Açık/Kapalı)
+  - [x] Giriş bildirimi (Açık/Kapalı)
+  - [x] Favori bildirimi (Açık/Kapalı)
+- [x] Ses efektleri: satış, teklif, eşya kurtarma, favori satış
+- [x] Bildirim tercih GUI'si (toggle butonları ile)
+- [x] Varsayılan tercihlerin config'den ayarlanabilmesi
 
 ## Aşama 14: Otomatik Yenileme (Auto-Relist)
 - [ ] Config: auto-relist.enabled, max-times, cost ayarları

@@ -111,6 +111,17 @@ history:
 preview:
   right-click-hint: "<gray>Right-click to preview item details."
 
+# Notification settings messages
+notifications:
+  toggled: "{setting} <gray>is now {status}<gray>."
+  enabled: "<green>enabled"
+  disabled: "<red>disabled"
+  sale: "<yellow>Sale Notifications"
+  bid: "<aqua>Bid Notifications"
+  sound: "<green>Sound Effects"
+  login: "<white>Login Notifications"
+  favorite: "<light_purple>Favorite Notifications"
+
 # Time format
 time:
   hours: "{value}h"

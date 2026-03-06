@@ -111,6 +111,17 @@ history:
 preview:
   right-click-hint: "<gray>Esya detaylarini onizlemek icin sag tiklayin."
 
+# Bildirim ayarlari mesajlari
+notifications:
+  toggled: "{setting} <gray>artik {status}<gray>."
+  enabled: "<green>acik"
+  disabled: "<red>kapali"
+  sale: "<yellow>Satis Bildirimleri"
+  bid: "<aqua>Teklif Bildirimleri"
+  sound: "<green>Ses Efektleri"
+  login: "<white>Giris Bildirimleri"
+  favorite: "<light_purple>Favori Bildirimleri"
+
 # Zaman formati
 time:
   hours: "{value}sa"
