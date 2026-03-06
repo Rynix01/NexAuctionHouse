@@ -29,6 +29,8 @@ auction:
   offline-revenue-single: "<green><yellow>{item} <green>esyaniz <yellow>{buyer}<green> tarafindan satin alindi! Gelir: <yellow>{amount}"
   offline-revenue-summary: "<green>Cevrimdisiyken <yellow>{count} <green>satis yapildi! Toplam: <yellow>{total}"
   offline-items-waiting: "<yellow>Toplanmayi bekleyen <green>{amount} <yellow>esyaniz var. <green>/ah expired <yellow>ile toplayin."
+  rescued-items: "<green>Onceki oturumdan <yellow>{amount} <green>esya kurtarildi ve envanterinize iade edildi."
+  rescued-items-stored: "<yellow>Kurtarilan {amount} esya envanterinize sigmadi. <green>/ah expired <yellow>ile toplayin."
 
   # Hata mesajlari
   no-item-in-hand: "<red>Elinizde bir esya tutmalisiniz."

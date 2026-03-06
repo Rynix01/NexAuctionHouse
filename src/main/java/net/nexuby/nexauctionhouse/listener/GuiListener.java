@@ -2,6 +2,7 @@ package net.nexuby.nexauctionhouse.listener;
 
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.gui.AbstractGui;
+import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -11,12 +12,14 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Handles all inventory interaction events for our custom GUIs.
  * This is the central anti-dupe protection layer:
  * - All clicks inside our GUIs are cancelled by default
  * - Drag events are fully blocked
+ * - Cursor items are persisted to DB for crash protection
  * - Cursor items are handled on close/quit
  */
 public class GuiListener implements Listener {
@@ -45,6 +48,19 @@ public class GuiListener implements Listener {
 
         // Delegate to the specific GUI handler
         gui.handleClick(event);
+
+        // After click processing, track whatever is now on the cursor for crash protection
+        Player player = (Player) event.getWhoClicked();
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            CursorProtectionManager cpm = plugin.getCursorProtectionManager();
+            ItemStack cursor = player.getItemOnCursor();
+            if (cursor != null && !cursor.getType().isAir()) {
+                cpm.trackCursorItem(player.getUniqueId(), player.getName(), cursor);
+            } else {
+                cpm.clearTracked(player.getUniqueId());
+            }
+        }, 1L);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -64,35 +80,49 @@ public class GuiListener implements Listener {
         if (topInventory.getHolder() instanceof AbstractGui gui) {
             gui.onClose();
 
-            // Safety: clear any item stuck on the cursor
             Player player = (Player) event.getPlayer();
+            CursorProtectionManager cpm = plugin.getCursorProtectionManager();
+
+            // Return cursor item to inventory, or save to DB if full
             if (player.getItemOnCursor() != null && !player.getItemOnCursor().getType().isAir()) {
-                // Return cursor item to inventory, or drop if full
-                var remaining = player.getInventory().addItem(player.getItemOnCursor());
+                ItemStack cursorItem = player.getItemOnCursor();
+                var remaining = player.getInventory().addItem(cursorItem);
                 if (!remaining.isEmpty()) {
-                    remaining.values().forEach(item ->
-                            player.getWorld().dropItemNaturally(player.getLocation(), item));
+                    // Inventory full - save to rescued items for later recovery
+                    for (ItemStack leftover : remaining.values()) {
+                        cpm.saveRescuedItem(player.getUniqueId(), player.getName(), leftover, "INVENTORY_FULL");
+                    }
                 }
                 player.setItemOnCursor(null);
             }
+
+            // Clear the crash-protection tracking since we handled the close normally
+            cpm.clearTracked(player.getUniqueId());
         }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        CursorProtectionManager cpm = plugin.getCursorProtectionManager();
 
         // Clean up GUI tracking state
         AbstractGui.removeViewer(player.getUniqueId());
 
-        // Handle cursor item on disconnect (prevents items vanishing)
+        // Handle cursor item on disconnect
         if (player.getItemOnCursor() != null && !player.getItemOnCursor().getType().isAir()) {
-            var remaining = player.getInventory().addItem(player.getItemOnCursor());
+            ItemStack cursorItem = player.getItemOnCursor();
+            var remaining = player.getInventory().addItem(cursorItem);
             if (!remaining.isEmpty()) {
-                remaining.values().forEach(item ->
-                        player.getWorld().dropItemNaturally(player.getLocation(), item));
+                // Inventory full on disconnect - save to DB for recovery on next login
+                for (ItemStack leftover : remaining.values()) {
+                    cpm.saveRescuedItem(player.getUniqueId(), player.getName(), leftover, "DISCONNECT");
+                }
             }
             player.setItemOnCursor(null);
         }
+
+        // Clear tracking - the item is either returned or saved to rescued_items
+        cpm.clearTracked(player.getUniqueId());
     }
 }

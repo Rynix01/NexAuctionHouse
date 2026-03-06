@@ -12,6 +12,7 @@ import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
+import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,6 +27,7 @@ public final class NexAuctionHouse extends JavaPlugin {
     private EconomyManager economyManager;
     private AuctionManager auctionManager;
     private ItemHookManager itemHookManager;
+    private CursorProtectionManager cursorProtectionManager;
 
     @Override
     public void onEnable() {
@@ -63,6 +65,9 @@ public final class NexAuctionHouse extends JavaPlugin {
         this.itemHookManager = new ItemHookManager(this);
         itemHookManager.registerAll();
 
+        // Initialize cursor protection
+        this.cursorProtectionManager = new CursorProtectionManager(this);
+
         // Initialize auction manager
         this.auctionManager = new AuctionManager(this);
         auctionManager.loadActiveAuctions();
@@ -88,6 +93,11 @@ public final class NexAuctionHouse extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Save cursor protection data before shutdown
+        if (cursorProtectionManager != null) {
+            cursorProtectionManager.saveAllTracked();
+        }
+
         if (auctionManager != null) {
             auctionManager.saveAll();
         }
@@ -129,6 +139,10 @@ public final class NexAuctionHouse extends JavaPlugin {
 
     public ItemHookManager getItemHookManager() {
         return itemHookManager;
+    }
+
+    public CursorProtectionManager getCursorProtectionManager() {
+        return cursorProtectionManager;
     }
 
     /**

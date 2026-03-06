@@ -122,14 +122,26 @@ public class DatabaseManager {
                 + "created_at BIGINT NOT NULL"
                 + ")";
 
+        // Rescued items - cursor/crash protection
+        String rescuedTable = "CREATE TABLE IF NOT EXISTS rescued_items ("
+                + "id INTEGER PRIMARY KEY " + (usingSQLite ? "AUTOINCREMENT" : "AUTO_INCREMENT") + ","
+                + "player_uuid VARCHAR(36) NOT NULL,"
+                + "player_name VARCHAR(16) NOT NULL,"
+                + "item_data LONGTEXT NOT NULL,"
+                + "reason VARCHAR(32) NOT NULL,"
+                + "created_at BIGINT NOT NULL"
+                + ")";
+
         try (PreparedStatement stmt1 = connection.prepareStatement(auctionsTable);
              PreparedStatement stmt2 = connection.prepareStatement(expiredTable);
              PreparedStatement stmt3 = connection.prepareStatement(logsTable);
-             PreparedStatement stmt4 = connection.prepareStatement(revenueTable)) {
+             PreparedStatement stmt4 = connection.prepareStatement(revenueTable);
+             PreparedStatement stmt5 = connection.prepareStatement(rescuedTable)) {
             stmt1.executeUpdate();
             stmt2.executeUpdate();
             stmt3.executeUpdate();
             stmt4.executeUpdate();
+            stmt5.executeUpdate();
         }
     }
 

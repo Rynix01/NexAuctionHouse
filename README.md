@@ -21,7 +21,8 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - **Discord Webhooks** — Send listing, sale, and cancellation notifications to a Discord channel
 - **PlaceholderAPI** — Expose auction data to scoreboards, holograms, and other plugins
 - **Admin GUI** — Admins can browse all auctions and force-remove any listing, returning the item to the seller
-- **Custom Item Compatibility** — Full support for ItemsAdder, Oraxen, MMOItems, MythicMobs, ExecutableItems, EcoItems, Slimefun, ModelEngine, HeadDatabase, CrazyEnchantments, ExcellentEnchants, and more
+- **Custom Item Compatibility** — Full support for [ItemsAdder](https://www.spigotmc.org/resources/itemsadder.73355/), [Oraxen](https://www.spigotmc.org/resources/oraxen.72448/), [Nexo](https://www.spigotmc.org/resources/nexo.93464/), [MMOItems](https://www.spigotmc.org/resources/mmoitems.39267/), [MythicMobs](https://www.spigotmc.org/resources/mythicmobs.5702/) / [MythicCrucible](https://www.spigotmc.org/resources/mythiccrucible.91404/), [ExecutableItems](https://www.spigotmc.org/resources/executableitems.77578/), [EcoItems](https://www.spigotmc.org/resources/ecoitems.94648/) / [EcoArmor](https://www.spigotmc.org/resources/ecoarmor.94648/) / [Talismans](https://www.spigotmc.org/resources/talismans.94648/), [Slimefun](https://github.com/Slimefun/Slimefun4), [ModelEngine](https://www.spigotmc.org/resources/conxeptworks-model-engine.79477/), [HeadDatabase](https://www.spigotmc.org/resources/head-database.14280/), [CrazyEnchantments](https://www.spigotmc.org/resources/crazyenchantments.16470/), [ExcellentEnchants](https://www.spigotmc.org/resources/excellentenchants.61693/), and NexEngine/NexItems
+- **Crash Protection** — Cursor items are persisted to database in real-time. Server crashes, kicks, and timeouts cannot cause item loss. Rescued items are automatically returned on next login
 
 ## Requirements
 
@@ -40,7 +41,15 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - [UltraEconomy](https://www.spigotmc.org/resources/ultraeconomy.83374/) (multi-currency)
 - [HeadDatabase](https://www.spigotmc.org/resources/head-database.14280/)
 - [ItemsAdder](https://www.spigotmc.org/resources/itemsadder.73355/)
-- And many more custom item plugins
+- [Oraxen](https://www.spigotmc.org/resources/oraxen.72448/) / [Nexo](https://www.spigotmc.org/resources/nexo.93464/)
+- [MMOItems](https://www.spigotmc.org/resources/mmoitems.39267/)
+- [MythicMobs](https://www.spigotmc.org/resources/mythicmobs.5702/) / [MythicCrucible](https://www.spigotmc.org/resources/mythiccrucible.91404/)
+- [ExecutableItems](https://www.spigotmc.org/resources/executableitems.77578/)
+- [EcoItems](https://www.spigotmc.org/resources/ecoitems.94648/) / [EcoArmor](https://www.spigotmc.org/resources/ecoarmor.94648/) / [Talismans](https://www.spigotmc.org/resources/talismans.94648/)
+- [Slimefun](https://github.com/Slimefun/Slimefun4)
+- [ModelEngine](https://www.spigotmc.org/resources/conxeptworks-model-engine.79477/)
+- [CrazyEnchantments](https://www.spigotmc.org/resources/crazyenchantments.16470/)
+- [ExcellentEnchants](https://www.spigotmc.org/resources/excellentenchants.61693/)
 
 ## Installation
 

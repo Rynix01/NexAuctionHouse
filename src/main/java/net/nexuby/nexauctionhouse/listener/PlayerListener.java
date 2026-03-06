@@ -2,12 +2,14 @@ package net.nexuby.nexauctionhouse.listener;
 
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.database.AuctionDAO;
+import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import net.nexuby.nexauctionhouse.model.ExpiredItem;
 import net.nexuby.nexauctionhouse.model.PendingRevenue;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,42 @@ public class PlayerListener implements Listener {
 
         plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
             AuctionDAO dao = plugin.getAuctionManager().getDao();
+            CursorProtectionManager cpm = plugin.getCursorProtectionManager();
+
+            // Process rescued items (crash/disconnect protection)
+            List<CursorProtectionManager.RescuedItem> rescuedItems = cpm.getRescuedItems(player.getUniqueId());
+            if (!rescuedItems.isEmpty()) {
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    if (!player.isOnline()) return;
+
+                    int returned = 0;
+                    int stored = 0;
+                    for (CursorProtectionManager.RescuedItem rescued : rescuedItems) {
+                        var remaining = player.getInventory().addItem(rescued.itemStack());
+                        if (remaining.isEmpty()) {
+                            returned++;
+                        } else {
+                            // Still can't fit - move to expired items for /ah expired
+                            for (ItemStack leftover : remaining.values()) {
+                                dao.insertExpiredItem(player.getUniqueId(), player.getName(), leftover, "RESCUED");
+                                stored++;
+                            }
+                        }
+                    }
+
+                    if (returned > 0) {
+                        player.sendMessage(plugin.getLangManager().prefixed("auction.rescued-items",
+                                "{amount}", String.valueOf(returned)));
+                    }
+                    if (stored > 0) {
+                        player.sendMessage(plugin.getLangManager().prefixed("auction.rescued-items-stored",
+                                "{amount}", String.valueOf(stored)));
+                    }
+                });
+
+                // Delete all rescued entries async
+                cpm.deleteAllRescuedItems(player.getUniqueId());
+            }
 
             // Process pending revenue queue
             List<PendingRevenue> pendingRevenues = dao.getPendingRevenue(player.getUniqueId());

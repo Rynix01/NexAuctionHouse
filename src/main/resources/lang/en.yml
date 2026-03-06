@@ -29,6 +29,8 @@ auction:
   offline-revenue-single: "<green>Your <yellow>{item} <green>was sold to <yellow>{buyer}<green>! Revenue: <yellow>{amount}"
   offline-revenue-summary: "<green>You earned revenue from <yellow>{count} <green>sales while offline! Total: <yellow>{total}"
   offline-items-waiting: "<yellow>You have <green>{amount} <yellow>item(s) waiting to be collected. Use <green>/ah expired<yellow>."
+  rescued-items: "<green>{amount} item(s) were recovered from a previous session and returned to your inventory."
+  rescued-items-stored: "<yellow>{amount} rescued item(s) couldn't fit in your inventory. Use <green>/ah expired <yellow>to collect them."
 
   # Error messages
   no-item-in-hand: "<red>You must hold an item in your hand."
