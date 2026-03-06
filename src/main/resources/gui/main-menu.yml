@@ -152,6 +152,7 @@ auction-item-lore:
   - "<gray>Expires in: <yellow>{time}"
   - ""
   - "<yellow>Click to purchase!"
+  - "<gray>Right-click to preview."
   - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Bid auction item lore template (for auction/bid type listings)
@@ -167,4 +168,5 @@ bid-item-lore:
   - "<gray>Expires in: <yellow>{time}"
   - ""
   - "<gold>Click to place a bid!"
+  - "<gray>Right-click to preview."
   - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"

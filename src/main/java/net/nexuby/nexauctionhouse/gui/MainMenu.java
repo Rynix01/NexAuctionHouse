@@ -174,6 +174,13 @@ public class MainMenu extends PaginatedGui {
             return;
         }
 
+        // Right-click opens item preview
+        if (event.isRightClick() && !event.isShiftClick()) {
+            new PreviewGui(plugin, viewer, auction.getItemStack(),
+                    () -> new MainMenu(plugin, viewer).open()).open();
+            return;
+        }
+
         // Shift+click toggles favorite
         if (event.isShiftClick()) {
             AuctionManager manager = plugin.getAuctionManager();

@@ -100,7 +100,15 @@ public class HistoryGui extends PaginatedGui {
 
     @Override
     protected void onItemClick(InventoryClickEvent event, int itemIndex) {
-        // History items are read-only, no action
+        // Right-click opens item preview
+        if (event.isRightClick()) {
+            List<TransactionLog> logs = plugin.getAuctionManager().getDao()
+                    .getPlayerHistory(targetUuid, plugin.getConfigManager().getHistoryLimit());
+            if (itemIndex < logs.size()) {
+                new PreviewGui(plugin, viewer, logs.get(itemIndex).getItemStack(),
+                        () -> new HistoryGui(plugin, viewer, targetUuid, targetName).open()).open();
+            }
+        }
     }
 
     @Override

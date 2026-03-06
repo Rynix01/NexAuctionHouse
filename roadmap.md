@@ -125,13 +125,13 @@
 - [x] İstatistik verileri cache sistemi (performans optimizasyonu)
 
 ## Aşama 12: Eşya Önizleme Sistemi
-- [ ] GUI'de eşyaya sağ tıkla → ayrı Preview GUI açılması
-- [ ] Tam enchant listesi, attribute'lar, lore detaylı görüntüleme
-- [ ] Shulker kutusu içerik önizleme (kutunun içindeki tüm eşyalar listelenir)
-- [ ] Kitap içerik önizleme (yazılmış kitapların sayfaları gösterilir)
-- [ ] Zırh önizleme sistemi (zırh seti olarak görsel render)
-- [ ] Custom item detay görüntüleme (MMOItems stat'ları, ItemsAdder özellikleri vb.)
-- [ ] Önizleme GUI'sinden geri dönüş (önceki sayfaya/menüye)
+- [x] GUI'de eşyaya sağ tıkla → ayrı Preview GUI açılması
+- [x] Tam enchant listesi, attribute'lar, lore detaylı görüntüleme
+- [x] Shulker kutusu içerik önizleme (kutunun içindeki tüm eşyalar listelenir)
+- [x] Kitap içerik önizleme (yazılmış kitapların sayfaları gösterilir)
+- [x] Zırh önizleme sistemi (zırh seti olarak görsel render)
+- [x] Custom item detay görüntüleme (MMOItems stat'ları, ItemsAdder özellikleri vb.)
+- [x] Önizleme GUI'sinden geri dönüş (önceki sayfaya/menüye)
 
 ## Aşama 13: Bildirim Tercihleri
 - [ ] Veritabanında player_settings tablosu

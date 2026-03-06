@@ -91,6 +91,13 @@ public class FavoritesGui extends PaginatedGui {
             return;
         }
 
+        // Right-click opens item preview
+        if (event.isRightClick() && !event.isShiftClick()) {
+            new PreviewGui(plugin, viewer, auction.getItemStack(),
+                    () -> new FavoritesGui(plugin, viewer).open()).open();
+            return;
+        }
+
         // Shift+click removes from favorites
         if (event.isShiftClick()) {
             plugin.getAuctionManager().removeFavorite(viewer, auctionId);

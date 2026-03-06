@@ -146,6 +146,13 @@ public class AdminGui extends PaginatedGui {
             return;
         }
 
+        // Right-click opens item preview
+        if (event.isRightClick()) {
+            new PreviewGui(plugin, viewer, auction.getItemStack(),
+                    () -> new AdminGui(plugin, viewer).open()).open();
+            return;
+        }
+
         // Admin force-remove: item is returned to seller directly or via expired items
         boolean removed = plugin.getAuctionManager().cancelAuction(viewer, auctionId, true);
 

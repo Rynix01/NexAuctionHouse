@@ -103,6 +103,8 @@ sale-item-lore:
   - "<gray>Tax: <red>{tax}"
   - "<gray>Revenue: <green>{revenue}"
   - "<gray>Time: <yellow>{time} ago"
+  - ""
+  - "<gray>Right-click to preview."
   - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Lore template for items you purchased
@@ -113,4 +115,6 @@ purchase-item-lore:
   - "<gray>Seller: <white>{seller}"
   - "<gray>Price: <green>{price}"
   - "<gray>Time: <yellow>{time} ago"
+  - ""
+  - "<gray>Right-click to preview."
   - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
