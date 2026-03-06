@@ -150,3 +150,17 @@ auction-item-lore:
   - ""
   - "<yellow>Click to purchase!"
   - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Bid auction item lore template (for auction/bid type listings)
+bid-item-lore:
+  - ""
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  - "<gold>[AUCTION]"
+  - "<gray>Seller: <white>{seller}"
+  - "<gray>Starting Price: <green>{price}"
+  - "<gray>Current Bid: <yellow>{current_bid}"
+  - "<gray>Highest Bidder: <white>{bidder}"
+  - "<gray>Expires in: <yellow>{time}"
+  - ""
+  - "<gold>Click to place a bid!"
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"

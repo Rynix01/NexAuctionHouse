@@ -1,0 +1,37 @@
+# NexAuctionHouse - Bid Placement GUI Configuration
+
+title: "<dark_gray>Place Bid"
+size: 27
+
+buttons:
+  bid:
+    slot: 11
+    material: GOLD_INGOT
+    name: "<gold>Place Bid"
+    lore:
+      - ""
+      - "<gray>Item: <white>{item}"
+      - "<gray>Seller: <white>{seller}"
+      - "<gray>Current Bid: <yellow>{current_bid}"
+      - "<gray>Highest Bidder: <white>{bidder}"
+      - ""
+      - "<gray>Minimum Bid: <green>{min_bid}"
+      - ""
+      - "<yellow>Click to enter your bid!"
+
+  cancel:
+    slot: 15
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>Cancel"
+    lore:
+      - ""
+      - "<gray>Go back to the menu."
+
+  # The item being bid on will be displayed here
+  display-item:
+    slot: 13
+
+filler:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+  name: " "

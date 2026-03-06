@@ -16,9 +16,19 @@ public class AuctionItem {
     private final long createdAt;
     private long expiresAt;
     private AuctionStatus status;
+    private final AuctionType auctionType;
+    private double highestBid;
+    private UUID highestBidderUuid;
+    private String highestBidderName;
 
     public AuctionItem(int id, UUID sellerUuid, String sellerName, ItemStack itemStack,
                        double price, String currency, double taxRate, long createdAt, long expiresAt, AuctionStatus status) {
+        this(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status, AuctionType.BIN, 0, null, null);
+    }
+
+    public AuctionItem(int id, UUID sellerUuid, String sellerName, ItemStack itemStack,
+                       double price, String currency, double taxRate, long createdAt, long expiresAt, AuctionStatus status,
+                       AuctionType auctionType, double highestBid, UUID highestBidderUuid, String highestBidderName) {
         this.id = id;
         this.sellerUuid = sellerUuid;
         this.sellerName = sellerName;
@@ -29,6 +39,10 @@ public class AuctionItem {
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
         this.status = status;
+        this.auctionType = auctionType;
+        this.highestBid = highestBid;
+        this.highestBidderUuid = highestBidderUuid;
+        this.highestBidderName = highestBidderName;
     }
 
     public int getId() {
@@ -103,5 +117,49 @@ public class AuctionItem {
 
     public void setExpiresAt(long expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    public AuctionType getAuctionType() {
+        return auctionType;
+    }
+
+    public boolean isBidAuction() {
+        return auctionType == AuctionType.AUCTION;
+    }
+
+    public double getHighestBid() {
+        return highestBid;
+    }
+
+    public void setHighestBid(double highestBid) {
+        this.highestBid = highestBid;
+    }
+
+    public UUID getHighestBidderUuid() {
+        return highestBidderUuid;
+    }
+
+    public void setHighestBidderUuid(UUID highestBidderUuid) {
+        this.highestBidderUuid = highestBidderUuid;
+    }
+
+    public String getHighestBidderName() {
+        return highestBidderName;
+    }
+
+    public void setHighestBidderName(String highestBidderName) {
+        this.highestBidderName = highestBidderName;
+    }
+
+    /**
+     * Returns the current effective price for display purposes.
+     * For BIN auctions this is the fixed price.
+     * For bid auctions this is the highest bid, or the starting price if no bids.
+     */
+    public double getCurrentPrice() {
+        if (auctionType == AuctionType.AUCTION && highestBid > 0) {
+            return highestBid;
+        }
+        return price;
     }
 }

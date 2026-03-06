@@ -5,6 +5,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 ## Features
 
 - **Full Auction System** — List, browse, buy, and cancel auctions through an intuitive GUI
+- **Bid / Auction System** — Create auctions with `--bid` flag. Players bid in real-time with anti-snipe protection. Automatic winner determination and loser refunds on expiry
 - **Search & Sort** — Search auctions by item name, material, or seller. Sort by price, date, or name with a single click
 - **Multi-Economy Support** — 7 economy providers: Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, UltraEconomy. Multiple economies active simultaneously with per-listing currency selection
 - **Offline Player Sync** — Queued revenue delivery and item returns when players log in. No money or items lost while offline
@@ -69,6 +70,8 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 | `/ah search <keyword>` | Search auctions by keyword | `nexauctions.use` |
 | `/ah sell <price>` | List the item in your hand | `nexauctions.sell` |
 | `/ah sell <price> <currency>` | List with a specific currency | `nexauctions.sell` |
+| `/ah sell <price> --bid` | List as a bid auction | `nexauctions.sell` |
+| `/ah sell <price> <currency> --bid` | Bid auction with specific currency | `nexauctions.sell` |
 | `/ah expired` | View & collect expired items | `nexauctions.use` |
 | `/ah admin` | Open admin panel | `nexauctions.admin` |
 | `/ah reload` | Reload all configs | `nexauctions.reload` |

@@ -30,6 +30,7 @@ public class GuiConfig {
         saveDefault("confirm.yml");
         saveDefault("expired.yml");
         saveDefault("categories.yml");
+        saveDefault("bid.yml");
 
         // Load all GUI configs from the folder
         File[] files = guiFolder.listFiles((dir, name) -> name.endsWith(".yml"));

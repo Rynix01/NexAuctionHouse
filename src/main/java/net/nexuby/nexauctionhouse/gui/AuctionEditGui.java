@@ -50,25 +50,51 @@ public class AuctionEditGui extends AbstractGui {
         List<Component> displayLore = displayMeta.hasLore() ? new ArrayList<>(displayMeta.lore()) : new ArrayList<>();
         displayLore.add(Component.empty());
         displayLore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        displayLore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())));
+
+        if (auctionItem.isBidAuction()) {
+            displayLore.add(text("<gold>[AUCTION]"));
+            displayLore.add(text("<gray>Starting Price: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())));
+            String currentBidStr = auctionItem.getHighestBid() > 0
+                    ? plugin.getEconomyManager().format(auctionItem.getHighestBid(), auctionItem.getCurrency())
+                    : plugin.getLangManager().getRaw("bid.no-bids-yet");
+            displayLore.add(text("<gray>Current Bid: <yellow>" + currentBidStr));
+            if (auctionItem.getHighestBidderName() != null) {
+                displayLore.add(text("<gray>Highest Bidder: <white>" + auctionItem.getHighestBidderName()));
+            }
+        } else {
+            displayLore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())));
+        }
+
         displayLore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auctionItem.getRemainingTime())));
         displayLore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auctionItem.getTaxRate())));
-        displayLore.add(text("<gray>You receive: <green>" + plugin.getEconomyManager().format(auctionItem.getSellerReceives(), auctionItem.getCurrency())));
+
+        if (!auctionItem.isBidAuction()) {
+            displayLore.add(text("<gray>You receive: <green>" + plugin.getEconomyManager().format(auctionItem.getSellerReceives(), auctionItem.getCurrency())));
+        }
+
         displayLore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
         displayMeta.lore(displayLore);
         display.setItemMeta(displayMeta);
         inventory.setItem(DISPLAY_SLOT, display);
 
-        // Edit Price button
+        // Edit Price button (disabled for bid auctions)
         ItemStack editPrice = new ItemStack(Material.NAME_TAG);
         ItemMeta editPriceMeta = editPrice.getItemMeta();
-        editPriceMeta.displayName(text("<yellow>Edit Price"));
-        editPriceMeta.lore(List.of(
-                text("<gray>Current: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())),
-                Component.empty(),
-                text("<gray>Click to type a new price"),
-                text("<gray>in the chat.")
-        ));
+        if (auctionItem.isBidAuction()) {
+            editPriceMeta.displayName(text("<red>Edit Price"));
+            editPriceMeta.lore(List.of(
+                    text("<red>Cannot edit the starting price"),
+                    text("<red>of a bid auction.")
+            ));
+        } else {
+            editPriceMeta.displayName(text("<yellow>Edit Price"));
+            editPriceMeta.lore(List.of(
+                    text("<gray>Current: <green>" + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())),
+                    Component.empty(),
+                    text("<gray>Click to type a new price"),
+                    text("<gray>in the chat.")
+            ));
+        }
         editPrice.setItemMeta(editPriceMeta);
         inventory.setItem(EDIT_PRICE_SLOT, editPrice);
 
@@ -85,13 +111,21 @@ public class AuctionEditGui extends AbstractGui {
         // Cancel button
         ItemStack cancel = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta cancelMeta = cancel.getItemMeta();
-        cancelMeta.displayName(text("<red>Cancel Auction"));
-        cancelMeta.lore(List.of(
-                text("<gray>Remove this listing and"),
-                text("<gray>get your item back."),
-                Component.empty(),
-                text("<red>This cannot be undone!")
-        ));
+        if (auctionItem.isBidAuction() && auctionItem.getHighestBid() > 0) {
+            cancelMeta.displayName(text("<dark_red>Cancel Auction"));
+            cancelMeta.lore(List.of(
+                    text("<red>Cannot cancel an auction"),
+                    text("<red>with active bids!")
+            ));
+        } else {
+            cancelMeta.displayName(text("<red>Cancel Auction"));
+            cancelMeta.lore(List.of(
+                    text("<gray>Remove this listing and"),
+                    text("<gray>get your item back."),
+                    Component.empty(),
+                    text("<red>This cannot be undone!")
+            ));
+        }
         cancel.setItemMeta(cancelMeta);
         inventory.setItem(CANCEL_SLOT, cancel);
 
@@ -161,7 +195,11 @@ public class AuctionEditGui extends AbstractGui {
         }
 
         switch (slot) {
-            case EDIT_PRICE_SLOT -> handleEditPrice();
+            case EDIT_PRICE_SLOT -> {
+                if (!auctionItem.isBidAuction()) {
+                    handleEditPrice();
+                }
+            }
             case EXTEND_1H_SLOT -> handleExtend(1);
             case EXTEND_6H_SLOT -> handleExtend(6);
             case EXTEND_12H_SLOT -> handleExtend(12);
@@ -241,6 +279,12 @@ public class AuctionEditGui extends AbstractGui {
     }
 
     private void handleCancel() {
+        // AuctionManager enforces this too, but show a clear UI message
+        if (auctionItem.isBidAuction() && auctionItem.getHighestBid() > 0) {
+            viewer.sendMessage(plugin.getLangManager().prefixed("bid.cannot-cancel-with-bids"));
+            return;
+        }
+
         boolean cancelled = plugin.getAuctionManager().cancelAuction(viewer, auctionItem.getId(), false);
 
         if (cancelled) {

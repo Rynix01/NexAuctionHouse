@@ -84,10 +84,32 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        // Check for --bid flag anywhere in args
+        boolean isBidAuction = false;
+        List<String> cleanArgs = new ArrayList<>();
+        cleanArgs.add(args[0]); // "sell"
+        for (int i = 1; i < args.length; i++) {
+            if (args[i].equalsIgnoreCase("--bid")) {
+                isBidAuction = true;
+            } else {
+                cleanArgs.add(args[i]);
+            }
+        }
+
+        if (isBidAuction && !plugin.getConfigManager().isBidEnabled()) {
+            player.sendMessage(lang.prefixed("bid.bid-disabled"));
+            return;
+        }
+
+        if (cleanArgs.size() < 2) {
+            player.sendMessage(lang.prefixed("general.invalid-usage"));
+            return;
+        }
+
         // Parse the price
         double price;
         try {
-            price = Double.parseDouble(args[1]);
+            price = Double.parseDouble(cleanArgs.get(1));
         } catch (NumberFormatException e) {
             player.sendMessage(lang.prefixed("general.invalid-usage"));
             return;
@@ -95,8 +117,8 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         // Parse currency (optional, defaults to first enabled provider)
         String currency;
-        if (args.length >= 3) {
-            currency = args[2].toLowerCase();
+        if (cleanArgs.size() >= 3) {
+            currency = cleanArgs.get(2).toLowerCase();
             if (!plugin.getEconomyManager().isValidCurrency(currency)) {
                 player.sendMessage(lang.prefixed("auction.invalid-currency",
                         "{currencies}", String.join(", ", plugin.getEconomyManager().getCurrencyNames())));
@@ -148,10 +170,21 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         ItemStack toSell = itemInHand.clone();
         player.getInventory().setItemInMainHand(null);
 
-        int auctionId = auctionManager.listItem(player, toSell, price, currency);
+        int auctionId;
+        if (isBidAuction) {
+            auctionId = auctionManager.listBidItem(player, toSell, price, currency);
+        } else {
+            auctionId = auctionManager.listItem(player, toSell, price, currency);
+        }
+
         if (auctionId > 0) {
-            player.sendMessage(lang.prefixed("auction.listed",
-                    "{price}", plugin.getEconomyManager().format(price, currency)));
+            if (isBidAuction) {
+                player.sendMessage(lang.prefixed("bid.listed",
+                        "{price}", plugin.getEconomyManager().format(price, currency)));
+            } else {
+                player.sendMessage(lang.prefixed("auction.listed",
+                        "{price}", plugin.getEconomyManager().format(price, currency)));
+            }
         } else {
             // Something went wrong, give the item back
             player.getInventory().setItemInMainHand(toSell);
@@ -331,9 +364,18 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 3 && args[0].equalsIgnoreCase("sell")) {
             List<String> currencies = new ArrayList<>(plugin.getEconomyManager().getCurrencyNames());
+            currencies.add("--bid");
             String input = args[2].toLowerCase();
-            currencies.removeIf(s -> !s.startsWith(input));
+            currencies.removeIf(s -> !s.toLowerCase().startsWith(input));
             return currencies;
+        }
+
+        if (args.length == 4 && args[0].equalsIgnoreCase("sell")) {
+            List<String> options = new ArrayList<>();
+            options.add("--bid");
+            String input = args[3].toLowerCase();
+            options.removeIf(s -> !s.toLowerCase().startsWith(input));
+            return options;
         }
 
         // Admin sub-tab completion

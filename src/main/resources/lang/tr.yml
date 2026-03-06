@@ -75,6 +75,23 @@ search:
   sort-name-asc: "Isim: A'dan Z'ye"
   sort-name-desc: "Isim: Z'den A'ya"
 
+# Teklif / Ihale mesajlari
+bid:
+  listed: "<green>Ihaleniz <yellow>{price}<green> baslangic fiyatiyla satisa konuldu!"
+  placed: "<green>Teklif verildi! <yellow>{item} <green>icin <yellow>{amount} <green>teklif ettiniz."
+  outbid: "<red><yellow>{item}<red> icin teklifiniz asildi! Yeni teklif: <yellow>{amount} <red>(<yellow>{bidder}<red>). Paraniz iade edildi."
+  new-bid-seller: "<green><yellow>{item} <green>esyaniza yeni teklif! <yellow>{bidder} <green><yellow>{amount}<green> teklif etti."
+  already-highest: "<red>Zaten en yuksek teklifi siz verdiniz."
+  bid-too-low: "<red>Teklifiniz cok dusuk. Minimum teklif: <yellow>{min}"
+  auction-won-buyer: "<green>Tebrikler! <yellow>{item} <green>ihalesini <yellow>{price}<green> ile kazandiniz!"
+  auction-won-seller: "<green><yellow>{item} <green>ihalenizi <yellow>{winner}<green> kazandi! Gelir: <yellow>{price} <green>(Vergi: <red>{tax}<green>)"
+  refund: "<green><yellow>{item} <green>icin teklifiniz iade edildi. Tutar: <yellow>{amount}"
+  cannot-cancel-with-bids: "<red>Aktif teklifi olan bir ihaleyi iptal edemezsiniz."
+  bid-disabled: "<red>Teklif sistemi su anda devre disi."
+  enter-bid-amount: "<yellow>Teklif tutarini sohbete yazin. <gray>(Minimum: {min})"
+  bid-cancelled: "<yellow>Teklif iptal edildi."
+  no-bids-yet: "Henuz teklif yok"
+
 # Zaman formati
 time:
   hours: "{value}sa"

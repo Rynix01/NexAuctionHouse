@@ -140,6 +140,54 @@ public class DiscordWebhook {
         sendWebhook(embed);
     }
 
+    /**
+     * Sends a notification when a new bid is placed.
+     */
+    public void sendBidNotification(String bidderName, String sellerName, ItemStack item, double bidAmount, String currency) {
+        if (!isEnabled()) return;
+
+        String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
+        int color = plugin.getConfigManager().getConfig().getInt("discord.colors.listing", 3447003);
+
+        JsonObject embed = createEmbed(
+                "\uD83D\uDD28 New Bid",
+                "**" + bidderName + "** placed a bid of **" + plugin.getEconomyManager().format(bidAmount, currency) + "** on **" + itemName + " x" + amount + "** (by " + sellerName + ").",
+                color
+        );
+        addField(embed, "Item", itemName + " x" + amount, true);
+        addField(embed, "Bid Amount", plugin.getEconomyManager().format(bidAmount, currency), true);
+        addField(embed, "Bidder", bidderName, true);
+        addField(embed, "Seller", sellerName, true);
+        addTimestamp(embed);
+
+        sendWebhook(embed);
+    }
+
+    /**
+     * Sends a notification when a bid auction is completed (winner determined).
+     */
+    public void sendAuctionWonNotification(String winnerName, String sellerName, ItemStack item, double finalPrice, String currency) {
+        if (!isEnabled()) return;
+
+        String itemName = AuctionManager.getItemName(item);
+        int amount = item.getAmount();
+        int color = plugin.getConfigManager().getConfig().getInt("discord.colors.sale", 5763719);
+
+        JsonObject embed = createEmbed(
+                "\uD83C\uDFC6 Auction Won",
+                "**" + winnerName + "** won the auction for **" + itemName + " x" + amount + "** from **" + sellerName + "** with a bid of **" + plugin.getEconomyManager().format(finalPrice, currency) + "**.",
+                color
+        );
+        addField(embed, "Item", itemName + " x" + amount, true);
+        addField(embed, "Final Price", plugin.getEconomyManager().format(finalPrice, currency), true);
+        addField(embed, "Winner", winnerName, true);
+        addField(embed, "Seller", sellerName, true);
+        addTimestamp(embed);
+
+        sendWebhook(embed);
+    }
+
     // -- JSON builders --
 
     private JsonObject createEmbed(String title, String description, int color) {

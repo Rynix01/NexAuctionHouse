@@ -132,16 +132,28 @@ public class DatabaseManager {
                 + "created_at BIGINT NOT NULL"
                 + ")";
 
+        // Bids table for auction (bid) system
+        String bidsTable = "CREATE TABLE IF NOT EXISTS bids ("
+                + "id INTEGER PRIMARY KEY " + (usingSQLite ? "AUTOINCREMENT" : "AUTO_INCREMENT") + ","
+                + "auction_id INTEGER NOT NULL,"
+                + "bidder_uuid VARCHAR(36) NOT NULL,"
+                + "bidder_name VARCHAR(16) NOT NULL,"
+                + "amount DOUBLE NOT NULL,"
+                + "timestamp BIGINT NOT NULL"
+                + ")";
+
         try (PreparedStatement stmt1 = connection.prepareStatement(auctionsTable);
              PreparedStatement stmt2 = connection.prepareStatement(expiredTable);
              PreparedStatement stmt3 = connection.prepareStatement(logsTable);
              PreparedStatement stmt4 = connection.prepareStatement(revenueTable);
-             PreparedStatement stmt5 = connection.prepareStatement(rescuedTable)) {
+             PreparedStatement stmt5 = connection.prepareStatement(rescuedTable);
+             PreparedStatement stmt6 = connection.prepareStatement(bidsTable)) {
             stmt1.executeUpdate();
             stmt2.executeUpdate();
             stmt3.executeUpdate();
             stmt4.executeUpdate();
             stmt5.executeUpdate();
+            stmt6.executeUpdate();
         }
     }
 
@@ -149,38 +161,45 @@ public class DatabaseManager {
      * Adds missing columns to existing databases (safe migration).
      */
     private void migrateDatabase() throws SQLException {
-        // Check if 'currency' column exists in auctions table
+        migrateColumn("currency", "VARCHAR(32) NOT NULL DEFAULT 'money'");
+        migrateColumn("auction_type", "VARCHAR(16) NOT NULL DEFAULT 'BIN'");
+        migrateColumn("highest_bid", "DOUBLE NOT NULL DEFAULT 0");
+        migrateColumn("highest_bidder_uuid", "VARCHAR(36) DEFAULT NULL");
+        migrateColumn("highest_bidder_name", "VARCHAR(16) DEFAULT NULL");
+    }
+
+    private void migrateColumn(String columnName, String columnDef) {
         try {
             String checkSql = usingSQLite
                     ? "PRAGMA table_info(auctions)"
-                    : "SHOW COLUMNS FROM auctions LIKE 'currency'";
+                    : "SHOW COLUMNS FROM auctions LIKE '" + columnName + "'";
 
-            boolean hasCurrency = false;
+            boolean hasColumn = false;
 
             try (PreparedStatement stmt = connection.prepareStatement(checkSql);
                  var rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     if (usingSQLite) {
-                        if ("currency".equalsIgnoreCase(rs.getString("name"))) {
-                            hasCurrency = true;
+                        if (columnName.equalsIgnoreCase(rs.getString("name"))) {
+                            hasColumn = true;
                             break;
                         }
                     } else {
-                        hasCurrency = true;
+                        hasColumn = true;
                         break;
                     }
                 }
             }
 
-            if (!hasCurrency) {
-                String alterSql = "ALTER TABLE auctions ADD COLUMN currency VARCHAR(32) NOT NULL DEFAULT 'money'";
+            if (!hasColumn) {
+                String alterSql = "ALTER TABLE auctions ADD COLUMN " + columnName + " " + columnDef;
                 try (PreparedStatement stmt = connection.prepareStatement(alterSql)) {
                     stmt.executeUpdate();
                 }
-                plugin.getLogger().info("Database migrated: added 'currency' column to auctions table.");
+                plugin.getLogger().info("Database migrated: added '" + columnName + "' column to auctions table.");
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database migration check failed", e);
+            plugin.getLogger().log(Level.WARNING, "Database migration check failed for column: " + columnName, e);
         }
     }
 

@@ -3,6 +3,8 @@ package net.nexuby.nexauctionhouse.database;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionStatus;
+import net.nexuby.nexauctionhouse.model.AuctionType;
+import net.nexuby.nexauctionhouse.model.Bid;
 import net.nexuby.nexauctionhouse.model.ExpiredItem;
 import net.nexuby.nexauctionhouse.model.PendingRevenue;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
@@ -29,8 +31,8 @@ public class AuctionDAO {
     // -- Auction CRUD operations --
 
     public int insertAuction(AuctionItem item) {
-        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status, auction_type, highest_bid, highest_bidder_uuid, highest_bidder_name) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, item.getSellerUuid().toString());
@@ -42,6 +44,10 @@ public class AuctionDAO {
             stmt.setLong(7, item.getCreatedAt());
             stmt.setLong(8, item.getExpiresAt());
             stmt.setString(9, item.getStatus().name());
+            stmt.setString(10, item.getAuctionType().name());
+            stmt.setDouble(11, item.getHighestBid());
+            stmt.setString(12, item.getHighestBidderUuid() != null ? item.getHighestBidderUuid().toString() : null);
+            stmt.setString(13, item.getHighestBidderName());
             stmt.executeUpdate();
 
             ResultSet keys = stmt.getGeneratedKeys();
@@ -294,6 +300,109 @@ public class AuctionDAO {
         }
     }
 
+    // -- Bid operations --
+
+    public boolean updateHighestBid(int auctionId, double amount, UUID bidderUuid, String bidderName) {
+        String sql = "UPDATE auctions SET highest_bid = ?, highest_bidder_uuid = ?, highest_bidder_name = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setDouble(1, amount);
+            stmt.setString(2, bidderUuid.toString());
+            stmt.setString(3, bidderName);
+            stmt.setInt(4, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to update highest bid", e);
+            return false;
+        }
+    }
+
+    public int insertBid(int auctionId, UUID bidderUuid, String bidderName, double amount) {
+        String sql = "INSERT INTO bids (auction_id, bidder_uuid, bidder_name, amount, timestamp) VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setInt(1, auctionId);
+            stmt.setString(2, bidderUuid.toString());
+            stmt.setString(3, bidderName);
+            stmt.setDouble(4, amount);
+            stmt.setLong(5, System.currentTimeMillis());
+            stmt.executeUpdate();
+
+            ResultSet keys = stmt.getGeneratedKeys();
+            if (keys.next()) {
+                return keys.getInt(1);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to insert bid", e);
+        }
+        return -1;
+    }
+
+    public List<Bid> getBidsByAuction(int auctionId) {
+        List<Bid> bids = new ArrayList<>();
+        String sql = "SELECT * FROM bids WHERE auction_id = ? ORDER BY amount DESC";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                bids.add(parseBid(rs));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load bids for auction #" + auctionId, e);
+        }
+        return bids;
+    }
+
+    public Bid getHighestBid(int auctionId) {
+        String sql = "SELECT * FROM bids WHERE auction_id = ? ORDER BY amount DESC LIMIT 1";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return parseBid(rs);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to get highest bid for auction #" + auctionId, e);
+        }
+        return null;
+    }
+
+    public boolean deleteBidsByAuction(int auctionId) {
+        String sql = "DELETE FROM bids WHERE auction_id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to delete bids for auction #" + auctionId, e);
+            return false;
+        }
+    }
+
+    public List<Bid> getUniqueBiddersByAuction(int auctionId) {
+        List<Bid> bids = new ArrayList<>();
+        String sql = "SELECT b1.* FROM bids b1 INNER JOIN ("
+                + "SELECT bidder_uuid, MAX(amount) as max_amount FROM bids WHERE auction_id = ? GROUP BY bidder_uuid"
+                + ") b2 ON b1.bidder_uuid = b2.bidder_uuid AND b1.amount = b2.max_amount WHERE b1.auction_id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, auctionId);
+            stmt.setInt(2, auctionId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                bids.add(parseBid(rs));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to get unique bidders for auction #" + auctionId, e);
+        }
+        return bids;
+    }
+
     // -- Parsing helpers --
 
     private AuctionItem parseAuction(ResultSet rs) throws SQLException {
@@ -315,12 +424,35 @@ public class AuctionDAO {
             long expiresAt = rs.getLong("expires_at");
             AuctionStatus status = AuctionStatus.valueOf(rs.getString("status"));
 
+            AuctionType auctionType;
+            try {
+                String typeStr = rs.getString("auction_type");
+                auctionType = (typeStr != null) ? AuctionType.valueOf(typeStr) : AuctionType.BIN;
+            } catch (SQLException | IllegalArgumentException ignored) {
+                auctionType = AuctionType.BIN;
+            }
+
+            double highestBid;
+            UUID highestBidderUuid = null;
+            String highestBidderName = null;
+            try {
+                highestBid = rs.getDouble("highest_bid");
+                String bidderStr = rs.getString("highest_bidder_uuid");
+                if (bidderStr != null && !bidderStr.isEmpty()) {
+                    highestBidderUuid = UUID.fromString(bidderStr);
+                }
+                highestBidderName = rs.getString("highest_bidder_name");
+            } catch (SQLException ignored) {
+                highestBid = 0;
+            }
+
             if (itemStack == null) {
                 plugin.getLogger().warning("Skipping auction #" + id + " - item data is corrupted.");
                 return null;
             }
 
-            return new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status);
+            return new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status,
+                    auctionType, highestBid, highestBidderUuid, highestBidderName);
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Skipping auction - invalid data: " + e.getMessage());
             return null;
@@ -361,5 +493,15 @@ public class AuctionDAO {
 
         return new PendingRevenue(id, playerUuid, playerName, amount, currency,
                 sourceAuctionId, itemName, buyerName, createdAt);
+    }
+
+    private Bid parseBid(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        int auctionId = rs.getInt("auction_id");
+        UUID bidderUuid = UUID.fromString(rs.getString("bidder_uuid"));
+        String bidderName = rs.getString("bidder_name");
+        double amount = rs.getDouble("amount");
+        long timestamp = rs.getLong("timestamp");
+        return new Bid(id, auctionId, bidderUuid, bidderName, amount, timestamp);
     }
 }

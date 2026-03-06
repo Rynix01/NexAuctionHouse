@@ -92,6 +92,24 @@ public class ConfigManager {
         return config.getBoolean("tax.enabled", true);
     }
 
+    // -- Bid settings --
+
+    public boolean isBidEnabled() {
+        return config.getBoolean("bid.enabled", true);
+    }
+
+    public double getBidMinIncrementPercent() {
+        return config.getDouble("bid.min-increment-percent", 5.0);
+    }
+
+    public int getAntiSnipeSeconds() {
+        return config.getInt("bid.anti-snipe-seconds", 300);
+    }
+
+    public int getBidDefaultDuration() {
+        return config.getInt("bid.default-duration", 24);
+    }
+
     // -- Blacklist --
 
     public List<String> getBlacklistedMaterials() {

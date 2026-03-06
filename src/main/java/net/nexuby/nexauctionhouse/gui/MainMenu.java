@@ -6,6 +6,7 @@ import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
+import net.nexuby.nexauctionhouse.model.AuctionType;
 import net.nexuby.nexauctionhouse.model.SortType;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
 import org.bukkit.Bukkit;
@@ -118,6 +119,7 @@ public class MainMenu extends PaginatedGui {
         // Read lore template from config
         FileConfiguration cfg = plugin.getGuiConfig().getGui(getGuiConfigName());
         List<String> loreTemplate = cfg != null ? cfg.getStringList("auction-item-lore") : List.of();
+        List<String> bidLoreTemplate = cfg != null ? cfg.getStringList("bid-item-lore") : List.of();
 
         List<ItemStack> displayItems = new ArrayList<>();
 
@@ -128,11 +130,21 @@ public class MainMenu extends PaginatedGui {
             // Build the auction info lore
             List<Component> existingLore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
 
-            for (String line : loreTemplate) {
+            List<String> template = auction.isBidAuction() && !bidLoreTemplate.isEmpty() ? bidLoreTemplate : loreTemplate;
+
+            String currentBidStr = auction.getHighestBid() > 0
+                    ? plugin.getEconomyManager().format(auction.getHighestBid(), auction.getCurrency())
+                    : plugin.getLangManager().getRaw("bid.no-bids-yet");
+            String bidderName = auction.getHighestBidderName() != null ? auction.getHighestBidderName() : "-";
+
+            for (String line : template) {
                 String parsed = line
                         .replace("{seller}", auction.getSellerName())
                         .replace("{price}", plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency()))
-                        .replace("{time}", TimeUtil.formatDuration(auction.getRemainingTime()));
+                        .replace("{time}", TimeUtil.formatDuration(auction.getRemainingTime()))
+                        .replace("{current_bid}", currentBidStr)
+                        .replace("{bidder}", bidderName)
+                        .replace("{type}", auction.isBidAuction() ? "Auction" : "BIN");
                 existingLore.add(text(parsed));
             }
 
@@ -159,8 +171,12 @@ public class MainMenu extends PaginatedGui {
             return;
         }
 
-        // Open confirmation menu
-        new ConfirmGui(plugin, viewer, auction).open();
+        // Bid auctions open the bid dialog, BIN auctions open confirm purchase
+        if (auction.isBidAuction()) {
+            new BidGui(plugin, viewer, auction).open();
+        } else {
+            new ConfirmGui(plugin, viewer, auction).open();
+        }
     }
 
     @Override

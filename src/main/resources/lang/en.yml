@@ -75,6 +75,23 @@ search:
   sort-name-asc: "Name: A to Z"
   sort-name-desc: "Name: Z to A"
 
+# Bid / Auction messages
+bid:
+  listed: "<green>Your auction has been listed with a starting price of <yellow>{price}<green>!"
+  placed: "<green>Bid placed! You bid <yellow>{amount} <green>on <yellow>{item}<green>."
+  outbid: "<red>You have been outbid on <yellow>{item}<red>! New bid: <yellow>{amount} <red>by <yellow>{bidder}<red>. You have been refunded."
+  new-bid-seller: "<green>New bid on your <yellow>{item}<green>! <yellow>{bidder} <green>bid <yellow>{amount}<green>."
+  already-highest: "<red>You are already the highest bidder."
+  bid-too-low: "<red>Your bid is too low. Minimum bid: <yellow>{min}"
+  auction-won-buyer: "<green>Congratulations! You won the auction for <yellow>{item} <green>at <yellow>{price}<green>!"
+  auction-won-seller: "<green>Your auction for <yellow>{item} <green>was won by <yellow>{winner}<green>! Revenue: <yellow>{price} <green>(Tax: <red>{tax}<green>)"
+  refund: "<green>Your bid on <yellow>{item} <green>has been refunded. Amount: <yellow>{amount}"
+  cannot-cancel-with-bids: "<red>You cannot cancel a bid auction that has active bids."
+  bid-disabled: "<red>The bid system is currently disabled."
+  enter-bid-amount: "<yellow>Enter your bid amount in chat. <gray>(Minimum: {min})"
+  bid-cancelled: "<yellow>Bid cancelled."
+  no-bids-yet: "No bids yet"
+
 # Time format
 time:
   hours: "{value}h"

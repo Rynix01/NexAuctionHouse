@@ -6,6 +6,8 @@ import net.nexuby.nexauctionhouse.database.AuctionDAO;
 import net.nexuby.nexauctionhouse.hook.DiscordWebhook;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionStatus;
+import net.nexuby.nexauctionhouse.model.AuctionType;
+import net.nexuby.nexauctionhouse.model.Bid;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -110,6 +112,37 @@ public class AuctionManager {
     }
 
     /**
+     * Lists a new bid auction (auction type) on the auction house.
+     * Returns the auction id, or -1 if it failed.
+     */
+    public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency) {
+        double taxRate = getPlayerTaxRate(seller);
+        int durationHours = plugin.getConfigManager().getBidDefaultDuration();
+        long now = System.currentTimeMillis();
+        long expiresAt = now + (durationHours * 3600000L);
+
+        AuctionItem auctionItem = new AuctionItem(
+                0, seller.getUniqueId(), seller.getName(), itemStack,
+                startingPrice, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE,
+                AuctionType.AUCTION, 0, null, null
+        );
+
+        int id = dao.insertAuction(auctionItem);
+        if (id > 0) {
+            AuctionItem withId = new AuctionItem(
+                    id, seller.getUniqueId(), seller.getName(), itemStack,
+                    startingPrice, currency, taxRate, now, expiresAt, AuctionStatus.ACTIVE,
+                    AuctionType.AUCTION, 0, null, null
+            );
+            activeAuctions.put(id, withId);
+            dao.logTransaction(id, seller.getUniqueId(), null, itemStack, startingPrice, 0, "LIST_AUCTION");
+            discordWebhook.sendListingNotification(seller.getName(), itemStack, startingPrice, currency);
+        }
+
+        return id;
+    }
+
+    /**
      * Processes a purchase of an auction item.
      * Returns true if successful.
      */
@@ -182,6 +215,102 @@ public class AuctionManager {
     }
 
     /**
+     * Places a bid on an auction item.
+     * Validates amount, refunds previous highest bidder, applies anti-snipe.
+     * Returns true if the bid was placed successfully.
+     */
+    public boolean placeBid(Player bidder, int auctionId, double amount) {
+        AuctionItem item = activeAuctions.get(auctionId);
+        if (item == null || item.isExpired() || !item.isBidAuction()) {
+            return false;
+        }
+
+        // Cannot bid on own item
+        if (item.getSellerUuid().equals(bidder.getUniqueId())) {
+            return false;
+        }
+
+        // Cannot bid if already highest bidder
+        if (bidder.getUniqueId().equals(item.getHighestBidderUuid())) {
+            return false;
+        }
+
+        String currency = item.getCurrency();
+
+        // Calculate minimum bid
+        double minBid;
+        double incrementPercent = plugin.getConfigManager().getBidMinIncrementPercent();
+        if (item.getHighestBid() > 0) {
+            minBid = item.getHighestBid() * (1 + incrementPercent / 100.0);
+        } else {
+            minBid = item.getPrice(); // starting price
+        }
+
+        if (amount < minBid) {
+            return false;
+        }
+
+        // Check bidder's balance
+        if (!plugin.getEconomyManager().has(bidder, amount, currency)) {
+            return false;
+        }
+
+        // Withdraw from bidder
+        plugin.getEconomyManager().withdraw(bidder, amount, currency);
+
+        // Refund previous highest bidder
+        UUID previousBidderUuid = item.getHighestBidderUuid();
+        double previousBidAmount = item.getHighestBid();
+        if (previousBidderUuid != null && previousBidAmount > 0) {
+            Player previousBidder = Bukkit.getPlayer(previousBidderUuid);
+            if (previousBidder != null && previousBidder.isOnline()) {
+                plugin.getEconomyManager().deposit(previousBidder, previousBidAmount, currency);
+                previousBidder.sendMessage(plugin.getLangManager().prefixed("bid.outbid",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{amount}", plugin.getEconomyManager().format(amount, currency),
+                        "{bidder}", bidder.getName()));
+            } else {
+                // Queue refund for offline player
+                dao.insertPendingRevenue(previousBidderUuid, item.getHighestBidderName(), previousBidAmount,
+                        currency, auctionId, getItemName(item.getItemStack()), bidder.getName());
+            }
+        }
+
+        // Update the auction with new highest bid
+        item.setHighestBid(amount);
+        item.setHighestBidderUuid(bidder.getUniqueId());
+        item.setHighestBidderName(bidder.getName());
+        dao.updateHighestBid(auctionId, amount, bidder.getUniqueId(), bidder.getName());
+        dao.insertBid(auctionId, bidder.getUniqueId(), bidder.getName(), amount);
+        dao.logTransaction(auctionId, item.getSellerUuid(), bidder.getUniqueId(),
+                item.getItemStack(), amount, 0, "BID");
+
+        // Anti-snipe: extend if bid is within the last X seconds before expiry
+        int antiSnipeSeconds = plugin.getConfigManager().getAntiSnipeSeconds();
+        long remaining = item.getRemainingTime();
+        if (remaining > 0 && remaining < antiSnipeSeconds * 1000L) {
+            long newExpiry = System.currentTimeMillis() + (antiSnipeSeconds * 1000L);
+            item.setExpiresAt(newExpiry);
+            dao.updateAuctionExpiry(auctionId, newExpiry);
+        }
+
+        // Notify seller if online
+        Player seller = Bukkit.getPlayer(item.getSellerUuid());
+        if (seller != null && seller.isOnline()) {
+            seller.sendMessage(plugin.getLangManager().prefixed("bid.new-bid-seller",
+                    "{item}", getItemName(item.getItemStack()),
+                    "{bidder}", bidder.getName(),
+                    "{amount}", plugin.getEconomyManager().format(amount, currency)));
+        }
+
+        // Discord notification
+        discordWebhook.sendBidNotification(bidder.getName(), item.getSellerName(),
+                item.getItemStack(), amount, currency);
+
+        return true;
+    }
+
+    /**
      * Cancels an auction and returns the item to the seller.
      */
     public boolean cancelAuction(Player requester, int auctionId, boolean isAdmin) {
@@ -195,11 +324,21 @@ public class AuctionManager {
             return false;
         }
 
+        // Bid auctions with active bids can only be cancelled by admin
+        if (item.isBidAuction() && item.getHighestBid() > 0 && !isAdmin) {
+            return false;
+        }
+
         activeAuctions.remove(auctionId);
         item.setStatus(AuctionStatus.CANCELLED);
         dao.updateAuctionStatus(auctionId, AuctionStatus.CANCELLED);
         dao.logTransaction(auctionId, item.getSellerUuid(), null,
                 item.getItemStack(), item.getPrice(), 0, isAdmin ? "ADMIN_CANCEL" : "CANCEL");
+
+        // Refund highest bidder if this was a bid auction
+        if (item.isBidAuction() && item.getHighestBidderUuid() != null && item.getHighestBid() > 0) {
+            refundHighestBidder(item);
+        }
 
         // Try to give the item directly to the seller if they're online
         Player seller = Bukkit.getPlayer(item.getSellerUuid());
@@ -208,6 +347,11 @@ public class AuctionManager {
         } else {
             // Seller offline or inventory full - store for later pickup
             dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "CANCELLED");
+        }
+
+        // Clean up bids
+        if (item.isBidAuction()) {
+            dao.deleteBidsByAuction(auctionId);
         }
 
         // Discord notification
@@ -223,6 +367,11 @@ public class AuctionManager {
     public boolean updatePrice(Player seller, int auctionId, double newPrice) {
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired()) {
+            return false;
+        }
+
+        // Cannot edit price of bid auctions
+        if (item.isBidAuction()) {
             return false;
         }
 
@@ -294,14 +443,95 @@ public class AuctionManager {
 
     /**
      * Moves an expired auction out of active list and into expired items.
+     * For bid auctions with a winner, completes the sale.
      */
     private void expireAuction(AuctionItem item) {
         activeAuctions.remove(item.getId());
-        item.setStatus(AuctionStatus.EXPIRED);
-        dao.updateAuctionStatus(item.getId(), AuctionStatus.EXPIRED);
-        dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "EXPIRED");
-        dao.logTransaction(item.getId(), item.getSellerUuid(), null,
-                item.getItemStack(), item.getPrice(), 0, "EXPIRE");
+
+        if (item.isBidAuction() && item.getHighestBidderUuid() != null && item.getHighestBid() > 0) {
+            // Bid auction with a winner - complete the sale
+            completeAuction(item);
+        } else {
+            // BIN auction expired with no buyer, or bid auction with no bids
+            item.setStatus(AuctionStatus.EXPIRED);
+            dao.updateAuctionStatus(item.getId(), AuctionStatus.EXPIRED);
+            dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "EXPIRED");
+            dao.logTransaction(item.getId(), item.getSellerUuid(), null,
+                    item.getItemStack(), item.getPrice(), 0, "EXPIRE");
+
+            // Clean up bids if it was a bid auction with no bids
+            if (item.isBidAuction()) {
+                dao.deleteBidsByAuction(item.getId());
+            }
+        }
+    }
+
+    /**
+     * Completes a bid auction: gives the item to the winner and pays the seller.
+     */
+    private void completeAuction(AuctionItem item) {
+        item.setStatus(AuctionStatus.SOLD);
+        dao.updateAuctionStatus(item.getId(), AuctionStatus.SOLD);
+
+        double salePrice = item.getHighestBid();
+        double taxAmount = salePrice * (item.getTaxRate() / 100.0);
+        double sellerReceives = salePrice - taxAmount;
+        String currency = item.getCurrency();
+
+        // Pay the seller
+        Player seller = Bukkit.getPlayer(item.getSellerUuid());
+        if (seller != null && seller.isOnline()) {
+            plugin.getEconomyManager().deposit(seller, sellerReceives, currency);
+            seller.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-seller",
+                    "{item}", getItemName(item.getItemStack()),
+                    "{winner}", item.getHighestBidderName(),
+                    "{price}", plugin.getEconomyManager().format(salePrice, currency),
+                    "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
+        } else {
+            dao.insertPendingRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives,
+                    currency, item.getId(), getItemName(item.getItemStack()), item.getHighestBidderName());
+        }
+
+        // Give item to winner
+        Player winner = Bukkit.getPlayer(item.getHighestBidderUuid());
+        if (winner != null && winner.isOnline() && winner.getInventory().firstEmpty() != -1) {
+            winner.getInventory().addItem(item.getItemStack());
+            winner.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-buyer",
+                    "{item}", getItemName(item.getItemStack()),
+                    "{price}", plugin.getEconomyManager().format(salePrice, currency)));
+        } else {
+            // Winner offline or full inventory - store for later pickup
+            dao.insertExpiredItem(item.getHighestBidderUuid(), item.getHighestBidderName(),
+                    item.getItemStack(), "AUCTION_WON");
+        }
+
+        dao.logTransaction(item.getId(), item.getSellerUuid(), item.getHighestBidderUuid(),
+                item.getItemStack(), salePrice, taxAmount, "AUCTION_COMPLETE");
+
+        // Clean up bids
+        dao.deleteBidsByAuction(item.getId());
+
+        // Discord notification
+        discordWebhook.sendAuctionWonNotification(item.getHighestBidderName(), item.getSellerName(),
+                item.getItemStack(), salePrice, currency);
+    }
+
+    /**
+     * Refunds the highest bidder of a bid auction.
+     */
+    private void refundHighestBidder(AuctionItem item) {
+        Player bidder = Bukkit.getPlayer(item.getHighestBidderUuid());
+        String currency = item.getCurrency();
+        if (bidder != null && bidder.isOnline()) {
+            plugin.getEconomyManager().deposit(bidder, item.getHighestBid(), currency);
+            bidder.sendMessage(plugin.getLangManager().prefixed("bid.refund",
+                    "{item}", getItemName(item.getItemStack()),
+                    "{amount}", plugin.getEconomyManager().format(item.getHighestBid(), currency)));
+        } else {
+            dao.insertPendingRevenue(item.getHighestBidderUuid(), item.getHighestBidderName(),
+                    item.getHighestBid(), currency, item.getId(),
+                    getItemName(item.getItemStack()), "REFUND");
+        }
     }
 
     // -- Permission-based limit helpers --
@@ -424,6 +654,18 @@ public class AuctionManager {
         // Active auctions are already persisted in the database,
         // this is just a safety checkpoint
         plugin.getLogger().info("Auction data saved. (" + activeAuctions.size() + " active auctions)");
+    }
+
+    public double getMinBid(AuctionItem item) {
+        double incrementPercent = plugin.getConfigManager().getBidMinIncrementPercent();
+        if (item.getHighestBid() > 0) {
+            return Math.ceil(item.getHighestBid() * (1 + incrementPercent / 100.0) * 100) / 100.0;
+        }
+        return item.getPrice();
+    }
+
+    public DiscordWebhook getDiscordWebhook() {
+        return discordWebhook;
     }
 
     public static String getItemName(ItemStack itemStack) {

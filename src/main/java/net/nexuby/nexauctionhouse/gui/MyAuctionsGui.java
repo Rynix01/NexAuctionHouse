@@ -112,7 +112,21 @@ public class MyAuctionsGui extends PaginatedGui {
             List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
             lore.add(Component.empty());
             lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-            lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
+
+            if (auction.isBidAuction()) {
+                lore.add(text("<gold>[AUCTION]"));
+                lore.add(text("<gray>Starting Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
+                String currentBidStr = auction.getHighestBid() > 0
+                        ? plugin.getEconomyManager().format(auction.getHighestBid(), auction.getCurrency())
+                        : plugin.getLangManager().getRaw("bid.no-bids-yet");
+                lore.add(text("<gray>Current Bid: <yellow>" + currentBidStr));
+                if (auction.getHighestBidderName() != null) {
+                    lore.add(text("<gray>Highest Bidder: <white>" + auction.getHighestBidderName()));
+                }
+            } else {
+                lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
+            }
+
             lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
             lore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auction.getTaxRate())));
             lore.add(Component.empty());

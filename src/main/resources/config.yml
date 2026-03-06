@@ -83,6 +83,17 @@ tax:
   # Override with permission: nexauctions.tax.<percentage>
   default-rate: 10.0
 
+# Bid / Auction system
+bid:
+  # Enable the bid (auction) system. If false, only BIN listings are allowed.
+  enabled: true
+  # Minimum bid increment percentage (e.g. 5 means each new bid must be >= 5% higher)
+  min-increment-percent: 5.0
+  # Anti-snipe: if a bid is placed within this many seconds before expiry, extend the auction
+  anti-snipe-seconds: 300
+  # Default duration for bid auctions in hours (can differ from BIN duration)
+  default-duration: 24
+
 # Blacklisted items that cannot be listed
 blacklist:
   materials:
