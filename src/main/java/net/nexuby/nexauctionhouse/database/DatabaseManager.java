@@ -142,18 +142,29 @@ public class DatabaseManager {
                 + "timestamp BIGINT NOT NULL"
                 + ")";
 
+        // Favorites table for watchlist system
+        String favoritesTable = "CREATE TABLE IF NOT EXISTS favorites ("
+                + "id INTEGER PRIMARY KEY " + (usingSQLite ? "AUTOINCREMENT" : "AUTO_INCREMENT") + ","
+                + "player_uuid VARCHAR(36) NOT NULL,"
+                + "auction_id INTEGER NOT NULL,"
+                + "added_at BIGINT NOT NULL,"
+                + "UNIQUE(player_uuid, auction_id)"
+                + ")";
+
         try (PreparedStatement stmt1 = connection.prepareStatement(auctionsTable);
              PreparedStatement stmt2 = connection.prepareStatement(expiredTable);
              PreparedStatement stmt3 = connection.prepareStatement(logsTable);
              PreparedStatement stmt4 = connection.prepareStatement(revenueTable);
              PreparedStatement stmt5 = connection.prepareStatement(rescuedTable);
-             PreparedStatement stmt6 = connection.prepareStatement(bidsTable)) {
+             PreparedStatement stmt6 = connection.prepareStatement(bidsTable);
+             PreparedStatement stmt7 = connection.prepareStatement(favoritesTable)) {
             stmt1.executeUpdate();
             stmt2.executeUpdate();
             stmt3.executeUpdate();
             stmt4.executeUpdate();
             stmt5.executeUpdate();
             stmt6.executeUpdate();
+            stmt7.executeUpdate();
         }
     }
 

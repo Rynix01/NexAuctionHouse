@@ -103,13 +103,13 @@
 - [x] Çevrimdışı teklif iade kuyruğu (pending_revenue entegrasyonu)
 
 ## Aşama 10: Favori / İzleme Listesi
-- [ ] Veritabanında favorites tablosu (player_uuid, auction_id)
-- [ ] GUI'de eşyaya shift+click ile favoriye ekleme/çıkarma
-- [ ] /ah favorites komutu ile favori listesi GUI'si
-- [ ] Ana menüde favori butonu
-- [ ] Favori ilan satıldığında/iptal edildiğinde oyuncuya bildirim
-- [ ] Config üzerinden favori limiti (max-favorites)
-- [ ] Favori listesi PaginatedGui desteği
+- [x] Veritabanında favorites tablosu (player_uuid, auction_id)
+- [x] GUI'de eşyaya shift+click ile favoriye ekleme/çıkarma
+- [x] /ah favorites komutu ile favori listesi GUI'si
+- [x] Ana menüde favori butonu
+- [x] Favori ilan satıldığında/iptal edildiğinde oyuncuya bildirim
+- [x] Config üzerinden favori limiti (max-favorites)
+- [x] Favori listesi PaginatedGui desteği
 
 ## Aşama 11: Fiyat Geçmişi ve İstatistikler
 - [ ] /ah history komutu → kişisel işlem geçmişi GUI'si (son 50 alış/satış)

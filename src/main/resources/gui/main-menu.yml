@@ -90,6 +90,15 @@ buttons:
       - ""
       - "<yellow>Click <gray>to cycle sort mode."
 
+  favorites:
+    slot: 38
+    material: NETHER_STAR
+    name: "<light_purple>Favorites"
+    lore:
+      - "<gray>View your favorited items."
+      - ""
+      - "<yellow>Shift+Click <gray>items to favorite."
+
   close:
     slot: 53
     material: BARRIER
@@ -120,25 +129,12 @@ filler:
     - 35
     - 36
     - 37
-    - 38
     - 39
     - 40
     - 41
     - 42
     - 43
     - 44
-    - 35
-    - 36
-    - 37
-    - 38
-    - 39
-    - 40
-    - 41
-    - 42
-    - 43
-    - 44
-    - 51
-    - 52
 
 # Auction item lore template (appended to item's original lore)
 auction-item-lore:

@@ -211,6 +211,9 @@ public class AuctionManager {
         discordWebhook.sendSaleNotification(item.getSellerName(), buyer.getName(),
                 item.getItemStack(), item.getPrice(), taxAmount, currency);
 
+        // Notify favorite watchers
+        notifyFavoriteWatchers(item, "sold");
+
         return true;
     }
 
@@ -357,6 +360,9 @@ public class AuctionManager {
         // Discord notification
         discordWebhook.sendCancelNotification(item.getSellerName(), item.getItemStack(), item.getPrice(), isAdmin, item.getCurrency());
 
+        // Notify favorite watchers
+        notifyFavoriteWatchers(item, "cancelled");
+
         return true;
     }
 
@@ -463,6 +469,9 @@ public class AuctionManager {
             if (item.isBidAuction()) {
                 dao.deleteBidsByAuction(item.getId());
             }
+
+            // Notify favorite watchers
+            notifyFavoriteWatchers(item, "expired");
         }
     }
 
@@ -514,6 +523,9 @@ public class AuctionManager {
         // Discord notification
         discordWebhook.sendAuctionWonNotification(item.getHighestBidderName(), item.getSellerName(),
                 item.getItemStack(), salePrice, currency);
+
+        // Notify favorite watchers
+        notifyFavoriteWatchers(item, "sold");
     }
 
     /**
@@ -666,6 +678,67 @@ public class AuctionManager {
 
     public DiscordWebhook getDiscordWebhook() {
         return discordWebhook;
+    }
+
+    // -- Favorites --
+
+    public boolean addFavorite(Player player, int auctionId) {
+        int maxFavorites = plugin.getConfigManager().getMaxFavorites();
+        int currentCount = dao.getFavoriteCount(player.getUniqueId());
+        if (currentCount >= maxFavorites) {
+            return false;
+        }
+        return dao.addFavorite(player.getUniqueId(), auctionId);
+    }
+
+    public boolean removeFavorite(Player player, int auctionId) {
+        return dao.removeFavorite(player.getUniqueId(), auctionId);
+    }
+
+    public boolean isFavorited(UUID playerUuid, int auctionId) {
+        return dao.isFavorited(playerUuid, auctionId);
+    }
+
+    public List<AuctionItem> getFavoriteAuctions(UUID playerUuid) {
+        List<Integer> ids = dao.getFavoriteAuctionIds(playerUuid);
+        List<AuctionItem> favorites = new ArrayList<>();
+        for (int id : ids) {
+            AuctionItem item = activeAuctions.get(id);
+            if (item != null && !item.isExpired()) {
+                favorites.add(item);
+            }
+        }
+        return favorites;
+    }
+
+    /**
+     * Notifies players who favorited an auction that it has been sold or cancelled.
+     */
+    public void notifyFavoriteWatchers(AuctionItem item, String reason) {
+        List<UUID> watchers = dao.getPlayersWhoFavorited(item.getId());
+        for (UUID watcherUuid : watchers) {
+            // Don't notify the seller
+            if (watcherUuid.equals(item.getSellerUuid())) continue;
+
+            Player watcher = Bukkit.getPlayer(watcherUuid);
+            if (watcher != null && watcher.isOnline()) {
+                if ("sold".equals(reason)) {
+                    watcher.sendMessage(plugin.getLangManager().prefixed("favorites.notify-sold",
+                            "{item}", getItemName(item.getItemStack()),
+                            "{seller}", item.getSellerName()));
+                } else if ("cancelled".equals(reason)) {
+                    watcher.sendMessage(plugin.getLangManager().prefixed("favorites.notify-cancelled",
+                            "{item}", getItemName(item.getItemStack()),
+                            "{seller}", item.getSellerName()));
+                } else if ("expired".equals(reason)) {
+                    watcher.sendMessage(plugin.getLangManager().prefixed("favorites.notify-expired",
+                            "{item}", getItemName(item.getItemStack()),
+                            "{seller}", item.getSellerName()));
+                }
+            }
+        }
+        // Clean up favorites for this auction
+        dao.deleteFavoritesByAuction(item.getId());
     }
 
     public static String getItemName(ItemStack itemStack) {

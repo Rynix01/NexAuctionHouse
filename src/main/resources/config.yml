@@ -94,6 +94,11 @@ bid:
   # Default duration for bid auctions in hours (can differ from BIN duration)
   default-duration: 24
 
+# Favorites / Watchlist system
+favorites:
+  # Maximum number of favorites per player
+  max-favorites: 50
+
 # Blacklisted items that cannot be listed
 blacklist:
   materials:

@@ -110,6 +110,12 @@ public class ConfigManager {
         return config.getInt("bid.default-duration", 24);
     }
 
+    // -- Favorites settings --
+
+    public int getMaxFavorites() {
+        return config.getInt("favorites.max-favorites", 50);
+    }
+
     // -- Blacklist --
 
     public List<String> getBlacklistedMaterials() {

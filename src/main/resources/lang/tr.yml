@@ -92,6 +92,16 @@ bid:
   bid-cancelled: "<yellow>Teklif iptal edildi."
   no-bids-yet: "Henuz teklif yok"
 
+# Favori / Izleme Listesi mesajlari
+favorites:
+  added: "<light_purple>★ <green><yellow>{item} <green>favorilerinize eklendi!"
+  removed: "<gray>★ <yellow><yellow>{item} <yellow>favorilerinizden cikarildi."
+  limit-reached: "<red>Favori limitinize ulastiniz: <yellow>{limit}<red>."
+  empty: "<yellow>Favori listeniz bos."
+  notify-sold: "<light_purple>★ <green>Favori esyaniz <yellow>{item} <green>(<yellow>{seller}<green>) satildi!"
+  notify-cancelled: "<light_purple>★ <yellow>Favori esyaniz <yellow>{item} <yellow>(<yellow>{seller}<yellow>) iptal edildi."
+  notify-expired: "<light_purple>★ <gray>Favori esyaniz <yellow>{item} <gray>(<yellow>{seller}<gray>) suresi doldu."
+
 # Zaman formati
 time:
   hours: "{value}sa"

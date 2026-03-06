@@ -5,6 +5,7 @@ import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.gui.AdminGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
+import net.nexuby.nexauctionhouse.gui.FavoritesGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
@@ -57,6 +58,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "sell" -> handleSell(sender, args);
             case "search" -> handleSearch(sender, args);
+            case "favorites" -> handleFavorites(sender);
             case "expired" -> handleExpired(sender);
             case "admin" -> handleAdmin(sender, args);
             case "reload" -> handleReload(sender);
@@ -208,6 +210,22 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         new ExpiredGui(plugin, player).open();
     }
 
+    private void handleFavorites(CommandSender sender) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.use")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        new FavoritesGui(plugin, player).open();
+    }
+
     private void handleSearch(CommandSender sender, String[] args) {
         LangManager lang = plugin.getLangManager();
 
@@ -340,6 +358,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             List<String> completions = new ArrayList<>();
             completions.add("sell");
             completions.add("search");
+            completions.add("favorites");
             completions.add("expired");
 
             if (sender.hasPermission("nexauctions.admin")) {

@@ -92,6 +92,16 @@ bid:
   bid-cancelled: "<yellow>Bid cancelled."
   no-bids-yet: "No bids yet"
 
+# Favorites / Watchlist messages
+favorites:
+  added: "<light_purple>★ <green>Added <yellow>{item} <green>to your favorites!"
+  removed: "<gray>★ <yellow>Removed <yellow>{item} <yellow>from your favorites."
+  limit-reached: "<red>You have reached your favorites limit of <yellow>{limit}<red>."
+  empty: "<yellow>Your favorites list is empty."
+  notify-sold: "<light_purple>★ <green>A favorited item <yellow>{item} <green>by <yellow>{seller} <green>has been sold!"
+  notify-cancelled: "<light_purple>★ <yellow>A favorited item <yellow>{item} <yellow>by <yellow>{seller} <yellow>has been cancelled."
+  notify-expired: "<light_purple>★ <gray>A favorited item <yellow>{item} <gray>by <yellow>{seller} <gray>has expired."
+
 # Time format
 time:
   hours: "{value}h"

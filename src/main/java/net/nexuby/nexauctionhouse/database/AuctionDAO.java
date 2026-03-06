@@ -403,6 +403,114 @@ public class AuctionDAO {
         return bids;
     }
 
+    // -- Favorites operations --
+
+    public boolean addFavorite(UUID playerUuid, int auctionId) {
+        String sql = "INSERT INTO favorites (player_uuid, auction_id, added_at) VALUES (?, ?, ?)";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            stmt.setInt(2, auctionId);
+            stmt.setLong(3, System.currentTimeMillis());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            // UNIQUE constraint violation means already favorited - not an error
+            if (e.getMessage() != null && (e.getMessage().contains("UNIQUE") || e.getMessage().contains("Duplicate"))) {
+                return false;
+            }
+            plugin.getLogger().log(Level.SEVERE, "Failed to add favorite", e);
+            return false;
+        }
+    }
+
+    public boolean removeFavorite(UUID playerUuid, int auctionId) {
+        String sql = "DELETE FROM favorites WHERE player_uuid = ? AND auction_id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            stmt.setInt(2, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to remove favorite", e);
+            return false;
+        }
+    }
+
+    public boolean isFavorited(UUID playerUuid, int auctionId) {
+        String sql = "SELECT 1 FROM favorites WHERE player_uuid = ? AND auction_id = ? LIMIT 1";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            stmt.setInt(2, auctionId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to check favorite", e);
+            return false;
+        }
+    }
+
+    public List<Integer> getFavoriteAuctionIds(UUID playerUuid) {
+        List<Integer> ids = new ArrayList<>();
+        String sql = "SELECT auction_id FROM favorites WHERE player_uuid = ? ORDER BY added_at DESC";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                ids.add(rs.getInt("auction_id"));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load favorites for player", e);
+        }
+        return ids;
+    }
+
+    public int getFavoriteCount(UUID playerUuid) {
+        String sql = "SELECT COUNT(*) FROM favorites WHERE player_uuid = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to count favorites", e);
+        }
+        return 0;
+    }
+
+    public List<UUID> getPlayersWhoFavorited(int auctionId) {
+        List<UUID> players = new ArrayList<>();
+        String sql = "SELECT player_uuid FROM favorites WHERE auction_id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, auctionId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                players.add(UUID.fromString(rs.getString("player_uuid")));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to get players who favorited auction #" + auctionId, e);
+        }
+        return players;
+    }
+
+    public boolean deleteFavoritesByAuction(int auctionId) {
+        String sql = "DELETE FROM favorites WHERE auction_id = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, auctionId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to delete favorites for auction #" + auctionId, e);
+            return false;
+        }
+    }
+
     // -- Parsing helpers --
 
     private AuctionItem parseAuction(ResultSet rs) throws SQLException {

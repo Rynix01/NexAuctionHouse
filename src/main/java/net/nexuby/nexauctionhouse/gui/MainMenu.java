@@ -43,6 +43,7 @@ public class MainMenu extends PaginatedGui {
     private int closeSlot = -1;
     private int searchSlot = -1;
     private int sortSlot = -1;
+    private int favoritesSlot = -1;
 
     // Maps item slot index -> auction id for click handling
     private final List<Integer> auctionIds = new ArrayList<>();
@@ -171,6 +172,26 @@ public class MainMenu extends PaginatedGui {
             return;
         }
 
+        // Shift+click toggles favorite
+        if (event.isShiftClick()) {
+            AuctionManager manager = plugin.getAuctionManager();
+            if (manager.isFavorited(viewer.getUniqueId(), auctionId)) {
+                manager.removeFavorite(viewer, auctionId);
+                viewer.sendMessage(plugin.getLangManager().prefixed("favorites.removed",
+                        "{item}", AuctionManager.getItemName(auction.getItemStack())));
+            } else {
+                if (manager.addFavorite(viewer, auctionId)) {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("favorites.added",
+                            "{item}", AuctionManager.getItemName(auction.getItemStack())));
+                } else {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("favorites.limit-reached",
+                            "{limit}", String.valueOf(plugin.getConfigManager().getMaxFavorites())));
+                }
+            }
+            refresh();
+            return;
+        }
+
         // Bid auctions open the bid dialog, BIN auctions open confirm purchase
         if (auction.isBidAuction()) {
             new BidGui(plugin, viewer, auction).open();
@@ -266,6 +287,14 @@ public class MainMenu extends PaginatedGui {
                 inventory.setItem(sortSlot, sortButton);
             }
         }
+
+        // Favorites button
+        if (buttons.contains("favorites")) {
+            favoritesSlot = buttons.getInt("favorites.slot", -1);
+            if (favoritesSlot >= 0) {
+                inventory.setItem(favoritesSlot, createButton(buttons.getConfigurationSection("favorites")));
+            }
+        }
     }
 
     @Override
@@ -284,6 +313,8 @@ public class MainMenu extends PaginatedGui {
             handleSearchClick();
         } else if (slot == sortSlot) {
             handleSortClick();
+        } else if (slot == favoritesSlot) {
+            new FavoritesGui(plugin, viewer).open();
         }
     }
 
