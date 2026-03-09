@@ -108,6 +108,9 @@ stats:
 
 # Blacklisted items that cannot be listed
 blacklist:
+  # Blacklist mode: 'blacklist' (block listed items) or 'whitelist' (only allow listed items)
+  mode: blacklist
+
   materials:
     - BEDROCK
     - BARRIER
@@ -129,6 +132,37 @@ blacklist:
   #  - "itemsadder:forbidden_sword"
   #  - "mmoitems:SWORD:FORBIDDEN_BLADE"
   #  - "oraxen:banned_item"
+
+  # Enchantment blacklist - items containing these enchantments cannot be listed
+  # Use Bukkit enchantment names (e.g. SHARPNESS, MENDING, SILK_TOUCH)
+  enchantments: []
+  #  - "MENDING"
+  #  - "SILK_TOUCH"
+
+  # NBT tag blacklist - items containing any of these NBT keys cannot be listed
+  # Checks in the item's PersistentDataContainer using NamespacedKeys (format: "namespace:key")
+  nbt-tags: []
+  #  - "myplugin:soulbound"
+  #  - "customplugin:untradeable"
+
+  # World blacklist - auction house cannot be used in these worlds
+  disabled-worlds: []
+  #  - "world_pvp"
+  #  - "world_minigames"
+
+  # Whitelist materials - only these materials can be listed when mode is 'whitelist'
+  whitelist-materials: []
+  #  - "DIAMOND_SWORD"
+  #  - "NETHERITE_SWORD"
+
+  # Per-material price limits (overrides global min/max price for specific materials)
+  material-price-limits: {}
+  #  DIAMOND:
+  #    min: 10.0
+  #    max: 500.0
+  #  NETHERITE_INGOT:
+  #    min: 100.0
+  #    max: 10000.0
 
 # Discord webhook integration
 discord:

@@ -62,6 +62,20 @@ admin:
   help-clear: "<yellow>/ah admin clear --all <gray>- Clear all auctions"
   help-clear-player: "<yellow>/ah admin clear --player=<name> <gray>- Clear player's auctions"
   help-stats: "<yellow>/ah admin stats <gray>- View auction stats"
+  help-blacklist: "<yellow>/ah admin blacklist <gray>- Manage blacklist settings"
+
+# Blacklist messages
+blacklist:
+  world-disabled: "<red>The auction house is disabled in this world."
+  material-price-too-low: "<red>Minimum price for <yellow>{material}<red> is <yellow>{min}<red>."
+  material-price-too-high: "<red>Maximum price for <yellow>{material}<red> is <yellow>{max}<red>."
+  mode-changed: "<green>Blacklist mode changed to <yellow>{mode}<green>."
+  enter-value: "<yellow>Enter the {type} to add. <gray>Type 'cancel' to go back."
+  action-cancelled: "<yellow>Action cancelled."
+  added: "<green>Added <yellow>{value}<green> to the blacklist."
+  removed: "<red>Removed <yellow>{value}<red> from the blacklist."
+  already-exists: "<yellow>{value}<yellow> is already in the list."
+  list-empty: "<red>The list is already empty."
 
 # Search and sort messages
 search:

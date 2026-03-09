@@ -5,6 +5,7 @@ import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.config.LangManager;
 import net.nexuby.nexauctionhouse.gui.AdminGui;
 import net.nexuby.nexauctionhouse.gui.AdminStatsGui;
+import net.nexuby.nexauctionhouse.gui.BlacklistGui;
 import net.nexuby.nexauctionhouse.gui.BulkSellGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.FavoritesGui;
@@ -53,6 +54,12 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
+            // World check
+            if (!player.hasPermission("nexauctions.bypass.world") && plugin.getAuctionManager().isWorldDisabled(player)) {
+                player.sendMessage(lang.prefixed("blacklist.world-disabled"));
+                return true;
+            }
+
             new MainMenu(plugin, player).open();
             return true;
         }
@@ -85,6 +92,12 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (!player.hasPermission("nexauctions.sell")) {
             player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        // World check
+        if (!player.hasPermission("nexauctions.bypass.world") && plugin.getAuctionManager().isWorldDisabled(player)) {
+            player.sendMessage(lang.prefixed("blacklist.world-disabled"));
             return;
         }
 
@@ -180,6 +193,23 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        // Per-material price limit check
+        double[] materialLimits = auctionManager.getMaterialPriceLimits(itemInHand.getType().name());
+        if (materialLimits != null) {
+            if (price < materialLimits[0]) {
+                player.sendMessage(lang.prefixed("blacklist.material-price-too-low",
+                        "{material}", itemInHand.getType().name(),
+                        "{min}", plugin.getEconomyManager().format(materialLimits[0], currency)));
+                return;
+            }
+            if (price > materialLimits[1]) {
+                player.sendMessage(lang.prefixed("blacklist.material-price-too-high",
+                        "{material}", itemInHand.getType().name(),
+                        "{max}", plugin.getEconomyManager().format(materialLimits[1], currency)));
+                return;
+            }
+        }
+
         // Listing limit check
         int limit = auctionManager.getPlayerListingLimit(player);
         int current = auctionManager.getPlayerActiveListings(player.getUniqueId());
@@ -229,6 +259,12 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (!player.hasPermission("nexauctions.sell")) {
             player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        // World check
+        if (!player.hasPermission("nexauctions.bypass.world") && plugin.getAuctionManager().isWorldDisabled(player)) {
+            player.sendMessage(lang.prefixed("blacklist.world-disabled"));
             return;
         }
 
@@ -487,6 +523,14 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 }
                 new AdminStatsGui(plugin, player).open();
             }
+            case "blacklist" -> {
+                // /ah admin blacklist - open blacklist management GUI (player only)
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(lang.prefixed("general.player-only"));
+                    return;
+                }
+                new BlacklistGui(plugin, player).open();
+            }
             default -> sender.sendMessage(lang.prefixed("admin.help"));
         }
     }
@@ -585,7 +629,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         // Admin sub-tab completion
         if (args[0].equalsIgnoreCase("admin") && sender.hasPermission("nexauctions.admin")) {
             if (args.length == 2) {
-                List<String> subs = new ArrayList<>(List.of("search", "remove", "clear", "stats"));
+                List<String> subs = new ArrayList<>(List.of("search", "remove", "clear", "stats", "blacklist"));
                 String input = args[1].toLowerCase();
                 subs.removeIf(s -> !s.startsWith(input));
                 return subs;

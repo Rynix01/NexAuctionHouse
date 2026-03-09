@@ -739,6 +739,14 @@ public class AuctionManager {
     public boolean isBlacklisted(ItemStack itemStack) {
         ConfigManager config = plugin.getConfigManager();
 
+        // Whitelist mode: only allow explicitly listed materials
+        if (config.isWhitelistMode()) {
+            List<String> whitelistMaterials = config.getWhitelistMaterials();
+            if (!whitelistMaterials.isEmpty()) {
+                return !whitelistMaterials.contains(itemStack.getType().name());
+            }
+        }
+
         // Check material blacklist
         String materialName = itemStack.getType().name();
         if (config.getBlacklistedMaterials().contains(materialName)) {
@@ -766,7 +774,47 @@ public class AuctionManager {
             }
         }
 
+        // Check enchantment blacklist
+        List<String> blockedEnchants = config.getBlacklistedEnchantments();
+        if (!blockedEnchants.isEmpty() && itemStack.hasItemMeta()) {
+            for (org.bukkit.enchantments.Enchantment ench : itemStack.getItemMeta().getEnchants().keySet()) {
+                if (blockedEnchants.contains(ench.getKey().getKey().toUpperCase())) {
+                    return true;
+                }
+            }
+        }
+
+        // Check NBT tag blacklist (PersistentDataContainer)
+        List<String> blockedNbtTags = config.getBlacklistedNbtTags();
+        if (!blockedNbtTags.isEmpty() && itemStack.hasItemMeta()) {
+            org.bukkit.persistence.PersistentDataContainer pdc = itemStack.getItemMeta().getPersistentDataContainer();
+            for (String tagStr : blockedNbtTags) {
+                String[] parts = tagStr.split(":", 2);
+                if (parts.length == 2) {
+                    org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(parts[0], parts[1]);
+                    if (pdc.has(key)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
         return false;
+    }
+
+    /**
+     * Checks if the player's current world is disabled for auction house usage.
+     */
+    public boolean isWorldDisabled(Player player) {
+        List<String> disabledWorlds = plugin.getConfigManager().getDisabledWorlds();
+        return disabledWorlds.contains(player.getWorld().getName());
+    }
+
+    /**
+     * Returns per-material price limits for the given material, or null if none configured.
+     */
+    public double[] getMaterialPriceLimits(String materialName) {
+        return plugin.getConfigManager().getMaterialPriceLimits().get(materialName.toUpperCase());
     }
 
     // -- Utility --

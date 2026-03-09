@@ -62,6 +62,20 @@ admin:
   help-clear: "<yellow>/ah admin clear --all <gray>- Tum ihaleleri temizle"
   help-clear-player: "<yellow>/ah admin clear --player=<isim> <gray>- Oyuncunun ihalelerini temizle"
   help-stats: "<yellow>/ah admin stats <gray>- Ihale istatistiklerini gor"
+  help-blacklist: "<yellow>/ah admin blacklist <gray>- Kara liste ayarlarini yonet"
+
+# Kara liste mesajlari
+blacklist:
+  world-disabled: "<red>Ihale evi bu dunyada devre disi."
+  material-price-too-low: "<red><yellow>{material}<red> icin minimum fiyat <yellow>{min}<red>."
+  material-price-too-high: "<red><yellow>{material}<red> icin maksimum fiyat <yellow>{max}<red>."
+  mode-changed: "<green>Kara liste modu <yellow>{mode}<green> olarak degistirildi."
+  enter-value: "<yellow>Eklenecek {type} girin. <gray>Geri donmek icin 'cancel' yazin."
+  action-cancelled: "<yellow>Islem iptal edildi."
+  added: "<green><yellow>{value}<green> kara listeye eklendi."
+  removed: "<red><yellow>{value}<red> kara listeden cikarildi."
+  already-exists: "<yellow>{value}<yellow> zaten listede mevcut."
+  list-empty: "<red>Liste zaten bos."
 
 # Arama ve siralama mesajlari
 search:

@@ -165,13 +165,13 @@
 - [x] Admin: /ah admin clear --all → tüm ilanları temizle (onay gerektirir)
 
 ## Aşama 16: Gelişmiş Kara Liste (Advanced Blacklist)
-- [ ] Enchantment bazlı kara liste (belirli büyülü eşyalar engellenebilir)
-- [ ] NBT tag bazlı kara liste (belirli tag içeren eşyalar engellenir)
-- [ ] Materyal bazlı fiyat limitleri (min/max fiyat per materyal)
-- [ ] Dünya bazlı kara liste (belirli dünyalarda AH kullanım engeli)
-- [ ] Whitelist modu (sadece izin verilen eşyalar satılabilir)
-- [ ] Admin Blacklist GUI'si (görsel yönetim arayüzü)
-- [ ] Blacklist config bölümü genişletilmesi
+- [x] Enchantment bazlı kara liste (belirli büyülü eşyalar engellenebilir)
+- [x] NBT tag bazlı kara liste (belirli tag içeren eşyalar engellenir)
+- [x] Materyal bazlı fiyat limitleri (min/max fiyat per materyal)
+- [x] Dünya bazlı kara liste (belirli dünyalarda AH kullanım engeli)
+- [x] Whitelist modu (sadece izin verilen eşyalar satılabilir)
+- [x] Admin Blacklist GUI'si (görsel yönetim arayüzü)
+- [x] Blacklist config bölümü genişletilmesi
 
 ## Aşama 17: Paket Satış (Bundle) Sistemi
 - [ ] /ah bundle <fiyat> komutu → paket oluşturma GUI'si

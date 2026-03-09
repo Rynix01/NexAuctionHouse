@@ -198,6 +198,13 @@ public class BulkSellGui extends AbstractGui {
                 continue;
             }
 
+            // Per-material price limit check
+            double[] materialLimits = auctionManager.getMaterialPriceLimits(item.getType().name());
+            if (materialLimits != null && (price < materialLimits[0] || price > materialLimits[1])) {
+                skipped++;
+                continue;
+            }
+
             ItemStack toSell = item.clone();
             viewer.getInventory().setItem(playerSlot, null);
 

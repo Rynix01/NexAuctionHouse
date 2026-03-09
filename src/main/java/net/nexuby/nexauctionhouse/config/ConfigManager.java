@@ -1,11 +1,15 @@
 package net.nexuby.nexauctionhouse.config;
 
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConfigManager {
 
@@ -128,6 +132,14 @@ public class ConfigManager {
 
     // -- Blacklist --
 
+    public String getBlacklistMode() {
+        return config.getString("blacklist.mode", "blacklist");
+    }
+
+    public boolean isWhitelistMode() {
+        return "whitelist".equalsIgnoreCase(getBlacklistMode());
+    }
+
     public List<String> getBlacklistedMaterials() {
         return config.getStringList("blacklist.materials");
     }
@@ -138,6 +150,38 @@ public class ConfigManager {
 
     public List<String> getBlacklistedCustomItems() {
         return config.getStringList("blacklist.custom-items");
+    }
+
+    public List<String> getBlacklistedEnchantments() {
+        return config.getStringList("blacklist.enchantments");
+    }
+
+    public List<String> getBlacklistedNbtTags() {
+        return config.getStringList("blacklist.nbt-tags");
+    }
+
+    public List<String> getDisabledWorlds() {
+        return config.getStringList("blacklist.disabled-worlds");
+    }
+
+    public List<String> getWhitelistMaterials() {
+        return config.getStringList("blacklist.whitelist-materials");
+    }
+
+    /**
+     * Returns per-material price limits as a map of material name -> [min, max].
+     */
+    public Map<String, double[]> getMaterialPriceLimits() {
+        ConfigurationSection section = config.getConfigurationSection("blacklist.material-price-limits");
+        if (section == null) return Collections.emptyMap();
+
+        Map<String, double[]> limits = new HashMap<>();
+        for (String material : section.getKeys(false)) {
+            double min = section.getDouble(material + ".min", getMinPrice());
+            double max = section.getDouble(material + ".max", getMaxPrice());
+            limits.put(material.toUpperCase(), new double[]{min, max});
+        }
+        return limits;
     }
 
     // -- Discord Webhook --

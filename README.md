@@ -12,6 +12,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - **Notification Preferences** — Per-player notification settings stored in database. Toggle sale, bid, login, favorite notifications and sound effects independently. Settings GUI accessible from main menu or `/ah notifications`. Configurable default preferences and sound effects per event type. Settings cached in memory and cleaned on logout
 - **Auto-Relist** — Automatically relist expired auctions with `--autorelist` flag. Configurable max relist count and optional cost percentage. Relist counter displayed in item lore. Discord webhook notification on auto-relist. Falls back to normal expired flow when relist limit is reached or seller has insufficient balance. Permission-gated with `nexauctions.autorelist`
 - **Bulk Operations** — Select multiple inventory items for listing at once via `/ah sell-all <price>` or the GUI "Bulk Sell" button. Listing limit enforced per batch. Admin clear operations support `--player=<name>` and `--all` flags for targeted or global auction removal
+- **Advanced Blacklist** — Enchantment-based blacklist blocks items with specific enchantments. NBT tag blacklist blocks items with specific PersistentDataContainer keys. Per-material price limits enforce min/max price overrides per material. World-based blacklist disables the auction house in specific worlds. Whitelist mode only allows explicitly listed materials. Admin Blacklist GUI (`/ah admin blacklist`) for visual management of all blacklist settings
 - **Search & Sort** — Search auctions by item name, material, or seller. Sort by price, date, or name with a single click
 - **Multi-Economy Support** — 7 economy providers: Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, UltraEconomy. Multiple economies active simultaneously with per-listing currency selection
 - **Offline Player Sync** — Queued revenue delivery and item returns when players log in. No money or items lost while offline
@@ -86,6 +87,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 | `/ah admin` | Open admin panel | `nexauctions.admin` |
 | `/ah admin clear --all` | Clear all auctions | `nexauctions.admin` |
 | `/ah admin clear --player=<name>` | Clear a player's auctions | `nexauctions.admin` |
+| `/ah admin blacklist` | Manage blacklist settings GUI | `nexauctions.admin` |
 | `/ah reload` | Reload all configs | `nexauctions.reload` |
 
 **Aliases:** `/auctionhouse`, `/nexah`
@@ -99,6 +101,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 | `nexauctions.admin` | Access admin panel | `op` |
 | `nexauctions.reload` | Reload configuration | `op` |
 | `nexauctions.bypass.blacklist` | Bypass blacklisted items | `op` |
+| `nexauctions.bypass.world` | Use AH in disabled worlds | `op` |
 | `nexauctions.bypass.tax` | Bypass sale tax | `false` |
 | `nexauctions.limit.<number>` | Custom listing limit | — |
 | `nexauctions.time.<hours>` | Custom auction duration | — |
