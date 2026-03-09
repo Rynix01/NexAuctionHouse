@@ -208,6 +208,24 @@ public class ConfigManager {
         return config.getDouble("auto-relist.cost-percent", 0.0);
     }
 
+    // -- Bundle settings --
+
+    public boolean isBundleEnabled() {
+        return config.getBoolean("bundles.enabled", true);
+    }
+
+    public int getBundleMaxItems() {
+        return config.getInt("bundles.max-items", 9);
+    }
+
+    public int getBundleMinItems() {
+        return config.getInt("bundles.min-items", 2);
+    }
+
+    public int getBundleLimit() {
+        return config.getInt("bundles.bundle-limit", 0);
+    }
+
     public FileConfiguration getConfig() {
         return config;
     }

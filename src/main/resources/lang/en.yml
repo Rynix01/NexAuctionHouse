@@ -156,6 +156,18 @@ bulk:
   no-items-selected: "<red>No items selected! Click items to select them first."
   enter-price: "<yellow>Enter the price per item (and optionally a currency). <gray>Example: 100 money"
 
+# Bundle messages
+bundle:
+  usage: "<red>Usage: <yellow>/ah bundle <price> [currency]"
+  disabled: "<red>Bundle listings are currently disabled."
+  listed: "<green>Bundle created with <yellow>{count}<green> item(s) for <yellow>{price}<green>!"
+  create-failed: "<red>Failed to create the bundle listing. Your items have been returned."
+  min-items: "<red>You must select at least <yellow>{min}<red> items for a bundle."
+  max-items: "<red>Bundle is full! Maximum <yellow>{max}<red> items allowed."
+  bundle-limit: "<red>You have reached your bundle listing limit (<yellow>{limit}<red>)."
+  contains-blacklisted: "<red>Cannot create bundle — <yellow>{item}<red> is blacklisted."
+  inventory-full: "<red>Not enough inventory space! You need <yellow>{required}<red> empty slots but only have <yellow>{available}<red>."
+
 # Time format
 time:
   hours: "{value}h"

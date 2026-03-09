@@ -2,6 +2,8 @@ package net.nexuby.nexauctionhouse.model;
 
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class AuctionItem {
@@ -23,6 +25,8 @@ public class AuctionItem {
     private boolean autoRelist;
     private int relistCount;
     private int maxRelists;
+    private boolean bundle;
+    private List<ItemStack> bundleItems;
 
     public AuctionItem(int id, UUID sellerUuid, String sellerName, ItemStack itemStack,
                        double price, String currency, double taxRate, long createdAt, long expiresAt, AuctionStatus status) {
@@ -49,6 +53,8 @@ public class AuctionItem {
         this.autoRelist = false;
         this.relistCount = 0;
         this.maxRelists = 0;
+        this.bundle = false;
+        this.bundleItems = new ArrayList<>();
     }
 
     public int getId() {
@@ -191,5 +197,21 @@ public class AuctionItem {
 
     public void setMaxRelists(int maxRelists) {
         this.maxRelists = maxRelists;
+    }
+
+    public boolean isBundle() {
+        return bundle;
+    }
+
+    public void setBundle(boolean bundle) {
+        this.bundle = bundle;
+    }
+
+    public List<ItemStack> getBundleItems() {
+        return bundleItems;
+    }
+
+    public void setBundleItems(List<ItemStack> bundleItems) {
+        this.bundleItems = bundleItems != null ? bundleItems : new ArrayList<>();
     }
 }

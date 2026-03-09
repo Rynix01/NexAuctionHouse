@@ -151,7 +151,19 @@ public class ConfirmGui extends AbstractGui {
         }
 
         // Check inventory space
-        if (viewer.getInventory().firstEmpty() == -1) {
+        if (current.isBundle()) {
+            int emptySlots = 0;
+            for (ItemStack slot : viewer.getInventory().getStorageContents()) {
+                if (slot == null || slot.getType() == org.bukkit.Material.AIR) emptySlots++;
+            }
+            if (emptySlots < current.getBundleItems().size()) {
+                viewer.sendMessage(plugin.getLangManager().prefixed("bundle.inventory-full",
+                        "{required}", String.valueOf(current.getBundleItems().size()),
+                        "{available}", String.valueOf(emptySlots)));
+                viewer.closeInventory();
+                return;
+            }
+        } else if (viewer.getInventory().firstEmpty() == -1) {
             viewer.sendMessage(plugin.getLangManager().prefixed("auction.inventory-full"));
             viewer.closeInventory();
             return;

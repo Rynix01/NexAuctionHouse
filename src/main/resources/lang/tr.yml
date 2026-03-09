@@ -156,6 +156,18 @@ bulk:
   no-items-selected: "<red>Esya secilmedi! Once esyalari tiklayarak secin."
   enter-price: "<yellow>Esya basina fiyat girin (istege bagli para birimi). <gray>Ornek: 100 money"
 
+# Paket mesajlari
+bundle:
+  usage: "<red>Kullanim: <yellow>/ah bundle <fiyat> [para-birimi]"
+  disabled: "<red>Paket ilan ozelligi su anda devre disi."
+  listed: "<green>Basariyla <yellow>{count}<green> esyadan olusan paket <yellow>{price}<green> fiyatla olusturuldu!"
+  create-failed: "<red>Paket ilani olusturulamadi. Esyalariniz iade edildi."
+  min-items: "<red>Paket olusturmak icin en az <yellow>{min}<red> esya secmelisiniz."
+  max-items: "<red>Paket dolu! En fazla <yellow>{max}<red> esya eklenebilir."
+  bundle-limit: "<red>Paket ilan limitinize ulastiniz (<yellow>{limit}<red>)."
+  contains-blacklisted: "<red>Paket olusturulamaz — <yellow>{item}<red> kara listede."
+  inventory-full: "<red>Yeterli envanter alani yok! <yellow>{required}<red> bos alan gerekiyor, <yellow>{available}<red> alaniniz var."
+
 # Zaman formati
 time:
   hours: "{value}sa"

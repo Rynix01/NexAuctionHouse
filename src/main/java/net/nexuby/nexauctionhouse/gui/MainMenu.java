@@ -161,6 +161,11 @@ public class MainMenu extends PaginatedGui {
                 existingLore.add(text("<gray>Auto-Relist: <yellow>" + auction.getRelistCount() + "/" + auction.getMaxRelists()));
             }
 
+            // Show bundle indicator
+            if (auction.isBundle()) {
+                existingLore.add(text("<gold>\u2766 Bundle <gray>(<yellow>" + auction.getBundleItems().size() + " items<gray>)"));
+            }
+
             meta.lore(existingLore);
             display.setItemMeta(meta);
 
@@ -184,10 +189,15 @@ public class MainMenu extends PaginatedGui {
             return;
         }
 
-        // Right-click opens item preview
+        // Right-click opens item preview (or bundle preview for bundles)
         if (event.isRightClick() && !event.isShiftClick()) {
-            new PreviewGui(plugin, viewer, auction.getItemStack(),
-                    () -> new MainMenu(plugin, viewer).open()).open();
+            if (auction.isBundle()) {
+                new BundlePreviewGui(plugin, viewer, auction,
+                        () -> new MainMenu(plugin, viewer).open()).open();
+            } else {
+                new PreviewGui(plugin, viewer, auction.getItemStack(),
+                        () -> new MainMenu(plugin, viewer).open()).open();
+            }
             return;
         }
 

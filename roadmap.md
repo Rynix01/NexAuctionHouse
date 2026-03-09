@@ -174,14 +174,14 @@
 - [x] Blacklist config bölümü genişletilmesi
 
 ## Aşama 17: Paket Satış (Bundle) Sistemi
-- [ ] /ah bundle <fiyat> komutu → paket oluşturma GUI'si
-- [ ] Envanterdeki eşyaları seçerek paket oluşturma
-- [ ] Birden fazla eşyanın tek ilan olarak satışa konulması
-- [ ] Paket önizleme GUI'si (alıcı paketin içeriğini görebilir)
-- [ ] Paket satın alındığında tüm eşyaların alıcıya teslimi
-- [ ] Config: bundle-limit (oyuncu başı paket ilan limiti)
-- [ ] Paket ilanlarının ana menüde özel ikon/etiketle gösterimi
-- [ ] Envanter dolu kontrolü (paket eşyaları sığmazsa uyarı)
+- [x] /ah bundle <fiyat> komutu → paket oluşturma GUI'si
+- [x] Envanterdeki eşyaları seçerek paket oluşturma
+- [x] Birden fazla eşyanın tek ilan olarak satışa konulması
+- [x] Paket önizleme GUI'si (alıcı paketin içeriğini görebilir)
+- [x] Paket satın alındığında tüm eşyaların alıcıya teslimi
+- [x] Config: bundle-limit (oyuncu başı paket ilan limiti)
+- [x] Paket ilanlarının ana menüde özel ikon/etiketle gösterimi
+- [x] Envanter dolu kontrolü (paket eşyaları sığmazsa uyarı)
 
 ## Aşama 18: Göç Aracı (Migration Tool)
 - [ ] /ah migrate <plugin> komutu (admin yetkisi)

@@ -196,6 +196,8 @@ public class DatabaseManager {
         migrateColumn("auto_relist", "BOOLEAN NOT NULL DEFAULT 0");
         migrateColumn("relist_count", "INT NOT NULL DEFAULT 0");
         migrateColumn("max_relists", "INT NOT NULL DEFAULT 0");
+        migrateColumn("is_bundle", "BOOLEAN NOT NULL DEFAULT 0");
+        migrateColumn("bundle_data", "LONGTEXT DEFAULT NULL");
     }
 
     private void migrateColumn(String columnName, String columnDef) {

@@ -33,8 +33,8 @@ public class AuctionDAO {
     // -- Auction CRUD operations --
 
     public int insertAuction(AuctionItem item) {
-        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status, auction_type, highest_bid, highest_bidder_uuid, highest_bidder_name, auto_relist, relist_count, max_relists) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO auctions (seller_uuid, seller_name, item_data, price, currency, tax_rate, created_at, expires_at, status, auction_type, highest_bid, highest_bidder_uuid, highest_bidder_name, auto_relist, relist_count, max_relists, is_bundle, bundle_data) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, item.getSellerUuid().toString());
@@ -53,6 +53,8 @@ public class AuctionDAO {
             stmt.setBoolean(14, item.isAutoRelist());
             stmt.setInt(15, item.getRelistCount());
             stmt.setInt(16, item.getMaxRelists());
+            stmt.setBoolean(17, item.isBundle());
+            stmt.setString(18, item.isBundle() ? ItemSerializer.bundleToBase64(item.getBundleItems()) : null);
             stmt.executeUpdate();
 
             ResultSet keys = stmt.getGeneratedKeys();
@@ -567,6 +569,7 @@ public class AuctionDAO {
             AuctionItem item = new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency, taxRate, createdAt, expiresAt, status,
                     auctionType, highestBid, highestBidderUuid, highestBidderName);
             applyAutoRelistFields(item, rs);
+            applyBundleFields(item, rs);
             return item;
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Skipping auction - invalid data: " + e.getMessage());
@@ -581,6 +584,19 @@ public class AuctionDAO {
             item.setAutoRelist(rs.getBoolean("auto_relist"));
             item.setRelistCount(rs.getInt("relist_count"));
             item.setMaxRelists(rs.getInt("max_relists"));
+        } catch (SQLException ignored) {
+            // Column may not exist yet in older databases
+        }
+    }
+
+    private void applyBundleFields(AuctionItem item, ResultSet rs) {
+        try {
+            boolean isBundle = rs.getBoolean("is_bundle");
+            item.setBundle(isBundle);
+            if (isBundle) {
+                String bundleData = rs.getString("bundle_data");
+                item.setBundleItems(ItemSerializer.bundleFromBase64(bundleData));
+            }
         } catch (SQLException ignored) {
             // Column may not exist yet in older databases
         }

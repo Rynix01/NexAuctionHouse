@@ -199,3 +199,14 @@ auto-relist:
   max-relists: 3
   # Cost percentage of the listing price charged per relist (0 = free)
   cost-percent: 0.0
+
+# Bundle system - list multiple items as a single auction
+bundles:
+  # Enable the bundle system
+  enabled: true
+  # Maximum number of items per bundle
+  max-items: 9
+  # Minimum number of items per bundle
+  min-items: 2
+  # Maximum active bundle listings per player (0 = use default listing limit)
+  bundle-limit: 0

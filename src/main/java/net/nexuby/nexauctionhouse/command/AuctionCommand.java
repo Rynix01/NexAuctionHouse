@@ -7,6 +7,7 @@ import net.nexuby.nexauctionhouse.gui.AdminGui;
 import net.nexuby.nexauctionhouse.gui.AdminStatsGui;
 import net.nexuby.nexauctionhouse.gui.BlacklistGui;
 import net.nexuby.nexauctionhouse.gui.BulkSellGui;
+import net.nexuby.nexauctionhouse.gui.BundleCreateGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
 import net.nexuby.nexauctionhouse.gui.FavoritesGui;
 import net.nexuby.nexauctionhouse.gui.HistoryGui;
@@ -69,6 +70,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "sell" -> handleSell(sender, args);
             case "sell-all" -> handleSellAll(sender, args);
+            case "bundle" -> handleBundle(sender, args);
             case "search" -> handleSearch(sender, args);
             case "favorites" -> handleFavorites(sender);
             case "history" -> handleHistory(sender, args);
@@ -308,6 +310,72 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         }
 
         new BulkSellGui(plugin, player, price, currency).open();
+    }
+
+    private void handleBundle(CommandSender sender, String[] args) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.bundle")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        if (!plugin.getConfigManager().isBundleEnabled()) {
+            player.sendMessage(lang.prefixed("bundle.disabled"));
+            return;
+        }
+
+        // World check
+        if (!player.hasPermission("nexauctions.bypass.world") && plugin.getAuctionManager().isWorldDisabled(player)) {
+            player.sendMessage(lang.prefixed("blacklist.world-disabled"));
+            return;
+        }
+
+        if (args.length < 2) {
+            player.sendMessage(lang.prefixed("bundle.usage"));
+            return;
+        }
+
+        double price;
+        try {
+            price = Double.parseDouble(args[1]);
+        } catch (NumberFormatException e) {
+            player.sendMessage(lang.prefixed("auction.invalid-price"));
+            return;
+        }
+
+        ConfigManager config = plugin.getConfigManager();
+
+        if (price < config.getMinPrice()) {
+            player.sendMessage(lang.prefixed("auction.price-too-low",
+                    "{min}", plugin.getEconomyManager().format(config.getMinPrice(), "money")));
+            return;
+        }
+
+        if (price > config.getMaxPrice()) {
+            player.sendMessage(lang.prefixed("auction.price-too-high",
+                    "{max}", plugin.getEconomyManager().format(config.getMaxPrice(), "money")));
+            return;
+        }
+
+        String currency;
+        if (args.length >= 3) {
+            currency = args[2].toLowerCase();
+            if (!plugin.getEconomyManager().isValidCurrency(currency)) {
+                player.sendMessage(lang.prefixed("auction.invalid-currency",
+                        "{currencies}", String.join(", ", plugin.getEconomyManager().getCurrencyNames())));
+                return;
+            }
+        } else {
+            currency = plugin.getEconomyManager().getDefaultProvider().getCurrencyName();
+        }
+
+        new BundleCreateGui(plugin, player, price, currency).open();
     }
 
     private void handleHistory(CommandSender sender, String[] args) {
@@ -554,6 +622,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             List<String> completions = new ArrayList<>();
             completions.add("sell");
             completions.add("sell-all");
+            completions.add("bundle");
             completions.add("search");
             completions.add("favorites");
             completions.add("history");
@@ -580,7 +649,15 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return Arrays.asList("<price>");
         }
 
+        if (args.length == 2 && args[0].equalsIgnoreCase("bundle")) {
+            return Arrays.asList("<price>");
+        }
+
         if (args.length == 3 && args[0].equalsIgnoreCase("sell-all")) {
+            return new ArrayList<>(plugin.getEconomyManager().getCurrencyNames());
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("bundle")) {
             return new ArrayList<>(plugin.getEconomyManager().getCurrencyNames());
         }
 
