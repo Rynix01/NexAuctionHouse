@@ -9,6 +9,10 @@ import net.nexuby.nexauctionhouse.gui.BlacklistGui;
 import net.nexuby.nexauctionhouse.gui.BulkSellGui;
 import net.nexuby.nexauctionhouse.gui.BundleCreateGui;
 import net.nexuby.nexauctionhouse.gui.ExpiredGui;
+import net.nexuby.nexauctionhouse.listener.ChatInputListener;
+import net.nexuby.nexauctionhouse.migration.AbstractMigrator;
+import net.nexuby.nexauctionhouse.migration.MigrationManager;
+import net.nexuby.nexauctionhouse.migration.MigrationReport;
 import net.nexuby.nexauctionhouse.gui.FavoritesGui;
 import net.nexuby.nexauctionhouse.gui.HistoryGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
@@ -599,8 +603,92 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                 }
                 new BlacklistGui(plugin, player).open();
             }
+            case "migrate" -> handleMigrate(sender, args);
             default -> sender.sendMessage(lang.prefixed("admin.help"));
         }
+    }
+
+    private void handleMigrate(CommandSender sender, String[] args) {
+        LangManager lang = plugin.getLangManager();
+
+        MigrationManager migrationManager = plugin.getMigrationManager();
+
+        if (args.length < 3) {
+            sender.sendMessage(lang.prefixed("migration.usage",
+                    "{plugins}", migrationManager.getSupportedPluginsList()));
+            return;
+        }
+
+        String pluginName = args[2];
+        AbstractMigrator migrator = migrationManager.getMigrator(pluginName);
+
+        if (migrator == null) {
+            sender.sendMessage(lang.prefixed("migration.unsupported-plugin",
+                    "{plugin}", pluginName,
+                    "{plugins}", migrationManager.getSupportedPluginsList()));
+            return;
+        }
+
+        // Validate source data exists
+        String validationError = migrator.validate();
+        if (validationError != null) {
+            sender.sendMessage(lang.prefixed("migration.validation-failed",
+                    "{error}", validationError));
+            return;
+        }
+
+        if (migrationManager.isMigrationInProgress()) {
+            sender.sendMessage(lang.prefixed("migration.already-running"));
+            return;
+        }
+
+        // Require confirmation
+        sender.sendMessage(lang.prefixed("migration.confirm-warning",
+                "{plugin}", migrator.getSourceName()));
+        sender.sendMessage(lang.prefixed("migration.confirm-prompt"));
+
+        if (sender instanceof Player player) {
+            ChatInputListener.awaitInput(player, input -> {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (!input.equalsIgnoreCase("confirm")) {
+                        player.sendMessage(lang.prefixed("migration.cancelled"));
+                        return;
+                    }
+                    startMigration(player, migrator, migrationManager);
+                });
+            });
+        } else {
+            // Console: run immediately (no chat input needed)
+            startMigration(sender, migrator, migrationManager);
+        }
+    }
+
+    private void startMigration(CommandSender sender, AbstractMigrator migrator, MigrationManager migrationManager) {
+        LangManager lang = plugin.getLangManager();
+
+        sender.sendMessage(lang.prefixed("migration.starting",
+                "{plugin}", migrator.getSourceName()));
+
+        // Run migration async to avoid blocking the main thread
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            MigrationReport report = migrationManager.executeMigration(migrator);
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (report == null) {
+                    sender.sendMessage(lang.prefixed("migration.failed",
+                            "{plugin}", migrator.getSourceName()));
+                    return;
+                }
+
+                sender.sendMessage(lang.prefixed("migration.completed",
+                        "{plugin}", report.getSourcePlugin(),
+                        "{auctions}", String.valueOf(report.getAuctionsMigrated()),
+                        "{expired}", String.valueOf(report.getExpiredMigrated()),
+                        "{logs}", String.valueOf(report.getLogsMigrated()),
+                        "{errors}", String.valueOf(report.getErrors()),
+                        "{time}", String.valueOf(report.getDurationMillis() / 1000)));
+            });
+        });
     }
 
     private void handleReload(CommandSender sender) {
@@ -706,7 +794,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         // Admin sub-tab completion
         if (args[0].equalsIgnoreCase("admin") && sender.hasPermission("nexauctions.admin")) {
             if (args.length == 2) {
-                List<String> subs = new ArrayList<>(List.of("search", "remove", "clear", "stats", "blacklist"));
+                List<String> subs = new ArrayList<>(List.of("search", "remove", "clear", "stats", "blacklist", "migrate"));
                 String input = args[1].toLowerCase();
                 subs.removeIf(s -> !s.startsWith(input));
                 return subs;
@@ -734,6 +822,12 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
                     String input = args[2].toLowerCase();
                     clearOptions.removeIf(s -> !s.toLowerCase().startsWith(input));
                     return clearOptions;
+                }
+                if (args[1].equalsIgnoreCase("migrate")) {
+                    List<String> plugins = new ArrayList<>(plugin.getMigrationManager().getSupportedPlugins());
+                    String input = args[2].toLowerCase();
+                    plugins.removeIf(s -> !s.toLowerCase().startsWith(input));
+                    return plugins;
                 }
             }
         }

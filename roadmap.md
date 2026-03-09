@@ -184,16 +184,16 @@
 - [x] Envanter dolu kontrolü (paket eşyaları sığmazsa uyarı)
 
 ## Aşama 18: Göç Aracı (Migration Tool)
-- [ ] /ah migrate <plugin> komutu (admin yetkisi)
-- [ ] AuctionHouse (klip) → NexAuctionHouse göçü
-- [ ] CrazyAuctions → NexAuctionHouse göçü
-- [ ] zAuctionHouse → NexAuctionHouse göçü
-- [ ] AuctionMaster → NexAuctionHouse göçü
-- [ ] Kaynak plugin veritabanı yapısını okuma ve eşya transferi
-- [ ] İlan geçmişi ve expired eşyaların aktarılması
-- [ ] Göç raporu (X ilan, Y expired, Z log taşındı)
-- [ ] Göç öncesi yedek uyarısı ve onay mekanizması
-- [ ] Hata durumunda rollback desteği
+- [x] /ah migrate <plugin> komutu (admin yetkisi)
+- [x] AuctionHouse (klip) → NexAuctionHouse göçü
+- [x] CrazyAuctions → NexAuctionHouse göçü
+- [x] zAuctionHouse → NexAuctionHouse göçü
+- [x] AuctionMaster → NexAuctionHouse göçü
+- [x] Kaynak plugin veritabanı yapısını okuma ve eşya transferi
+- [x] İlan geçmişi ve expired eşyaların aktarılması
+- [x] Göç raporu (X ilan, Y expired, Z log taşındı)
+- [x] Göç öncesi yedek uyarısı ve onay mekanizması
+- [x] Hata durumunda rollback desteği
 
 ## Aşama 19: GUI Tema Sistemi
 - [ ] Çoklu tema dosyası desteği (themes/ klasörü)

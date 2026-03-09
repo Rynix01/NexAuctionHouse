@@ -174,3 +174,16 @@ time:
   minutes: "{value}m"
   seconds: "{value}s"
   expired: "Expired"
+
+# Migration messages
+migration:
+  usage: "<red>Usage: <yellow>/ah admin migrate <plugin> <gray>— Supported: {plugins}"
+  unsupported-plugin: "<red>Unknown plugin: <yellow>{plugin}<red>. Supported: <yellow>{plugins}"
+  validation-failed: "<red>Migration validation failed: <yellow>{error}"
+  already-running: "<red>A migration is already in progress. Please wait."
+  confirm-warning: "<yellow>⚠ You are about to migrate data from <gold>{plugin}<yellow>."
+  confirm-prompt: "<yellow>A backup of your database will be created first. Type <green>confirm<yellow> to proceed or <red>cancel<yellow> to abort."
+  cancelled: "<gray>Migration cancelled."
+  starting: "<yellow>Starting migration from <gold>{plugin}<yellow>... This may take a moment."
+  failed: "<red>Migration from <yellow>{plugin}<red> failed. Check the console for details."
+  completed: "<green>Migration from <yellow>{plugin}<green> completed in <yellow>{time}s<green>! Auctions: <yellow>{auctions}<green>, Expired: <yellow>{expired}<green>, Logs: <yellow>{logs}<green>, Errors: <red>{errors}"

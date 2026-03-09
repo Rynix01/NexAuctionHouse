@@ -174,3 +174,16 @@ time:
   minutes: "{value}dk"
   seconds: "{value}sn"
   expired: "Suresi doldu"
+
+# Goc araci mesajlari
+migration:
+  usage: "<red>Kullanim: <yellow>/ah admin migrate <plugin> <gray>— Desteklenen: {plugins}"
+  unsupported-plugin: "<red>Bilinmeyen eklenti: <yellow>{plugin}<red>. Desteklenen: <yellow>{plugins}"
+  validation-failed: "<red>Goc dogrulamasi basarisiz: <yellow>{error}"
+  already-running: "<red>Bir goc islemi zaten devam ediyor. Lutfen bekleyin."
+  confirm-warning: "<yellow>⚠ <gold>{plugin}<yellow> eklentisinden veri gocurmek uzeresiniz."
+  confirm-prompt: "<yellow>Once veritabaninizin yedegi alinacaktir. Devam etmek icin <green>confirm<yellow>, iptal icin <red>cancel<yellow> yazin."
+  cancelled: "<gray>Goc islemi iptal edildi."
+  starting: "<yellow><gold>{plugin}<yellow> eklentisinden goc baslatiliyor... Bu biraz zaman alabilir."
+  failed: "<red><yellow>{plugin}<red> eklentisinden goc basarisiz oldu. Detaylar icin konsolu kontrol edin."
+  completed: "<green><yellow>{plugin}<green> eklentisinden goc <yellow>{time}sn<green> icinde tamamlandi! Ilanlar: <yellow>{auctions}<green>, Suresi dolmus: <yellow>{expired}<green>, Loglar: <yellow>{logs}<green>, Hatalar: <red>{errors}"
