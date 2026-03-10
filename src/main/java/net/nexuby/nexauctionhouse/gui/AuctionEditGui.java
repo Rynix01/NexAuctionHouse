@@ -109,7 +109,9 @@ public class AuctionEditGui extends AbstractGui {
         inventory.setItem(EXTEND_12H_SLOT, createExtendButton(12, canExtend));
 
         // Cancel button
-        ItemStack cancel = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+        Material cancelMat = plugin.getThemeManager() != null
+                ? plugin.getThemeManager().getButtonMaterial(viewer.getUniqueId(), "cancel") : null;
+        ItemStack cancel = new ItemStack(cancelMat != null ? cancelMat : Material.RED_STAINED_GLASS_PANE);
         ItemMeta cancelMeta = cancel.getItemMeta();
         if (auctionItem.isBidAuction() && auctionItem.getHighestBid() > 0) {
             cancelMeta.displayName(text("<dark_red>Cancel Auction"));
@@ -138,10 +140,7 @@ public class AuctionEditGui extends AbstractGui {
         inventory.setItem(BACK_SLOT, back);
 
         // Fill empty slots
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(text(" "));
-        filler.setItemMeta(fillerMeta);
+        ItemStack filler = createThemedFiller();
         for (int i = 0; i < 27; i++) {
             if (inventory.getItem(i) == null) {
                 inventory.setItem(i, filler);

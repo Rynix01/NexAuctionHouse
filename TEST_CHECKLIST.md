@@ -23,9 +23,9 @@
 - [X] Menü boşken düzgün gözüküyor (ilan yok mesajı/boş alan)
 
 ### 1.3 Eşya Satışa Koyma (BIN — Sabit Fiyat)
-- [-] Eline bir eşya al → `/ah sell 100` → onay menüsü açılıyor
-- [-] Onay menüsünde eşya ve fiyat görünüyor
-- [-] Onay butonuna tıklayınca eşya elinden gidiyor ve "ilan oluşturuldu" mesajı geliyor
+- [X] Eline bir eşya al → `/ah sell 100` → onay menüsü açılıyor
+- [X] Onay menüsünde eşya ve fiyat görünüyor
+- [X] Onay butonuna tıklayınca eşya elinden gidiyor ve "ilan oluşturuldu" mesajı geliyor
 - [X] `/ah` ile menüyü açınca ilan görünüyor (fiyat, süre, satıcı adı lore'da)
 - [X] İlan süresinin doğru göründüğünü kontrol et (config'deki default-auction-duration)
 
@@ -90,7 +90,7 @@
 ### 3.1 Arama Sistemi
 - [X] `/ah search diamond` → sadece "diamond" içeren eşyalar listeleniyor
 - [X] Ana menüdeki arama butonuna tıkla → chatte arama yazısı iste → sonuçlar gelsin
-- [-] Arama + kategori filtresi bir arada çalışıyor mu?
+- [X] Arama + kategori filtresi bir arada çalışıyor mu?
 - [-] Tab completion'da materyal isimleri geliyor mu?
 
 ### 3.2 Sıralama Sistemi
@@ -99,15 +99,15 @@
 - [X] Fiyat (Azalan) → yüksekten düşüğe
 - [X] Tarih (Yeni Önce) → en son eklenen en üstte
 - [X] İsim (A-Z) → alfabetik sıralama
-- [-] Sıralama + Kategori + Arama hep birlikte çalışıyor mu?
+- [X] Sıralama + Kategori + Arama hep birlikte çalışıyor mu?
 
 ### 3.3 Favori / İzleme Listesi
 - [X] Bir ilana Shift+Click yap → "favorilere eklendi" mesajı
 - [X] `/ah favorites` → favori listesi açılıyor, eklediğin ilan var
 - [X] Ana menüdeki favori butonuna tıkla → aynı liste
 - [X] Aynı ilana tekrar Shift+Click → favorilerden çıkarıldı
-- [ ] Favori ilandaki eşya satıldığında bildirim geliyor mu? (çevrimiçiysen)
-- [ ] `favorites.max-favorites: 3` yap → 4. favori eklenemez
+- [-] Favori ilandaki eşya satıldığında bildirim geliyor mu? (çevrimiçiysen)
+- [X] `favorites.max-favorites: 3` yap → 4. favori eklenemez
 
 ### 3.4 Bildirim Tercihleri
 - [X] `/ah notifications` veya ayarlar butonuyla bildirim menüsü açılıyor
@@ -179,8 +179,8 @@
 ### 4.5 Fiyat Geçmişi ve İstatistikler
 - [X] Birkaç alışveriş yap (satış + alış)
 - [X] `/ah history` → kişisel işlem geçmişi GUI'si açılıyor (son 50 kayıt)
-- [-] `/ah history Rynix` (admin yetkisiyle) → başka oyuncunun geçmişi
-- [-] Menüde eşya hover → "Ortalama Piyasa Fiyatı: X₺" bilgisi
+- [X] `/ah history Rynix` (admin yetkisiyle) → başka oyuncunun geçmişi
+- [X] Menüde eşya hover → "Ortalama Piyasa Fiyatı: X₺" bilgisi
 - [ ] PlaceholderAPI testleri (PAPI yüklü olmalı):
   - [ ] `%nexauction_player_total_sales%` → doğru toplam satış sayısı
   - [ ] `%nexauction_player_total_revenue%` → doğru toplam kazanç

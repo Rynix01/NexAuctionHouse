@@ -190,3 +190,8 @@ migration:
   starting: "<yellow><gold>{plugin}<yellow> eklentisinden goc baslatiliyor... Bu biraz zaman alabilir."
   failed: "<red><yellow>{plugin}<red> eklentisinden goc basarisiz oldu. Detaylar icin konsolu kontrol edin."
   completed: "<green><yellow>{plugin}<green> eklentisinden goc <yellow>{time}sn<green> icinde tamamlandi! Ilanlar: <yellow>{auctions}<green>, Suresi dolmus: <yellow>{expired}<green>, Loglar: <yellow>{logs}<green>, Hatalar: <red>{errors}"
+
+# Tema mesajlari
+theme:
+  selected: "<green>Tema <yellow>{theme}<green> olarak degistirildi!"
+  not-found: "<red><yellow>{theme}<red> temasi bulunamadi. Mevcut temalari gormek icin <yellow>/ah theme <gray>kullanin."

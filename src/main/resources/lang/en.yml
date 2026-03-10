@@ -190,3 +190,8 @@ migration:
   starting: "<yellow>Starting migration from <gold>{plugin}<yellow>... This may take a moment."
   failed: "<red>Migration from <yellow>{plugin}<red> failed. Check the console for details."
   completed: "<green>Migration from <yellow>{plugin}<green> completed in <yellow>{time}s<green>! Auctions: <yellow>{auctions}<green>, Expired: <yellow>{expired}<green>, Logs: <yellow>{logs}<green>, Errors: <red>{errors}"
+
+# Theme messages
+theme:
+  selected: "<green>Theme changed to <yellow>{theme}<green>!"
+  not-found: "<red>Theme <yellow>{theme}<red> not found. Use <yellow>/ah theme <gray>to see available themes."

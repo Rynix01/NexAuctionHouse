@@ -43,10 +43,7 @@ public class BulkSellGui extends AbstractGui {
     @Override
     protected void build() {
         // Fill bottom row with glass
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(text(" "));
-        filler.setItemMeta(fillerMeta);
+        ItemStack filler = createThemedFiller();
         for (int i = 36; i < GUI_SIZE; i++) {
             inventory.setItem(i, filler);
         }
@@ -82,7 +79,9 @@ public class BulkSellGui extends AbstractGui {
         }
 
         // Confirm button
-        ItemStack confirm = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+        Material confirmMat = plugin.getThemeManager() != null
+                ? plugin.getThemeManager().getButtonMaterial(viewer.getUniqueId(), "confirm") : null;
+        ItemStack confirm = new ItemStack(confirmMat != null ? confirmMat : Material.LIME_STAINED_GLASS_PANE);
         ItemMeta confirmMeta = confirm.getItemMeta();
         confirmMeta.displayName(text("<green>Confirm Bulk Sell"));
         confirmMeta.lore(List.of(
@@ -109,7 +108,9 @@ public class BulkSellGui extends AbstractGui {
         inventory.setItem(INFO_SLOT, info);
 
         // Cancel button
-        ItemStack cancel = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+        Material cancelMat = plugin.getThemeManager() != null
+                ? plugin.getThemeManager().getButtonMaterial(viewer.getUniqueId(), "cancel") : null;
+        ItemStack cancel = new ItemStack(cancelMat != null ? cancelMat : Material.RED_STAINED_GLASS_PANE);
         ItemMeta cancelMeta = cancel.getItemMeta();
         cancelMeta.displayName(text("<red>Cancel"));
         cancelMeta.lore(List.of(text("<gray>Return without listing.")));

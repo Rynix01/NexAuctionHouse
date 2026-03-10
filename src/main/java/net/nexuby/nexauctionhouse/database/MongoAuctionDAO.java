@@ -765,6 +765,36 @@ public class MongoAuctionDAO extends AuctionDAO {
         saveNotificationSettings(settings);
     }
 
+    // -- Player Theme --
+
+    @Override
+    public String getPlayerTheme(UUID playerUuid) {
+        try {
+            Document doc = mongo.playerSettings()
+                    .find(Filters.eq("_id", playerUuid.toString()))
+                    .first();
+            if (doc != null) {
+                return doc.getString("theme");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load player theme (MongoDB)", e);
+        }
+        return null;
+    }
+
+    @Override
+    public void setPlayerTheme(UUID playerUuid, String theme) {
+        try {
+            mongo.playerSettings().updateOne(
+                    Filters.eq("_id", playerUuid.toString()),
+                    new Document("$set", new Document("theme", theme)
+                            .append("updated_at", System.currentTimeMillis())),
+                    new com.mongodb.client.model.UpdateOptions().upsert(true));
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to save player theme (MongoDB)", e);
+        }
+    }
+
     // -- Document parsing helpers --
 
     private AuctionItem parseAuction(Document doc) {

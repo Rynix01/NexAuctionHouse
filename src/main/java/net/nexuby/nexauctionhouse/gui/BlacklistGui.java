@@ -48,10 +48,7 @@ public class BlacklistGui extends AbstractGui {
         ConfigManager config = plugin.getConfigManager();
 
         // Fill background
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(text(" "));
-        filler.setItemMeta(fillerMeta);
+        ItemStack filler = createThemedFiller();
         for (int i = 0; i < inventory.getSize(); i++) {
             inventory.setItem(i, filler);
         }

@@ -208,6 +208,9 @@ public class DatabaseManager {
         migrateColumn("max_relists", "INT NOT NULL DEFAULT 0");
         migrateColumn("is_bundle", "BOOLEAN NOT NULL DEFAULT 0");
         migrateColumn("bundle_data", "LONGTEXT DEFAULT NULL");
+
+        // player_settings migrations
+        migrateSettingsColumn("theme", "VARCHAR(32) DEFAULT 'default'");
     }
 
     private void migrateColumn(String columnName, String columnDef) {
@@ -239,6 +242,41 @@ public class DatabaseManager {
                     stmt.executeUpdate();
                 }
                 plugin.getLogger().info("Database migrated: added '" + columnName + "' column to auctions table.");
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Database migration check failed for column: " + columnName, e);
+        }
+    }
+
+    private void migrateSettingsColumn(String columnName, String columnDef) {
+        try {
+            String checkSql = usingSQLite
+                    ? "PRAGMA table_info(player_settings)"
+                    : "SHOW COLUMNS FROM player_settings LIKE '" + columnName + "'";
+
+            boolean hasColumn = false;
+
+            try (PreparedStatement stmt = connection.prepareStatement(checkSql);
+                 var rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    if (usingSQLite) {
+                        if (columnName.equalsIgnoreCase(rs.getString("name"))) {
+                            hasColumn = true;
+                            break;
+                        }
+                    } else {
+                        hasColumn = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!hasColumn) {
+                String alterSql = "ALTER TABLE player_settings ADD COLUMN " + columnName + " " + columnDef;
+                try (PreparedStatement stmt = connection.prepareStatement(alterSql)) {
+                    stmt.executeUpdate();
+                }
+                plugin.getLogger().info("Database migrated: added '" + columnName + "' column to player_settings table.");
             }
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Database migration check failed for column: " + columnName, e);

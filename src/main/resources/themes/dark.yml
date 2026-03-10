@@ -1,0 +1,17 @@
+# NexAuctionHouse - Dark Theme
+
+name: "Dark"
+description: "A sleek and modern dark theme"
+icon: GRAY_STAINED_GLASS
+
+# Filler glass pane used as background decoration
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+
+# Title color prefix applied to GUI titles
+title-color: "<dark_gray>"
+
+# Aesthetic button material overrides
+buttons:
+  confirm: LIME_STAINED_GLASS_PANE
+  cancel: RED_STAINED_GLASS_PANE

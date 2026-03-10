@@ -1,0 +1,17 @@
+# NexAuctionHouse - Nether Theme
+
+name: "Nether"
+description: "A fiery Nether-inspired theme"
+icon: NETHERRACK
+
+# Filler glass pane used as background decoration
+filler:
+  material: RED_STAINED_GLASS_PANE
+
+# Title color prefix applied to GUI titles
+title-color: "<dark_red>"
+
+# Aesthetic button material overrides
+buttons:
+  confirm: ORANGE_STAINED_GLASS_PANE
+  cancel: BLACK_STAINED_GLASS_PANE

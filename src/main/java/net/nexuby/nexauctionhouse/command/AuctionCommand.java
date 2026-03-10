@@ -18,6 +18,7 @@ import net.nexuby.nexauctionhouse.gui.HistoryGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.gui.NotificationSettingsGui;
 import net.nexuby.nexauctionhouse.gui.SellConfirmGui;
+import net.nexuby.nexauctionhouse.gui.ThemeSelectGui;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import org.bukkit.Bukkit;
@@ -80,6 +81,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             case "favorites" -> handleFavorites(sender);
             case "history" -> handleHistory(sender, args);
             case "notifications" -> handleNotifications(sender);
+            case "theme" -> handleTheme(sender, args);
             case "expired" -> handleExpired(sender);
             case "admin" -> handleAdmin(sender, args);
             case "reload" -> handleReload(sender);
@@ -478,6 +480,37 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         new NotificationSettingsGui(plugin, player, () -> new MainMenu(plugin, player).open()).open();
     }
 
+    private void handleTheme(CommandSender sender, String[] args) {
+        LangManager lang = plugin.getLangManager();
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.prefixed("general.player-only"));
+            return;
+        }
+
+        if (!player.hasPermission("nexauctions.use")) {
+            player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        // /ah theme <name> - direct set
+        if (args.length >= 2) {
+            String themeName = args[1].toLowerCase();
+            if (!plugin.getThemeManager().isValidTheme(themeName)) {
+                player.sendMessage(lang.prefixed("theme.not-found", "{theme}", args[1]));
+                return;
+            }
+            org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+                    plugin.getThemeManager().savePlayerTheme(player.getUniqueId(), themeName));
+            player.sendMessage(lang.prefixed("theme.selected",
+                    "{theme}", plugin.getThemeManager().getThemeName(themeName)));
+            return;
+        }
+
+        // /ah theme - open selection GUI
+        new ThemeSelectGui(plugin, player, () -> new MainMenu(plugin, player).open()).open();
+    }
+
     private void handleSearch(CommandSender sender, String[] args) {
         LangManager lang = plugin.getLangManager();
 
@@ -734,6 +767,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             completions.add("favorites");
             completions.add("history");
             completions.add("notifications");
+            completions.add("theme");
             completions.add("expired");
 
             if (sender.hasPermission("nexauctions.admin")) {
@@ -770,6 +804,13 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("search")) {
             return Arrays.asList("<keyword>");
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("theme")) {
+            List<String> themeNames = new ArrayList<>(plugin.getThemeManager().getThemeIds());
+            String input = args[1].toLowerCase();
+            themeNames.removeIf(s -> !s.startsWith(input));
+            return themeNames;
         }
 
         // /ah history <player> tab completion for admins

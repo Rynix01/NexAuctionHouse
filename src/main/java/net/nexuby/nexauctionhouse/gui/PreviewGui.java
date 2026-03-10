@@ -66,10 +66,7 @@ public class PreviewGui extends AbstractGui {
         inventory = Bukkit.createInventory(this, 54, text("<dark_gray>Item Preview"));
 
         // Fill background
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(Component.empty());
-        filler.setItemMeta(fillerMeta);
+        ItemStack filler = createThemedFiller();
         for (int i = 0; i < 54; i++) {
             inventory.setItem(i, filler);
         }
@@ -448,10 +445,7 @@ public class PreviewGui extends AbstractGui {
 
     private void rebuildBookPage() {
         // Clear book area
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(Component.empty());
-        filler.setItemMeta(fillerMeta);
+        ItemStack filler = createThemedFiller();
 
         inventory.setItem(BOOK_SLOT, filler);
         inventory.setItem(BOOK_PREV_SLOT, filler);

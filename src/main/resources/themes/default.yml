@@ -1,0 +1,17 @@
+# NexAuctionHouse - Default Theme
+
+name: "Default"
+description: "The classic Auction House look"
+icon: PAINTING
+
+# Filler glass pane used as background decoration
+filler:
+  material: BLACK_STAINED_GLASS_PANE
+
+# Title color prefix applied to GUI titles
+title-color: "<dark_gray>"
+
+# Aesthetic button material overrides
+buttons:
+  confirm: LIME_STAINED_GLASS_PANE
+  cancel: RED_STAINED_GLASS_PANE

@@ -32,6 +32,9 @@ public class PlayerListener implements Listener {
             AuctionDAO dao = plugin.getAuctionManager().getDao();
             CursorProtectionManager cpm = plugin.getCursorProtectionManager();
 
+            // Load player theme preference
+            plugin.getThemeManager().loadPlayerTheme(player.getUniqueId());
+
             boolean canReceiveLogin = plugin.getNotificationManager().canReceiveLoginNotification(player.getUniqueId());
             boolean hasSounds = plugin.getNotificationManager().hasSoundEnabled(player.getUniqueId());
 
@@ -137,5 +140,6 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         plugin.getNotificationManager().unloadSettings(event.getPlayer().getUniqueId());
+        plugin.getThemeManager().unloadPlayerTheme(event.getPlayer().getUniqueId());
     }
 }

@@ -14,6 +14,7 @@ import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import net.nexuby.nexauctionhouse.manager.NotificationManager;
+import net.nexuby.nexauctionhouse.manager.ThemeManager;
 import net.nexuby.nexauctionhouse.migration.MigrationManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -31,6 +32,7 @@ public final class NexAuctionHouse extends JavaPlugin {
     private ItemHookManager itemHookManager;
     private CursorProtectionManager cursorProtectionManager;
     private NotificationManager notificationManager;
+    private ThemeManager themeManager;
     private MigrationManager migrationManager;
 
     @Override
@@ -78,6 +80,10 @@ public final class NexAuctionHouse extends JavaPlugin {
 
         // Initialize notification manager
         this.notificationManager = new NotificationManager(this);
+
+        // Initialize theme manager
+        this.themeManager = new ThemeManager(this);
+        themeManager.load();
 
         // Initialize migration manager
         this.migrationManager = new MigrationManager(this);
@@ -159,6 +165,10 @@ public final class NexAuctionHouse extends JavaPlugin {
         return notificationManager;
     }
 
+    public ThemeManager getThemeManager() {
+        return themeManager;
+    }
+
     public MigrationManager getMigrationManager() {
         return migrationManager;
     }
@@ -170,6 +180,7 @@ public final class NexAuctionHouse extends JavaPlugin {
         configManager.load();
         langManager.load();
         guiConfig.load();
+        themeManager.load();
         getLogger().info("All configurations have been reloaded.");
     }
 }

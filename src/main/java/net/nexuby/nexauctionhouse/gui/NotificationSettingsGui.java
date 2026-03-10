@@ -19,6 +19,7 @@ public class NotificationSettingsGui extends AbstractGui {
     private static final int SOUND_SLOT = 24;
     private static final int LOGIN_SLOT = 30;
     private static final int FAVORITE_SLOT = 32;
+    private static final int THEME_SLOT = 40;
     private static final int BACK_SLOT = 49;
 
     private final Runnable backAction;
@@ -34,11 +35,8 @@ public class NotificationSettingsGui extends AbstractGui {
         NotificationManager nm = plugin.getNotificationManager();
         NotificationSettings settings = nm.getSettings(viewer.getUniqueId());
 
-        // Fill background
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(text(" "));
-        filler.setItemMeta(fillerMeta);
+        // Fill background using player's theme
+        ItemStack filler = createThemedFiller();
         for (int i = 0; i < inventory.getSize(); i++) {
             inventory.setItem(i, filler);
         }
@@ -74,6 +72,23 @@ public class NotificationSettingsGui extends AbstractGui {
         setToggle(FAVORITE_SLOT, Material.NETHER_STAR, "<light_purple>Favorite Notifications",
                 "<gray>Receive notifications when favorited", "<gray>items are sold, cancelled, or expired.",
                 settings.isFavoriteNotifications());
+
+        // Theme selection button
+        String currentTheme = plugin.getThemeManager() != null
+                ? plugin.getThemeManager().getThemeName(plugin.getThemeManager().getPlayerTheme(viewer.getUniqueId()))
+                : "Default";
+        ItemStack themeItem = new ItemStack(Material.PAINTING);
+        ItemMeta themeMeta = themeItem.getItemMeta();
+        themeMeta.displayName(text("<gold>GUI Theme"));
+        themeMeta.lore(List.of(
+                text("<gray>Customize the look of your menus."),
+                text(""),
+                text("<gray>Current: <yellow>" + currentTheme),
+                text(""),
+                text("<yellow>Click to browse themes.")
+        ));
+        themeItem.setItemMeta(themeMeta);
+        inventory.setItem(THEME_SLOT, themeItem);
 
         // Back button
         ItemStack back = new ItemStack(Material.ARROW);
@@ -150,6 +165,11 @@ public class NotificationSettingsGui extends AbstractGui {
             } else {
                 viewer.closeInventory();
             }
+        }
+
+        if (slot == THEME_SLOT) {
+            new ThemeSelectGui(plugin, viewer, () ->
+                    new NotificationSettingsGui(plugin, viewer, backAction).open()).open();
         }
     }
 }

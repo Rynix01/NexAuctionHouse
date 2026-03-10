@@ -978,4 +978,40 @@ public class AuctionDAO {
             plugin.getLogger().log(Level.SEVERE, "Failed to save notification settings (MySQL)", e);
         }
     }
+
+    // -- Player Theme --
+
+    public String getPlayerTheme(UUID playerUuid) {
+        String sql = "SELECT theme FROM player_settings WHERE player_uuid = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("theme");
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to load player theme", e);
+        }
+        return null;
+    }
+
+    public void setPlayerTheme(UUID playerUuid, String theme) {
+        String sql = plugin.getDatabaseManager().isUsingSQLite()
+                ? "INSERT INTO player_settings (player_uuid, notification_sale, notification_bid, sound_enabled, notification_login, notification_favorite, updated_at, theme) "
+                + "VALUES (?, 1, 1, 1, 1, 1, ?, ?) "
+                + "ON CONFLICT(player_uuid) DO UPDATE SET theme = excluded.theme, updated_at = excluded.updated_at"
+                : "INSERT INTO player_settings (player_uuid, notification_sale, notification_bid, sound_enabled, notification_login, notification_favorite, updated_at, theme) "
+                + "VALUES (?, 1, 1, 1, 1, 1, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE theme = VALUES(theme), updated_at = VALUES(updated_at)";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, playerUuid.toString());
+            stmt.setLong(2, System.currentTimeMillis());
+            stmt.setString(3, theme);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to save player theme", e);
+        }
+    }
 }

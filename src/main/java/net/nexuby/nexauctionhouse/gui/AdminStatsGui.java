@@ -135,10 +135,7 @@ public class AdminStatsGui extends AbstractGui {
         inventory.setItem(49, close);
 
         // Filler
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.displayName(Component.empty());
-        filler.setItemMeta(fillerMeta);
+        ItemStack filler = createThemedFiller();
 
         for (int i = 0; i < 54; i++) {
             if (inventory.getItem(i) == null) {

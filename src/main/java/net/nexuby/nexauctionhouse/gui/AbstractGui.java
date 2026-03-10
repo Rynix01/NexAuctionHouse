@@ -152,8 +152,15 @@ public abstract class AbstractGui implements InventoryHolder {
         ConfigurationSection filler = cfg.getConfigurationSection("filler");
         if (filler == null || !filler.getBoolean("enabled", false)) return;
 
-        Material material = Material.matchMaterial(filler.getString("material", "BLACK_STAINED_GLASS_PANE"));
-        if (material == null) material = Material.BLACK_STAINED_GLASS_PANE;
+        // Use player's theme filler material if available
+        Material material = null;
+        if (viewer != null && plugin.getThemeManager() != null) {
+            material = plugin.getThemeManager().getFillerMaterial(viewer.getUniqueId());
+        }
+        if (material == null) {
+            material = Material.matchMaterial(filler.getString("material", "BLACK_STAINED_GLASS_PANE"));
+            if (material == null) material = Material.BLACK_STAINED_GLASS_PANE;
+        }
 
         ItemStack pane = new ItemStack(material);
         ItemMeta meta = pane.getItemMeta();
@@ -178,5 +185,20 @@ public abstract class AbstractGui implements InventoryHolder {
 
     protected Player getViewer() {
         return viewer;
+    }
+
+    /**
+     * Creates a filler glass pane using the player's active theme.
+     */
+    protected ItemStack createThemedFiller() {
+        Material material = Material.BLACK_STAINED_GLASS_PANE;
+        if (viewer != null && plugin.getThemeManager() != null) {
+            material = plugin.getThemeManager().getFillerMaterial(viewer.getUniqueId());
+        }
+        ItemStack pane = new ItemStack(material);
+        ItemMeta meta = pane.getItemMeta();
+        meta.displayName(text(" "));
+        pane.setItemMeta(meta);
+        return pane;
     }
 }

@@ -196,14 +196,14 @@
 - [x] Hata durumunda rollback desteği
 
 ## Aşama 19: GUI Tema Sistemi
-- [ ] Çoklu tema dosyası desteği (themes/ klasörü)
-- [ ] Varsayılan tema (themes/default.yml)
-- [ ] Koyu tema (themes/dark.yml)
-- [ ] Nether teması (themes/nether.yml)
-- [ ] /ah theme <tema_adı> komutu ile tema seçimi
-- [ ] Ayarlar GUI'sinde tema seçim ekranı
-- [ ] Her tema: farklı renkler, cam desenleri, buton materyalleri
-- [ ] Oyuncu tema tercihinin veritabanında saklanması
+- [x] Çoklu tema dosyası desteği (themes/ klasörü)
+- [x] Varsayılan tema (themes/default.yml)
+- [x] Koyu tema (themes/dark.yml)
+- [x] Nether teması (themes/nether.yml)
+- [x] /ah theme <tema_adı> komutu ile tema seçimi
+- [x] Ayarlar GUI'sinde tema seçim ekranı
+- [x] Her tema: farklı renkler, cam desenleri, buton materyalleri
+- [x] Oyuncu tema tercihinin veritabanında saklanması
 
 ## Aşama 20: Geliştirici API (Developer API)
 - [ ] NexAuctionHouseAPI public sınıfı (static erişim)
