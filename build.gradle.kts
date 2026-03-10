@@ -37,6 +37,7 @@ tasks {
         archiveFileName.set("NexAuctionHouse-${project.version}.jar")
         relocate("com.mongodb", "net.nexuby.nexauctionhouse.libs.mongodb")
         relocate("org.bson", "net.nexuby.nexauctionhouse.libs.bson")
+        exclude("META-INF/native-image/**")
     }
 
     build {
