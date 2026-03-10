@@ -25,9 +25,15 @@ public class CategoryMenu extends AbstractGui {
     private final MiniMessage mm = MiniMessage.miniMessage();
     private final Map<Integer, CategoryEntry> categorySlots = new HashMap<>();
     private int backSlot = -1;
+    private String searchQuery;
 
     public CategoryMenu(NexAuctionHouse plugin, Player viewer) {
         super(plugin, viewer);
+    }
+
+    public CategoryMenu(NexAuctionHouse plugin, Player viewer, String searchQuery) {
+        super(plugin, viewer);
+        this.searchQuery = searchQuery;
     }
 
     @Override
@@ -117,13 +123,21 @@ public class CategoryMenu extends AbstractGui {
         if (slot < 0 || slot >= inventory.getSize()) return;
 
         if (slot == backSlot) {
-            new MainMenu(plugin, viewer).open();
+            if (searchQuery != null && !searchQuery.isBlank()) {
+                new MainMenu(plugin, viewer, searchQuery).open();
+            } else {
+                new MainMenu(plugin, viewer).open();
+            }
             return;
         }
 
         CategoryEntry entry = categorySlots.get(slot);
         if (entry != null) {
-            new MainMenu(plugin, viewer, entry.filter(), entry.name()).open();
+            MainMenu menu = new MainMenu(plugin, viewer, entry.filter(), entry.name());
+            if (searchQuery != null && !searchQuery.isBlank()) {
+                menu.setSearchQuery(searchQuery);
+            }
+            menu.open();
         }
     }
 

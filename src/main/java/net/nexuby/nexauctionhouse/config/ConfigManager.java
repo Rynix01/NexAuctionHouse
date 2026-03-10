@@ -226,6 +226,10 @@ public class ConfigManager {
         return config.getInt("bundles.bundle-limit", 0);
     }
 
+    public boolean isConfirmSellGui() {
+        return config.getBoolean("general.confirm-sell-gui", true);
+    }
+
     public FileConfiguration getConfig() {
         return config;
     }

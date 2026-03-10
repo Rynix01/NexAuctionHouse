@@ -14,7 +14,9 @@ import org.bukkit.inventory.ItemStack;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -763,6 +765,44 @@ public class AuctionDAO {
             plugin.getLogger().log(Level.SEVERE, "Failed to calculate average price for " + materialName, e);
         }
         return 0;
+    }
+
+    /**
+     * Computes average sale prices for ALL materials that have been sold in the last N days.
+     * Returns a map of material name (uppercase) -> average price.
+     */
+    public Map<String, Double> getAllAveragePrices(int days) {
+        Map<String, Double> result = new HashMap<>();
+        long since = System.currentTimeMillis() - (days * 86400000L);
+        String sql = "SELECT t.price, t.item_data FROM transaction_logs t "
+                + "WHERE t.action IN ('SALE', 'AUCTION_COMPLETE') AND t.timestamp > ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setLong(1, since);
+            ResultSet rs = stmt.executeQuery();
+
+            Map<String, double[]> accum = new HashMap<>(); // [total, count]
+            while (rs.next()) {
+                ItemStack item = ItemSerializer.fromBase64(rs.getString("item_data"));
+                if (item != null) {
+                    String mat = item.getType().name().toUpperCase();
+                    double price = rs.getDouble("price");
+                    accum.computeIfAbsent(mat, k -> new double[]{0, 0});
+                    accum.get(mat)[0] += price;
+                    accum.get(mat)[1] += 1;
+                }
+            }
+
+            for (Map.Entry<String, double[]> entry : accum.entrySet()) {
+                double avg = Math.round(entry.getValue()[0] / entry.getValue()[1] * 100.0) / 100.0;
+                if (avg > 0) {
+                    result.put(entry.getKey(), avg);
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to calculate all average prices", e);
+        }
+        return result;
     }
 
     // -- Admin statistics queries --

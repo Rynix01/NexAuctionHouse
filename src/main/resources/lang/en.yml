@@ -43,6 +43,9 @@ auction:
   auction-not-found: "<red>This auction no longer exists."
   inventory-full: "<red>Your inventory is full!"
   invalid-currency: "<red>Invalid currency! Available: <yellow>{currencies}"
+  listing-cancelled: "<yellow>Listing cancelled. Item returned to your hand."
+  broadcast: "<green>{seller} <gray>listed <yellow>{item} <gray>for <green>{price}<gray>!"
+  broadcast-bid: "<green>{seller} <gray>started an auction for <yellow>{item} <gray>starting at <green>{price}<gray>!"
 
 # Admin messages
 admin:

@@ -353,7 +353,7 @@ public class MainMenu extends PaginatedGui {
     @Override
     protected void handleExtraClick(InventoryClickEvent event, int slot) {
         if (slot == categoriesSlot) {
-            new CategoryMenu(plugin, viewer).open();
+            new CategoryMenu(plugin, viewer, searchQuery).open();
         } else if (slot == myAuctionsSlot) {
             new MyAuctionsGui(plugin, viewer).open();
         } else if (slot == expiredSlot) {

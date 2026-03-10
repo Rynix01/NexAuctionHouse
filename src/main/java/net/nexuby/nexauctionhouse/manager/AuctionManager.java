@@ -127,6 +127,9 @@ public class AuctionManager {
 
             // Discord notification
             discordWebhook.sendListingNotification(seller.getName(), itemStack, price, currency);
+
+            // Broadcast to online players
+            broadcastNewListing(seller, itemStack, price, currency, false);
         }
 
         return id;
@@ -171,6 +174,9 @@ public class AuctionManager {
             activeAuctions.put(id, withId);
             dao.logTransaction(id, seller.getUniqueId(), null, itemStack, startingPrice, 0, "LIST_AUCTION");
             discordWebhook.sendListingNotification(seller.getName(), itemStack, startingPrice, currency);
+
+            // Broadcast to online players
+            broadcastNewListing(seller, itemStack, startingPrice, currency, true);
         }
 
         return id;
@@ -209,6 +215,9 @@ public class AuctionManager {
             activeAuctions.put(id, withId);
             dao.logTransaction(id, seller.getUniqueId(), null, displayItem, price, 0, "LIST_BUNDLE");
             discordWebhook.sendListingNotification(seller.getName(), displayItem, price, currency);
+
+            // Broadcast to online players
+            broadcastNewListing(seller, displayItem, price, currency, false);
         }
 
         return id;
@@ -1083,23 +1092,30 @@ public class AuctionManager {
 
     /**
      * Forces a refresh of the statistics cache.
+     * Computes average prices from transaction logs for all materials
+     * that have been sold in the last 7 days.
      */
     public void refreshStatsCache() {
+        Map<String, Double> freshCache = dao.getAllAveragePrices(7);
         avgPriceCache.clear();
-
-        // Get all active auction materials and compute avg from transaction history
-        Set<String> materials = new HashSet<>();
-        for (AuctionItem item : activeAuctions.values()) {
-            materials.add(item.getItemStack().getType().name());
-        }
-
-        for (String material : materials) {
-            double avg = dao.getAveragePrice(material, 7);
-            if (avg > 0) {
-                avgPriceCache.put(material.toUpperCase(), avg);
-            }
-        }
-
+        avgPriceCache.putAll(freshCache);
         lastStatsCacheRefresh = System.currentTimeMillis();
+    }
+
+    /**
+     * Broadcasts a new listing to all online players except the seller.
+     */
+    private void broadcastNewListing(Player seller, ItemStack itemStack, double price, String currency, boolean isBid) {
+        String itemName = getItemName(itemStack);
+        String priceStr = plugin.getEconomyManager().format(price, currency);
+        String langKey = isBid ? "auction.broadcast-bid" : "auction.broadcast";
+
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.getUniqueId().equals(seller.getUniqueId())) continue;
+            online.sendMessage(plugin.getLangManager().prefixed(langKey,
+                    "{seller}", seller.getName(),
+                    "{item}", itemName,
+                    "{price}", priceStr));
+        }
     }
 }

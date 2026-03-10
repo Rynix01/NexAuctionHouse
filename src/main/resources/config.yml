@@ -23,6 +23,9 @@ general:
   # Days to keep expired items before permanent deletion
   expired-item-keep-days: 7
 
+  # Show a confirmation GUI before listing an item for sale
+  confirm-sell-gui: true
+
 # Economy providers configuration
 # Multiple economies can be active simultaneously.
 # Players choose currency when listing: /ah sell <price> <currency>

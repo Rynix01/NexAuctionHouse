@@ -17,6 +17,7 @@ import net.nexuby.nexauctionhouse.gui.FavoritesGui;
 import net.nexuby.nexauctionhouse.gui.HistoryGui;
 import net.nexuby.nexauctionhouse.gui.MainMenu;
 import net.nexuby.nexauctionhouse.gui.NotificationSettingsGui;
+import net.nexuby.nexauctionhouse.gui.SellConfirmGui;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import org.bukkit.Bukkit;
@@ -225,6 +226,14 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        // Confirm GUI before listing (if enabled)
+        if (plugin.getConfigManager().isConfirmSellGui()) {
+            ItemStack toSell = itemInHand.clone();
+            player.getInventory().setItemInMainHand(null);
+            new SellConfirmGui(plugin, player, toSell, price, currency, isBidAuction, isAutoRelist).open();
+            return;
+        }
+
         // Take item from hand and list it
         ItemStack toSell = itemInHand.clone();
         player.getInventory().setItemInMainHand(null);
@@ -398,13 +407,23 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         // /ah history <player> - admin view
         if (args.length >= 2 && player.hasPermission("nexauctions.admin")) {
             String targetName = args[1];
+
+            // Try online player first (case-insensitive)
+            Player onlineTarget = Bukkit.getPlayer(targetName);
+            if (onlineTarget != null) {
+                new HistoryGui(plugin, player, onlineTarget.getUniqueId(), onlineTarget.getName()).open();
+                return;
+            }
+
+            // Fall back to offline player lookup
             @SuppressWarnings("deprecation")
             org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            if (!target.hasPlayedBefore() && !target.isOnline()) {
+            if (!target.hasPlayedBefore()) {
                 player.sendMessage(lang.prefixed("history.player-not-found"));
                 return;
             }
-            new HistoryGui(plugin, player, target.getUniqueId(), target.getName()).open();
+            String displayName = target.getName() != null ? target.getName() : targetName;
+            new HistoryGui(plugin, player, target.getUniqueId(), displayName).open();
             return;
         }
 

@@ -43,6 +43,9 @@ auction:
   auction-not-found: "<red>Bu ihale artik mevcut degil."
   inventory-full: "<red>Envanteriniz dolu!"
   invalid-currency: "<red>Gecersiz para birimi! Mevcut: <yellow>{currencies}"
+  listing-cancelled: "<yellow>Listeleme iptal edildi. Esya elinize iade edildi."
+  broadcast: "<green>{seller} <gray><yellow>{item} <gray>esyasini <green>{price}<gray> fiyatla satisa koydu!"
+  broadcast-bid: "<green>{seller} <gray><yellow>{item} <gray>icin <green>{price}<gray> baslangic fiyatli ihale baslatti!"
 
 # Admin mesajlari
 admin:
