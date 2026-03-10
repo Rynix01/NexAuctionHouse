@@ -3,6 +3,7 @@ package net.nexuby.nexauctionhouse.manager;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.config.ConfigManager;
 import net.nexuby.nexauctionhouse.database.AuctionDAO;
+import net.nexuby.nexauctionhouse.database.MongoAuctionDAO;
 import net.nexuby.nexauctionhouse.hook.DiscordWebhook;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionStatus;
@@ -37,7 +38,11 @@ public class AuctionManager {
 
     public AuctionManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
-        this.dao = new AuctionDAO(plugin);
+        if (plugin.getDatabaseManager().isUsingMongoDB()) {
+            this.dao = new MongoAuctionDAO(plugin, plugin.getDatabaseManager().getMongoManager());
+        } else {
+            this.dao = new AuctionDAO(plugin);
+        }
         this.discordWebhook = new DiscordWebhook(plugin);
     }
 

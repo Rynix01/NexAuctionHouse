@@ -56,6 +56,16 @@ public class ConfigManager {
         return config.getBoolean("database.mysql.use-ssl", false);
     }
 
+    // -- MongoDB settings --
+
+    public String getMongoConnectionString() {
+        return config.getString("database.mongodb.connection-string", "mongodb://localhost:27017");
+    }
+
+    public String getMongoDatabase() {
+        return config.getString("database.mongodb.database", "nexauctionhouse");
+    }
+
     // -- General settings --
 
     public String getDefaultLanguage() {

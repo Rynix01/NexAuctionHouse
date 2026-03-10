@@ -68,7 +68,7 @@ economy:
 
 # Database configuration
 database:
-  # Type: 'sqlite' or 'mysql'
+  # Type: 'sqlite', 'mysql', or 'mongodb'
   type: sqlite
 
   mysql:
@@ -78,6 +78,12 @@ database:
     username: root
     password: ''
     use-ssl: false
+
+  mongodb:
+    # MongoDB connection string (supports standard and SRV formats)
+    connection-string: "mongodb://localhost:27017"
+    # Database name to use
+    database: nexauctionhouse
 
 # Tax system
 tax:

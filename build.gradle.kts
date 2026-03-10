@@ -26,12 +26,17 @@ dependencies {
     compileOnly("com.github.LoneDev6:API-ItemsAdder:3.6.3-beta-14")
     compileOnly("io.lumine:Mythic-Dist:5.7.2")
     compileOnly("io.lumine:MythicCrucible-Dist:2.1.0")
+
+    // MongoDB driver (shaded into the plugin jar)
+    implementation("org.mongodb:mongodb-driver-sync:5.1.0")
 }
 
 tasks {
     shadowJar {
         archiveClassifier.set("")
         archiveFileName.set("NexAuctionHouse-${project.version}.jar")
+        relocate("com.mongodb", "net.nexuby.nexauctionhouse.libs.mongodb")
+        relocate("org.bson", "net.nexuby.nexauctionhouse.libs.bson")
     }
 
     build {

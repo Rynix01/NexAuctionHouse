@@ -1,7 +1,11 @@
 package net.nexuby.nexauctionhouse.manager;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
+import net.nexuby.nexauctionhouse.database.MongoManager;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
+import org.bson.Document;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -31,6 +35,14 @@ public class CursorProtectionManager {
         this.plugin = plugin;
     }
 
+    private boolean isMongo() {
+        return plugin.getDatabaseManager().isUsingMongoDB();
+    }
+
+    private MongoManager mongo() {
+        return plugin.getDatabaseManager().getMongoManager();
+    }
+
     /**
      * Saves a cursor item to the database for crash protection.
      * Called when a player picks up an item inside our GUI.
@@ -43,6 +55,23 @@ public class CursorProtectionManager {
 
         // Remove any existing tracked item first
         clearTracked(playerUuid);
+
+        if (isMongo()) {
+            try {
+                int id = mongo().getNextId("rescued_items");
+                Document doc = new Document("_id", id)
+                        .append("player_uuid", playerUuid.toString())
+                        .append("player_name", playerName)
+                        .append("item_data", itemData)
+                        .append("reason", "CURSOR_PROTECTION")
+                        .append("created_at", System.currentTimeMillis());
+                mongo().rescuedItems().insertOne(doc);
+                trackedPlayers.add(playerUuid);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to save cursor item for crash protection (MongoDB)", e);
+            }
+            return;
+        }
 
         String sql = "INSERT INTO rescued_items (player_uuid, player_name, item_data, reason, created_at) VALUES (?, ?, ?, ?, ?)";
 
@@ -66,6 +95,18 @@ public class CursorProtectionManager {
     public void clearTracked(UUID playerUuid) {
         if (!trackedPlayers.remove(playerUuid)) return;
 
+        if (isMongo()) {
+            try {
+                mongo().rescuedItems().deleteMany(
+                        Filters.and(
+                                Filters.eq("player_uuid", playerUuid.toString()),
+                                Filters.eq("reason", "CURSOR_PROTECTION")));
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to clear tracked cursor item (MongoDB)", e);
+            }
+            return;
+        }
+
         String sql = "DELETE FROM rescued_items WHERE player_uuid = ? AND reason = 'CURSOR_PROTECTION'";
 
         try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
@@ -86,6 +127,22 @@ public class CursorProtectionManager {
         String itemData = ItemSerializer.toBase64(item);
         if (itemData == null) return;
 
+        if (isMongo()) {
+            try {
+                int id = mongo().getNextId("rescued_items");
+                Document doc = new Document("_id", id)
+                        .append("player_uuid", playerUuid.toString())
+                        .append("player_name", playerName)
+                        .append("item_data", itemData)
+                        .append("reason", reason)
+                        .append("created_at", System.currentTimeMillis());
+                mongo().rescuedItems().insertOne(doc);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to save rescued item (MongoDB)", e);
+            }
+            return;
+        }
+
         String sql = "INSERT INTO rescued_items (player_uuid, player_name, item_data, reason, created_at) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
@@ -105,6 +162,29 @@ public class CursorProtectionManager {
      */
     public List<RescuedItem> getRescuedItems(UUID playerUuid) {
         List<RescuedItem> items = new ArrayList<>();
+
+        if (isMongo()) {
+            try {
+                for (Document doc : mongo().rescuedItems()
+                        .find(Filters.eq("player_uuid", playerUuid.toString()))
+                        .sort(Sorts.ascending("created_at"))) {
+                    int id = doc.getInteger("_id");
+                    String itemData = doc.getString("item_data");
+                    String reason = doc.getString("reason");
+                    ItemStack item = ItemSerializer.fromBase64(itemData);
+
+                    if (item != null) {
+                        items.add(new RescuedItem(id, item, reason));
+                    } else {
+                        deleteRescuedItem(id);
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to load rescued items (MongoDB)", e);
+            }
+            return items;
+        }
+
         String sql = "SELECT id, item_data, reason FROM rescued_items WHERE player_uuid = ? ORDER BY created_at ASC";
 
         try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
@@ -134,6 +214,15 @@ public class CursorProtectionManager {
      * Deletes a specific rescued item by ID.
      */
     public void deleteRescuedItem(int id) {
+        if (isMongo()) {
+            try {
+                mongo().rescuedItems().deleteOne(Filters.eq("_id", id));
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to delete rescued item (MongoDB)", e);
+            }
+            return;
+        }
+
         String sql = "DELETE FROM rescued_items WHERE id = ?";
 
         try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
@@ -148,6 +237,15 @@ public class CursorProtectionManager {
      * Deletes all rescued items for a player.
      */
     public void deleteAllRescuedItems(UUID playerUuid) {
+        if (isMongo()) {
+            try {
+                mongo().rescuedItems().deleteMany(Filters.eq("player_uuid", playerUuid.toString()));
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to delete rescued items (MongoDB)", e);
+            }
+            return;
+        }
+
         String sql = "DELETE FROM rescued_items WHERE player_uuid = ?";
 
         try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {

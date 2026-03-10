@@ -15,6 +15,8 @@ public class DatabaseManager {
     private final NexAuctionHouse plugin;
     private Connection connection;
     private boolean usingSQLite;
+    private boolean usingMongoDB;
+    private MongoManager mongoManager;
 
     public DatabaseManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
@@ -25,7 +27,9 @@ public class DatabaseManager {
         String type = config.getDatabaseType().toLowerCase();
 
         try {
-            if (type.equals("mysql")) {
+            if (type.equals("mongodb")) {
+                return connectMongoDB();
+            } else if (type.equals("mysql")) {
                 connectMySQL(config);
                 usingSQLite = false;
             } else {
@@ -42,6 +46,12 @@ public class DatabaseManager {
             plugin.getLogger().log(Level.SEVERE, "Failed to connect to database", e);
             return false;
         }
+    }
+
+    private boolean connectMongoDB() {
+        this.mongoManager = new MongoManager(plugin);
+        this.usingMongoDB = true;
+        return mongoManager.connect();
     }
 
     private void connectSQLite() throws SQLException {
@@ -236,6 +246,7 @@ public class DatabaseManager {
     }
 
     public Connection getConnection() {
+        if (usingMongoDB) return null;
         try {
             if (connection == null || connection.isClosed()) {
                 connect();
@@ -250,7 +261,21 @@ public class DatabaseManager {
         return usingSQLite;
     }
 
+    public boolean isUsingMongoDB() {
+        return usingMongoDB;
+    }
+
+    public MongoManager getMongoManager() {
+        return mongoManager;
+    }
+
     public void disconnect() {
+        if (usingMongoDB) {
+            if (mongoManager != null) {
+                mongoManager.disconnect();
+            }
+            return;
+        }
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
