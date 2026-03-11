@@ -219,3 +219,32 @@ bundles:
   min-items: 2
   # Maximum active bundle listings per player (0 = use default listing limit)
   bundle-limit: 0
+
+# Cross-server synchronization (requires MySQL or MongoDB, NOT SQLite)
+# When enabled, multiple servers share the same auction house via a shared database
+# and use Redis pub/sub for real-time cache synchronization.
+cross-server:
+  # Enable cross-server mode
+  enabled: false
+
+  # Unique identifier for this server instance (must be different on each server)
+  server-id: "server-1"
+
+  # Redis configuration for real-time pub/sub messaging between servers
+  redis:
+    host: localhost
+    port: 6379
+    password: ''
+    # Redis database index (0-15)
+    database: 0
+    # Connection timeout in milliseconds
+    timeout: 3000
+    # Maximum connections in the pool
+    max-pool-size: 10
+    # Channel prefix for Redis pub/sub (change if running multiple networks on one Redis)
+    channel-prefix: "nexah"
+
+  # BungeeCord/Velocity plugin messaging support
+  # Allows cross-server player lookups and notification forwarding
+  bungeecord:
+    enabled: false

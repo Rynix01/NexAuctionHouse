@@ -223,10 +223,10 @@
 - [ ] Maven/Gradle dependency olarak sunulabilir yapı
 
 ## Aşama 21: Redis / BungeeCord Desteği
-- [ ] MySQL zorunlu mod ile çoklu sunucu senkronizasyonu
-- [ ] Redis pub/sub entegrasyonu (anlık güncelleme)
-- [ ] Sunucu A'da ilan açıldığında sunucu B'de anlık yansıma
-- [ ] BungeeCord/Velocity plugin messaging desteği
-- [ ] Sunucular arası bildirim sistemi
-- [ ] Redis bağlantı havuzu ve yeniden bağlanma mekanizması
-- [ ] Config: redis bağlantı ayarları (host, port, password, database)
+- [x] MySQL zorunlu mod ile çoklu sunucu senkronizasyonu
+- [x] Redis pub/sub entegrasyonu (anlık güncelleme)
+- [x] Sunucu A'da ilan açıldığında sunucu B'de anlık yansıma
+- [x] BungeeCord/Velocity plugin messaging desteği
+- [x] Sunucular arası bildirim sistemi
+- [x] Redis bağlantı havuzu ve yeniden bağlanma mekanizması
+- [x] Config: redis bağlantı ayarları (host, port, password, database)

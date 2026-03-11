@@ -236,6 +236,48 @@ public class ConfigManager {
         return config.getInt("bundles.bundle-limit", 0);
     }
 
+    // -- Cross-server settings --
+
+    public boolean isCrossServerEnabled() {
+        return config.getBoolean("cross-server.enabled", false);
+    }
+
+    public String getServerId() {
+        return config.getString("cross-server.server-id", "server-1");
+    }
+
+    public String getRedisHost() {
+        return config.getString("cross-server.redis.host", "localhost");
+    }
+
+    public int getRedisPort() {
+        return config.getInt("cross-server.redis.port", 6379);
+    }
+
+    public String getRedisPassword() {
+        return config.getString("cross-server.redis.password", "");
+    }
+
+    public int getRedisDatabase() {
+        return config.getInt("cross-server.redis.database", 0);
+    }
+
+    public int getRedisTimeout() {
+        return config.getInt("cross-server.redis.timeout", 3000);
+    }
+
+    public int getRedisMaxPoolSize() {
+        return config.getInt("cross-server.redis.max-pool-size", 10);
+    }
+
+    public String getRedisChannelPrefix() {
+        return config.getString("cross-server.redis.channel-prefix", "nexah");
+    }
+
+    public boolean isBungeeCordEnabled() {
+        return config.getBoolean("cross-server.bungeecord.enabled", false);
+    }
+
     public boolean isConfirmSellGui() {
         return config.getBoolean("general.confirm-sell-gui", true);
     }

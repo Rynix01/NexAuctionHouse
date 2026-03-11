@@ -195,3 +195,10 @@ migration:
 theme:
   selected: "<green>Theme changed to <yellow>{theme}<green>!"
   not-found: "<red>Theme <yellow>{theme}<red> not found. Use <yellow>/ah theme <gray>to see available themes."
+
+# Cross-server messages
+cross-server:
+  redis-connected: "<green>Redis connection established."
+  redis-disconnected: "<red>Redis connection lost. Cross-server sync disabled."
+  sync-enabled: "<green>Cross-server synchronization is active."
+  cache-refreshed: "<green>Auction cache refreshed from database."

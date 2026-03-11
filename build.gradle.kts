@@ -29,6 +29,9 @@ dependencies {
 
     // MongoDB driver (shaded into the plugin jar)
     implementation("org.mongodb:mongodb-driver-sync:5.1.0")
+
+    // Redis client (shaded into the plugin jar)
+    implementation("redis.clients:jedis:5.2.0")
 }
 
 tasks {
@@ -37,6 +40,9 @@ tasks {
         archiveFileName.set("NexAuctionHouse-${project.version}.jar")
         relocate("com.mongodb", "net.nexuby.nexauctionhouse.libs.mongodb")
         relocate("org.bson", "net.nexuby.nexauctionhouse.libs.bson")
+        relocate("redis.clients", "net.nexuby.nexauctionhouse.libs.redis")
+        relocate("org.apache.commons.pool2", "net.nexuby.nexauctionhouse.libs.pool2")
+        relocate("org.json", "net.nexuby.nexauctionhouse.libs.json")
         exclude("META-INF/native-image/**")
     }
 

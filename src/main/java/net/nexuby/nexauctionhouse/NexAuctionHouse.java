@@ -11,11 +11,14 @@ import net.nexuby.nexauctionhouse.hook.item.ItemHookManager;
 import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
+import net.nexuby.nexauctionhouse.listener.BungeeCordListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import net.nexuby.nexauctionhouse.manager.NotificationManager;
 import net.nexuby.nexauctionhouse.manager.ThemeManager;
 import net.nexuby.nexauctionhouse.migration.MigrationManager;
+import net.nexuby.nexauctionhouse.redis.CrossServerManager;
+import net.nexuby.nexauctionhouse.redis.RedisManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -34,6 +37,9 @@ public final class NexAuctionHouse extends JavaPlugin {
     private NotificationManager notificationManager;
     private ThemeManager themeManager;
     private MigrationManager migrationManager;
+    private RedisManager redisManager;
+    private CrossServerManager crossServerManager;
+    private BungeeCordListener bungeeCordListener;
 
     @Override
     public void onEnable() {
@@ -88,6 +94,29 @@ public final class NexAuctionHouse extends JavaPlugin {
         // Initialize migration manager
         this.migrationManager = new MigrationManager(this);
 
+        // Initialize cross-server synchronization (Redis + BungeeCord)
+        if (configManager.isCrossServerEnabled()) {
+            if (databaseManager.isUsingSQLite()) {
+                getLogger().severe("Cross-server mode requires MySQL or MongoDB! SQLite is not supported. Disabling cross-server sync.");
+            } else {
+                this.redisManager = new RedisManager(this);
+                if (redisManager.connect()) {
+                    this.crossServerManager = new CrossServerManager(this, redisManager);
+                    crossServerManager.start();
+
+                    if (configManager.isBungeeCordEnabled()) {
+                        this.bungeeCordListener = new BungeeCordListener(this);
+                        bungeeCordListener.register();
+                    }
+
+                    getLogger().info("Cross-server synchronization enabled.");
+                } else {
+                    getLogger().severe("Failed to connect to Redis! Cross-server sync disabled.");
+                    this.redisManager = null;
+                }
+            }
+        }
+
         // Register commands
         AuctionCommand auctionCommand = new AuctionCommand(this);
         getCommand("ah").setExecutor(auctionCommand);
@@ -116,6 +145,15 @@ public final class NexAuctionHouse extends JavaPlugin {
 
         if (auctionManager != null) {
             auctionManager.saveAll();
+        }
+
+        // Disconnect cross-server systems
+        if (bungeeCordListener != null) {
+            bungeeCordListener.unregister();
+        }
+
+        if (redisManager != null) {
+            redisManager.disconnect();
         }
 
         if (databaseManager != null) {
@@ -171,6 +209,18 @@ public final class NexAuctionHouse extends JavaPlugin {
 
     public MigrationManager getMigrationManager() {
         return migrationManager;
+    }
+
+    public RedisManager getRedisManager() {
+        return redisManager;
+    }
+
+    public CrossServerManager getCrossServerManager() {
+        return crossServerManager;
+    }
+
+    public BungeeCordListener getBungeeCordListener() {
+        return bungeeCordListener;
     }
 
     /**

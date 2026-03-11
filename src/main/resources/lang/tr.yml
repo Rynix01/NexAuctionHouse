@@ -195,3 +195,10 @@ migration:
 theme:
   selected: "<green>Tema <yellow>{theme}<green> olarak degistirildi!"
   not-found: "<red><yellow>{theme}<red> temasi bulunamadi. Mevcut temalari gormek icin <yellow>/ah theme <gray>kullanin."
+
+# Coklu sunucu mesajlari
+cross-server:
+  redis-connected: "<green>Redis baglantisi kuruldu."
+  redis-disconnected: "<red>Redis baglantisi kesildi. Coklu sunucu senkronizasyonu devre disi."
+  sync-enabled: "<green>Coklu sunucu senkronizasyonu aktif."
+  cache-refreshed: "<green>Ilan onbellegi veritabanindan yenilendi."

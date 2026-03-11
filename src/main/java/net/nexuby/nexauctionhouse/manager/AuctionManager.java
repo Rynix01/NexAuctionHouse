@@ -16,9 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.scheduler.BukkitRunnable;
+import net.nexuby.nexauctionhouse.redis.CrossServerManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -130,6 +128,9 @@ public class AuctionManager {
             // Log the listing
             dao.logTransaction(id, seller.getUniqueId(), null, itemStack, price, 0, "LIST");
 
+            // Cross-server sync
+            publishCrossServer("CREATE", id);
+
             // Discord notification
             discordWebhook.sendListingNotification(seller.getName(), itemStack, price, currency);
 
@@ -178,6 +179,10 @@ public class AuctionManager {
             }
             activeAuctions.put(id, withId);
             dao.logTransaction(id, seller.getUniqueId(), null, itemStack, startingPrice, 0, "LIST_AUCTION");
+
+            // Cross-server sync
+            publishCrossServer("CREATE", id);
+
             discordWebhook.sendListingNotification(seller.getName(), itemStack, startingPrice, currency);
 
             // Broadcast to online players
@@ -219,6 +224,10 @@ public class AuctionManager {
             withId.setBundleItems(items);
             activeAuctions.put(id, withId);
             dao.logTransaction(id, seller.getUniqueId(), null, displayItem, price, 0, "LIST_BUNDLE");
+
+            // Cross-server sync
+            publishCrossServer("CREATE", id);
+
             discordWebhook.sendListingNotification(seller.getName(), displayItem, price, currency);
 
             // Broadcast to online players
@@ -270,6 +279,9 @@ public class AuctionManager {
             return false;
         }
 
+        // Cross-server sync: remove from other servers immediately
+        publishCrossServer("REMOVE", auctionId);
+
         // Process economy
         plugin.getEconomyManager().withdraw(buyer, item.getPrice(), currency);
 
@@ -301,7 +313,7 @@ public class AuctionManager {
         dao.logTransaction(auctionId, item.getSellerUuid(), buyer.getUniqueId(),
                 item.getItemStack(), item.getPrice(), taxAmount, "SALE");
 
-        // Notify seller if online
+        // Notify seller if online (local or cross-server)
         if (seller != null && seller.isOnline()) {
             if (plugin.getNotificationManager().canReceiveSaleNotification(seller.getUniqueId())) {
                 seller.sendMessage(plugin.getLangManager().prefixed("auction.sold",
@@ -310,6 +322,12 @@ public class AuctionManager {
                         "{tax}", plugin.getEconomyManager().format(taxAmount, currency)));
                 plugin.getNotificationManager().playSaleSound(seller);
             }
+        } else if (plugin.getCrossServerManager() != null) {
+            plugin.getCrossServerManager().publishNotificationWithSound(
+                    item.getSellerUuid(), "auction.sold", "ENTITY_EXPERIENCE_ORB_PICKUP",
+                    "{item}", getItemName(item.getItemStack()),
+                    "{price}", plugin.getEconomyManager().format(item.getPrice(), currency),
+                    "{tax}", plugin.getEconomyManager().format(taxAmount, currency));
         }
 
         // Discord notification
@@ -384,6 +402,15 @@ public class AuctionManager {
                 // Queue refund for offline player
                 dao.insertPendingRevenue(previousBidderUuid, item.getHighestBidderName(), previousBidAmount,
                         currency, auctionId, getItemName(item.getItemStack()), bidder.getName());
+
+                // Cross-server outbid notification
+                if (plugin.getCrossServerManager() != null) {
+                    plugin.getCrossServerManager().publishNotificationWithSound(
+                            previousBidderUuid, "bid.outbid", "ENTITY_ARROW_HIT_PLAYER",
+                            "{item}", getItemName(item.getItemStack()),
+                            "{amount}", plugin.getEconomyManager().format(amount, currency),
+                            "{bidder}", bidder.getName());
+                }
             }
         }
 
@@ -405,7 +432,10 @@ public class AuctionManager {
             dao.updateAuctionExpiry(auctionId, newExpiry);
         }
 
-        // Notify seller if online
+        // Cross-server sync
+        publishCrossServer("UPDATE", auctionId);
+
+        // Notify seller if online (local or cross-server)
         Player seller = Bukkit.getPlayer(item.getSellerUuid());
         if (seller != null && seller.isOnline()) {
             if (plugin.getNotificationManager().canReceiveBidNotification(seller.getUniqueId())) {
@@ -415,6 +445,12 @@ public class AuctionManager {
                         "{amount}", plugin.getEconomyManager().format(amount, currency)));
                 plugin.getNotificationManager().playBidSound(seller);
             }
+        } else if (plugin.getCrossServerManager() != null) {
+            plugin.getCrossServerManager().publishNotificationWithSound(
+                    item.getSellerUuid(), "bid.new-bid-seller", "ENTITY_ARROW_HIT_PLAYER",
+                    "{item}", getItemName(item.getItemStack()),
+                    "{bidder}", bidder.getName(),
+                    "{amount}", plugin.getEconomyManager().format(amount, currency));
         }
 
         // Discord notification
@@ -446,6 +482,9 @@ public class AuctionManager {
         activeAuctions.remove(auctionId);
         item.setStatus(AuctionStatus.CANCELLED);
         dao.updateAuctionStatus(auctionId, AuctionStatus.CANCELLED);
+
+        // Cross-server sync
+        publishCrossServer("REMOVE", auctionId);
         dao.logTransaction(auctionId, item.getSellerUuid(), null,
                 item.getItemStack(), item.getPrice(), 0, isAdmin ? "ADMIN_CANCEL" : "CANCEL");
 
@@ -528,6 +567,10 @@ public class AuctionManager {
         if (dao.updateAuctionPrice(auctionId, newPrice)) {
             dao.logTransaction(auctionId, seller.getUniqueId(), null,
                     item.getItemStack(), newPrice, 0, "PRICE_UPDATE");
+
+            // Cross-server sync
+            publishCrossServer("UPDATE", auctionId);
+
             discordWebhook.sendPriceUpdateNotification(seller.getName(), item.getItemStack(), oldPrice, newPrice, item.getCurrency());
             return true;
         }
@@ -571,6 +614,10 @@ public class AuctionManager {
         if (dao.updateAuctionExpiry(auctionId, newExpiresAt)) {
             dao.logTransaction(auctionId, seller.getUniqueId(), null,
                     item.getItemStack(), item.getPrice(), 0, "EXTEND");
+
+            // Cross-server sync
+            publishCrossServer("UPDATE", auctionId);
+
             return true;
         }
 
@@ -582,9 +629,23 @@ public class AuctionManager {
     /**
      * Moves an expired auction out of active list and into expired items.
      * For bid auctions with a winner, completes the sale.
+     * In cross-server mode, uses distributed locking to prevent double processing.
      */
     private void expireAuction(AuctionItem item) {
+        // In cross-server mode, acquire distributed lock before processing
+        CrossServerManager csm = plugin.getCrossServerManager();
+        if (csm != null) {
+            if (!csm.tryLockExpiration(item.getId())) {
+                // Another server is handling this expiration
+                activeAuctions.remove(item.getId());
+                return;
+            }
+        }
+
         activeAuctions.remove(item.getId());
+
+        // Cross-server sync
+        publishCrossServer("REMOVE", item.getId());
 
         if (item.isBidAuction() && item.getHighestBidderUuid() != null && item.getHighestBid() > 0) {
             // Bid auction with a winner - complete the sale
@@ -668,6 +729,9 @@ public class AuctionManager {
         dao.updateAutoRelistData(item.getId(), newRelistCount, newExpiresAt);
         activeAuctions.put(item.getId(), item);
 
+        // Cross-server sync: notify other servers of the re-listed auction
+        publishCrossServer("CREATE", item.getId());
+
         dao.logTransaction(item.getId(), item.getSellerUuid(), null,
                 item.getItemStack(), item.getPrice(), cost, "AUTO_RELIST");
 
@@ -716,6 +780,16 @@ public class AuctionManager {
         } else {
             dao.insertPendingRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives,
                     currency, item.getId(), getItemName(item.getItemStack()), item.getHighestBidderName());
+
+            // Cross-server seller notification
+            if (plugin.getCrossServerManager() != null) {
+                plugin.getCrossServerManager().publishNotificationWithSound(
+                        item.getSellerUuid(), "bid.auction-won-seller", "ENTITY_EXPERIENCE_ORB_PICKUP",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{winner}", item.getHighestBidderName(),
+                        "{price}", plugin.getEconomyManager().format(salePrice, currency),
+                        "{tax}", plugin.getEconomyManager().format(taxAmount, currency));
+            }
         }
 
         // Give item(s) to winner
@@ -1021,9 +1095,18 @@ public class AuctionManager {
 
     /**
      * Notifies players who favorited an auction that it has been sold or cancelled.
+     * Sends cross-server notifications when the watcher is not on this server.
      */
     public void notifyFavoriteWatchers(AuctionItem item, String reason) {
         List<UUID> watchers = dao.getPlayersWhoFavorited(item.getId());
+        String langKey = switch (reason) {
+            case "sold" -> "favorites.notify-sold";
+            case "cancelled" -> "favorites.notify-cancelled";
+            case "expired" -> "favorites.notify-expired";
+            default -> null;
+        };
+        if (langKey == null) return;
+
         for (UUID watcherUuid : watchers) {
             // Don't notify the seller
             if (watcherUuid.equals(item.getSellerUuid())) continue;
@@ -1033,20 +1116,15 @@ public class AuctionManager {
 
             Player watcher = Bukkit.getPlayer(watcherUuid);
             if (watcher != null && watcher.isOnline()) {
-                if ("sold".equals(reason)) {
-                    watcher.sendMessage(plugin.getLangManager().prefixed("favorites.notify-sold",
-                            "{item}", getItemName(item.getItemStack()),
-                            "{seller}", item.getSellerName()));
-                } else if ("cancelled".equals(reason)) {
-                    watcher.sendMessage(plugin.getLangManager().prefixed("favorites.notify-cancelled",
-                            "{item}", getItemName(item.getItemStack()),
-                            "{seller}", item.getSellerName()));
-                } else if ("expired".equals(reason)) {
-                    watcher.sendMessage(plugin.getLangManager().prefixed("favorites.notify-expired",
-                            "{item}", getItemName(item.getItemStack()),
-                            "{seller}", item.getSellerName()));
-                }
+                watcher.sendMessage(plugin.getLangManager().prefixed(langKey,
+                        "{item}", getItemName(item.getItemStack()),
+                        "{seller}", item.getSellerName()));
                 plugin.getNotificationManager().playFavoriteSound(watcher);
+            } else if (plugin.getCrossServerManager() != null) {
+                plugin.getCrossServerManager().publishNotificationWithSound(
+                        watcherUuid, langKey, "BLOCK_NOTE_BLOCK_CHIME",
+                        "{item}", getItemName(item.getItemStack()),
+                        "{seller}", item.getSellerName());
             }
         }
         // Clean up favorites for this auction
@@ -1121,6 +1199,36 @@ public class AuctionManager {
                     "{seller}", seller.getName(),
                     "{item}", itemName,
                     "{price}", priceStr));
+        }
+    }
+
+    // -- Cross-server cache management --
+
+    /**
+     * Adds an auction to the local active cache (called by CrossServerManager for remote auctions).
+     */
+    public void addToCache(AuctionItem item) {
+        activeAuctions.put(item.getId(), item);
+    }
+
+    /**
+     * Removes an auction from the local active cache (called by CrossServerManager for remote events).
+     */
+    public void removeFromCache(int auctionId) {
+        activeAuctions.remove(auctionId);
+    }
+
+    /**
+     * Publishes a cross-server event if cross-server mode is active.
+     */
+    private void publishCrossServer(String type, int auctionId) {
+        CrossServerManager csm = plugin.getCrossServerManager();
+        if (csm == null) return;
+
+        switch (type) {
+            case "CREATE" -> csm.publishCreate(auctionId);
+            case "REMOVE" -> csm.publishRemove(auctionId, "REMOVED");
+            case "UPDATE" -> csm.publishUpdate(auctionId);
         }
     }
 }
