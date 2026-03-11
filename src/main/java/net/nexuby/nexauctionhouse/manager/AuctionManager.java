@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import net.nexuby.nexauctionhouse.api.event.*;
 import net.nexuby.nexauctionhouse.redis.CrossServerManager;
 
 import java.util.*;
@@ -113,6 +114,11 @@ public class AuctionManager {
             auctionItem.setMaxRelists(config.getMaxAutoRelists());
         }
 
+        // Fire API event
+        AuctionListEvent listEvent = new AuctionListEvent(seller, auctionItem);
+        Bukkit.getPluginManager().callEvent(listEvent);
+        if (listEvent.isCancelled()) return -1;
+
         int id = dao.insertAuction(auctionItem);
         if (id > 0) {
             AuctionItem withId = new AuctionItem(
@@ -166,6 +172,11 @@ public class AuctionManager {
             auctionItem.setMaxRelists(plugin.getConfigManager().getMaxAutoRelists());
         }
 
+        // Fire API event
+        AuctionListEvent listEvent = new AuctionListEvent(seller, auctionItem);
+        Bukkit.getPluginManager().callEvent(listEvent);
+        if (listEvent.isCancelled()) return -1;
+
         int id = dao.insertAuction(auctionItem);
         if (id > 0) {
             AuctionItem withId = new AuctionItem(
@@ -213,6 +224,11 @@ public class AuctionManager {
         );
         auctionItem.setBundle(true);
         auctionItem.setBundleItems(items);
+
+        // Fire API event
+        AuctionListEvent listEvent = new AuctionListEvent(seller, auctionItem);
+        Bukkit.getPluginManager().callEvent(listEvent);
+        if (listEvent.isCancelled()) return -1;
 
         int id = dao.insertAuction(auctionItem);
         if (id > 0) {
@@ -273,6 +289,11 @@ public class AuctionManager {
                 return false;
             }
         }
+
+        // Fire API event
+        AuctionPurchaseEvent purchaseEvent = new AuctionPurchaseEvent(buyer, item);
+        Bukkit.getPluginManager().callEvent(purchaseEvent);
+        if (purchaseEvent.isCancelled()) return false;
 
         // Remove from active list first to prevent double-buy
         if (activeAuctions.remove(auctionId) == null) {
@@ -381,6 +402,11 @@ public class AuctionManager {
             return false;
         }
 
+        // Fire API event
+        BidPlaceEvent bidEvent = new BidPlaceEvent(bidder, item, amount);
+        Bukkit.getPluginManager().callEvent(bidEvent);
+        if (bidEvent.isCancelled()) return false;
+
         // Withdraw from bidder
         plugin.getEconomyManager().withdraw(bidder, amount, currency);
 
@@ -482,6 +508,9 @@ public class AuctionManager {
         activeAuctions.remove(auctionId);
         item.setStatus(AuctionStatus.CANCELLED);
         dao.updateAuctionStatus(auctionId, AuctionStatus.CANCELLED);
+
+        // Fire API event (informational, not cancellable)
+        Bukkit.getPluginManager().callEvent(new AuctionCancelEvent(item, requester, isAdmin));
 
         // Cross-server sync
         publishCrossServer("REMOVE", auctionId);
@@ -646,6 +675,10 @@ public class AuctionManager {
 
         // Cross-server sync
         publishCrossServer("REMOVE", item.getId());
+
+        // Fire API event (informational, not cancellable)
+        boolean hadWinner = item.isBidAuction() && item.getHighestBidderUuid() != null && item.getHighestBid() > 0;
+        Bukkit.getPluginManager().callEvent(new AuctionExpireEvent(item, hadWinner));
 
         if (item.isBidAuction() && item.getHighestBidderUuid() != null && item.getHighestBid() > 0) {
             // Bid auction with a winner - complete the sale

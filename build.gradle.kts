@@ -46,6 +46,17 @@ tasks {
         exclude("META-INF/native-image/**")
     }
 
+    register<Jar>("apiJar") {
+        archiveClassifier.set("api")
+        archiveFileName.set("NexAuctionHouse-${project.version}-api.jar")
+        from(sourceSets.main.get().output) {
+            include("net/nexuby/nexauctionhouse/api/**")
+            include("net/nexuby/nexauctionhouse/model/AuctionItem.class")
+            include("net/nexuby/nexauctionhouse/model/AuctionStatus.class")
+            include("net/nexuby/nexauctionhouse/model/AuctionType.class")
+        }
+    }
+
     build {
         dependsOn(shadowJar)
     }

@@ -206,21 +206,21 @@
 - [x] Oyuncu tema tercihinin veritabanında saklanması
 
 ## Aşama 20: Geliştirici API (Developer API)
-- [ ] NexAuctionHouseAPI public sınıfı (static erişim)
-- [ ] Custom Event'ler:
-  - [ ] AuctionListEvent (cancellable) → ilan açılmadan önce
-  - [ ] AuctionPurchaseEvent (cancellable) → satın almadan önce
-  - [ ] AuctionExpireEvent → ilan süresi dolunca
-  - [ ] AuctionCancelEvent → ilan iptal edilince
-  - [ ] BidPlaceEvent (cancellable) → teklif verilmeden önce
-- [ ] API metotları:
-  - [ ] getActiveAuctions()
-  - [ ] getAuctionsByPlayer(UUID)
-  - [ ] forceCreateAuction(player, item, price, currency)
-  - [ ] forceRemoveAuction(id)
-  - [ ] getPlayerStats(UUID)
-- [ ] Javadoc dokümantasyonu
-- [ ] Maven/Gradle dependency olarak sunulabilir yapı
+- [x] NexAuctionHouseAPI public sınıfı (static erişim)
+- [x] Custom Event'ler:
+  - [x] AuctionListEvent (cancellable) → ilan açılmadan önce
+  - [x] AuctionPurchaseEvent (cancellable) → satın almadan önce
+  - [x] AuctionExpireEvent → ilan süresi dolunca
+  - [x] AuctionCancelEvent → ilan iptal edilince
+  - [x] BidPlaceEvent (cancellable) → teklif verilmeden önce
+- [x] API metotları:
+  - [x] getActiveAuctions()
+  - [x] getAuctionsByPlayer(UUID)
+  - [x] forceCreateAuction(player, item, price, currency)
+  - [x] forceRemoveAuction(id)
+  - [x] getPlayerStats(UUID)
+- [x] Javadoc dokümantasyonu
+- [x] Maven/Gradle dependency olarak sunulabilir yapı
 
 ## Aşama 21: Redis / BungeeCord Desteği
 - [x] MySQL zorunlu mod ile çoklu sunucu senkronizasyonu

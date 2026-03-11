@@ -12,6 +12,7 @@ import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.listener.BungeeCordListener;
+import net.nexuby.nexauctionhouse.api.NexAuctionHouseAPI;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import net.nexuby.nexauctionhouse.manager.NotificationManager;
@@ -133,11 +134,17 @@ public final class NexAuctionHouse extends JavaPlugin {
             getLogger().info("PlaceholderAPI hook registered.");
         }
 
+        // Initialize Developer API
+        NexAuctionHouseAPI.setInstance(new NexAuctionHouseAPI(this));
+
         getLogger().info("NexAuctionHouse v" + getDescription().getVersion() + " has been enabled!");
     }
 
     @Override
     public void onDisable() {
+        // Cleanup API
+        NexAuctionHouseAPI.setInstance(null);
+
         // Save cursor protection data before shutdown
         if (cursorProtectionManager != null) {
             cursorProtectionManager.saveAllTracked();
