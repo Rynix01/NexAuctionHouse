@@ -235,6 +235,11 @@ cross-server:
     host: localhost
     port: 6379
     password: ''
+    # Enable TLS (rediss) and certificate/hostname verification.
+    use-ssl: false
+    # Required when cross-server mode is enabled. Use a random value of at least 32 characters
+    # and configure the same value on every server. Redis messages are HMAC-signed with it.
+    message-secret: ''
     # Redis database index (0-15)
     database: 0
     # Connection timeout in milliseconds

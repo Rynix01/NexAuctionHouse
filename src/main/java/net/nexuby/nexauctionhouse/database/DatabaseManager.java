@@ -85,7 +85,7 @@ public class DatabaseManager {
         boolean ssl = config.getMySQLSSL();
 
         String url = "jdbc:mysql://" + host + ":" + port + "/" + database
-                + "?useSSL=" + ssl
+                + "?sslMode=" + (ssl ? "VERIFY_IDENTITY" : "DISABLED")
                 + "&autoReconnect=true"
                 + "&characterEncoding=UTF-8";
 
@@ -321,7 +321,7 @@ public class DatabaseManager {
     private Connection openMySQLConnection(ConfigManager config) throws SQLException {
         String url = "jdbc:mysql://" + config.getMySQLHost() + ":" + config.getMySQLPort()
                 + "/" + config.getMySQLDatabase()
-                + "?useSSL=" + config.getMySQLSSL()
+                + "?sslMode=" + (config.getMySQLSSL() ? "VERIFY_IDENTITY" : "DISABLED")
                 + "&autoReconnect=true&characterEncoding=UTF-8";
         return DriverManager.getConnection(url, config.getMySQLUsername(), config.getMySQLPassword());
     }

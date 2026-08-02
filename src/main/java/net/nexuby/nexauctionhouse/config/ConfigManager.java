@@ -274,6 +274,14 @@ public class ConfigManager {
         return config.getString("cross-server.redis.channel-prefix", "nexah");
     }
 
+    public boolean getRedisSSL() {
+        return config.getBoolean("cross-server.redis.use-ssl", false);
+    }
+
+    public String getRedisMessageSecret() {
+        return config.getString("cross-server.redis.message-secret", "");
+    }
+
     public boolean isBungeeCordEnabled() {
         return config.getBoolean("cross-server.bungeecord.enabled", false);
     }
