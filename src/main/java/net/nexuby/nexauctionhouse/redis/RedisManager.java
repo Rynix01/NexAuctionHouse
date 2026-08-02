@@ -10,7 +10,9 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.params.SetParams;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -20,6 +22,7 @@ public class RedisManager {
     private final NexAuctionHouse plugin;
     private JedisPool pool;
     private final Map<String, SubscriptionThread> activeSubscriptions = new ConcurrentHashMap<>();
+    private final Map<String, String> ownedLocks = new ConcurrentHashMap<>();
     private String channelPrefix;
     private SignedMessageCodec messageCodec;
 
@@ -123,10 +126,12 @@ public class RedisManager {
      */
     public boolean tryLock(String key, int ttlSeconds) {
         String fullKey = channelPrefix + ":lock:" + key;
+        String token = plugin.getConfigManager().getServerId() + ":" + UUID.randomUUID();
         try (Jedis jedis = pool.getResource()) {
-            String result = jedis.set(fullKey, plugin.getConfigManager().getServerId(),
-                    SetParams.setParams().nx().ex(ttlSeconds));
-            return "OK".equals(result);
+            String result = jedis.set(fullKey, token, SetParams.setParams().nx().ex(ttlSeconds));
+            if (!"OK".equals(result)) return false;
+            ownedLocks.put(fullKey, token);
+            return true;
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "Failed to acquire Redis lock: " + fullKey, e);
             return false;
@@ -138,8 +143,13 @@ public class RedisManager {
      */
     public void releaseLock(String key) {
         String fullKey = channelPrefix + ":lock:" + key;
+        String token = ownedLocks.remove(fullKey);
+        if (token == null) return;
         try (Jedis jedis = pool.getResource()) {
-            jedis.del(fullKey);
+            jedis.eval(
+                    "if redis.call('get', KEYS[1]) == ARGV[1] then "
+                            + "return redis.call('del', KEYS[1]) else return 0 end",
+                    List.of(fullKey), List.of(token));
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "Failed to release Redis lock: " + fullKey, e);
         }
@@ -160,6 +170,7 @@ public class RedisManager {
             entry.getValue().shutdown();
         }
         activeSubscriptions.clear();
+        ownedLocks.clear();
 
         if (pool != null && !pool.isClosed()) {
             pool.close();

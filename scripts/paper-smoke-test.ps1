@@ -1,13 +1,19 @@
 param(
     [string]$MinecraftVersion = "1.21.4",
-    [int]$TimeoutSeconds = 180
+    [int]$TimeoutSeconds = 180,
+    [switch]$UseExternalServices,
+    [string]$MongoUri = "mongodb://127.0.0.1:27018",
+    [string]$MongoDatabase = "nexah_paper_smoke",
+    [string]$RedisHost = "127.0.0.1",
+    [int]$RedisPort = 6379
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$runtimeRoot = Join-Path $repositoryRoot "build\paper-smoke-$MinecraftVersion"
+$runtimeSuffix = if ($UseExternalServices) { "$MinecraftVersion-external" } else { $MinecraftVersion }
+$runtimeRoot = Join-Path $repositoryRoot "build\paper-smoke-$runtimeSuffix"
 $pluginsRoot = Join-Path $runtimeRoot "plugins"
 $paperJar = Join-Path $runtimeRoot "paper.jar"
 $userAgent = "NexAuctionHouse-TestHarness/1.0 (https://github.com/Rynix01/NexAuctionHouse)"
@@ -56,6 +62,22 @@ Download-FileIfMissing `
 Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\libs\NexAuctionHouse-1.0.0.jar") `
     -Destination $pluginJar -Force
 
+if ($UseExternalServices) {
+    $pluginDataRoot = Join-Path $pluginsRoot "NexAuctionHouse"
+    New-Item -ItemType Directory -Force -Path $pluginDataRoot | Out-Null
+    $configText = Get-Content -LiteralPath (Join-Path $repositoryRoot "src\main\resources\config.yml") -Raw
+    $configText = $configText.Replace("  type: sqlite", "  type: mongodb")
+    $configText = $configText.Replace('connection-string: "mongodb://localhost:27017"', "connection-string: `"$MongoUri`"")
+    $configText = $configText.Replace("    database: nexauctionhouse", "    database: $MongoDatabase")
+    $configText = $configText.Replace("  enabled: false`r`n`r`n  # Unique identifier for this server instance", "  enabled: true`r`n`r`n  # Unique identifier for this server instance")
+    $configText = $configText.Replace("    host: localhost", "    host: $RedisHost")
+    $configText = $configText.Replace("    port: 6379", "    port: $RedisPort")
+    $configText = $configText.Replace("    message-secret: ''", "    message-secret: 'nexah-paper-smoke-secret-at-least-32-characters'")
+    $configText = $configText.Replace("    database: 0", "    database: 15")
+    $configText = $configText.Replace('    channel-prefix: "nexah"', '    channel-prefix: "nexah-paper-smoke"')
+    Set-Content -LiteralPath (Join-Path $pluginDataRoot "config.yml") -Encoding UTF8 -Value $configText
+}
+
 Set-Content -LiteralPath (Join-Path $runtimeRoot "eula.txt") -Encoding ASCII -Value "eula=true"
 Set-Content -LiteralPath (Join-Path $runtimeRoot "server.properties") -Encoding ASCII -Value @(
     "server-port=0"
@@ -84,7 +106,7 @@ Write-Host "Starting Paper $MinecraftVersion smoke server..."
 $stdoutFile = Join-Path $runtimeRoot "console-output.log"
 $stderrFile = Join-Path $runtimeRoot "console-error.log"
 $serverLog = Join-Path $runtimeRoot "logs\latest.log"
-Remove-Item -LiteralPath $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $stdoutFile, $stderrFile, $serverLog -Force -ErrorAction SilentlyContinue
 $process = Start-Process -FilePath $java `
     -ArgumentList @("-Xms512M", "-Xmx1G", "-jar", $paperJar, "--nogui") `
     -WorkingDirectory $runtimeRoot `
@@ -96,6 +118,8 @@ $process = Start-Process -FilePath $java `
 $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
 $enabled = $false
 $economyReady = $false
+$mongoReady = -not $UseExternalServices
+$redisReady = -not $UseExternalServices
 $fatal = $false
 
 try {
@@ -103,8 +127,10 @@ try {
         if (Test-Path -LiteralPath $serverLog) {
             $logText = Get-Content -LiteralPath $serverLog -Raw
             $economyReady = $logText -match "Economy provider registered: Money"
+            $mongoReady = $mongoReady -or $logText -match "MongoDB connection established"
+            $redisReady = $redisReady -or $logText -match "Redis connection established"
             $enabled = $logText -match "NexAuctionHouse v.+ has been enabled"
-            $fatal = $logText -match "Failed to establish database connection|No economy provider available"
+            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|No economy provider available"
         }
 
         if ($enabled -or $fatal) {
@@ -136,9 +162,16 @@ if (-not $economyReady) {
 if (-not $enabled) {
     throw "NexAuctionHouse did not enable before the timeout. See $logFile"
 }
+if (-not $mongoReady) {
+    throw "MongoDB integration did not become ready. See $logFile"
+}
+if (-not $redisReady) {
+    throw "Redis integration did not become ready. See $logFile"
+}
 if ($fatal) {
     throw "NexAuctionHouse reported a fatal startup error. See $logFile"
 }
 
-Write-Host "PASS: Paper, Vault, EssentialsX, SQLite and NexAuctionHouse started successfully."
+$databaseLabel = if ($UseExternalServices) { "MongoDB, Redis cross-server mode" } else { "SQLite" }
+Write-Host "PASS: Paper, Vault, EssentialsX, $databaseLabel and NexAuctionHouse started successfully."
 Write-Host "Log: $logFile"

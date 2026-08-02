@@ -80,6 +80,27 @@ tasks {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform {
+            excludeTags("external")
+        }
+    }
+
+    register<Test>("externalIntegrationTest") {
+        description = "Runs MongoDB and Redis integration tests against local services."
+        group = "verification"
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform {
+            includeTags("external")
+        }
+        systemProperty("nexah.mongo.uri",
+                providers.systemProperty("nexah.mongo.uri").orElse("mongodb://127.0.0.1:27018").get())
+        systemProperty("nexah.redis.host",
+                providers.systemProperty("nexah.redis.host").orElse("127.0.0.1").get())
+        systemProperty("nexah.redis.port",
+                providers.systemProperty("nexah.redis.port").orElse("6379").get())
+        systemProperty("nexah.redis.password",
+                providers.systemProperty("nexah.redis.password").orElse("").get())
+        shouldRunAfter(test)
     }
 }

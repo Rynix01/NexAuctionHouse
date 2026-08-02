@@ -16,6 +16,21 @@ market, GUI, command, delivery, migration, API and concurrency behavior.
 
 The HTML report is generated at `build/reports/tests/test/index.html`.
 
+## Live MongoDB and Redis integration suite
+
+Run the provider contract tests against local Docker services:
+
+```powershell
+.\gradlew.bat externalIntegrationTest --no-daemon `
+  "-Dnexah.mongo.uri=mongodb://127.0.0.1:27018" `
+  "-Dnexah.redis.host=127.0.0.1" `
+  "-Dnexah.redis.port=6379"
+```
+
+This task creates a uniquely named temporary MongoDB database, uses an isolated
+Redis key/channel prefix, and drops only that temporary database after each
+test. It is excluded from the normal CI task because it needs live services.
+
 ## Real Paper smoke test
 
 Run the reproducible Paper 1.21.4 startup environment on Windows:
@@ -30,9 +45,17 @@ temporary local server, starts it without a GUI, verifies Vault/economy, SQLite
 and NexAuctionHouse startup, then terminates the disposable test process. All runtime files stay under
 the ignored `build/paper-smoke-1.21.4` directory.
 
+To start the same Paper harness with MongoDB and Redis cross-server mode:
+
+```powershell
+.\scripts\paper-smoke-test.ps1 -UseExternalServices
+```
+
+The external Paper run uses the dedicated `nexah_paper_smoke` MongoDB database.
+
 ## External integration coverage
 
-MySQL, MongoDB, Redis, BungeeCord/Velocity, PlaceholderAPI and custom-item or
+MySQL, BungeeCord/Velocity, PlaceholderAPI and custom-item or
 alternate-economy plugins require their own running services or third-party
 plugin binaries. They remain explicit manual/infrastructure tests in
 `TEST_CHECKLIST.md`; they are not reported as passing unless those dependencies
