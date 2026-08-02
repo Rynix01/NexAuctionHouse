@@ -1,6 +1,5 @@
 package net.nexuby.nexauctionhouse.gui;
 
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.listener.ChatInputListener;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
@@ -21,7 +20,6 @@ import java.util.List;
  */
 public class BidGui extends AbstractGui {
 
-    private final MiniMessage mm = MiniMessage.miniMessage();
     private final AuctionItem auctionItem;
 
     private int bidSlot = -1;
@@ -41,7 +39,7 @@ public class BidGui extends AbstractGui {
             return;
         }
 
-        String itemName = AuctionManager.getItemName(auctionItem.getItemStack());
+        String itemName = escapeMiniMessage(AuctionManager.getItemName(auctionItem.getItemStack()));
         double minBid = plugin.getAuctionManager().getMinBid(auctionItem);
         String minBidStr = plugin.getEconomyManager().format(minBid, auctionItem.getCurrency());
         String currentBidStr = auctionItem.getHighestBid() > 0

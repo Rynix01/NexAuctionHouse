@@ -2,6 +2,8 @@ package net.nexuby.nexauctionhouse.config;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -92,7 +94,16 @@ public class LangManager {
      * Parses the message through MiniMessage with placeholder replacements.
      */
     public Component get(String key, String... replacements) {
-        return miniMessage.deserialize(getRaw(key, replacements));
+        String template = getRaw(key);
+        TagResolver.Builder resolvers = TagResolver.builder();
+
+        for (int i = 0; i < replacements.length - 1; i += 2) {
+            String tagName = "nah" + (i / 2);
+            template = template.replace(replacements[i], "<" + tagName + ">");
+            resolvers.resolver(Placeholder.unparsed(tagName, replacements[i + 1]));
+        }
+
+        return miniMessage.deserialize(template, resolvers.build());
     }
 
     /**

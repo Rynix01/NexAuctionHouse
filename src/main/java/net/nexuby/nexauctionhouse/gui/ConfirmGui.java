@@ -1,6 +1,5 @@
 package net.nexuby.nexauctionhouse.gui;
 
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import org.bukkit.Bukkit;
@@ -16,7 +15,6 @@ import org.bukkit.inventory.ItemStack;
  */
 public class ConfirmGui extends AbstractGui {
 
-    private final MiniMessage mm = MiniMessage.miniMessage();
     private final AuctionItem auctionItem;
 
     private int confirmSlot = -1;
@@ -38,7 +36,7 @@ public class ConfirmGui extends AbstractGui {
 
         String rawTitle = cfg.getString("title", "<dark_gray>Confirm Purchase");
         String title = rawTitle
-                .replace("{item}", net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(auctionItem.getItemStack()))
+                .replace("{item}", escapeMiniMessage(net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(auctionItem.getItemStack())))
                 .replace("{price}", plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency()));
 
         int size = cfg.getInt("size", 27);
@@ -78,7 +76,7 @@ public class ConfirmGui extends AbstractGui {
             var meta = button.getItemMeta();
             if (meta.hasLore()) {
                 var newLore = new java.util.ArrayList<net.kyori.adventure.text.Component>();
-                String itemName = net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(auctionItem.getItemStack());
+                String itemName = escapeMiniMessage(net.nexuby.nexauctionhouse.manager.AuctionManager.getItemName(auctionItem.getItemStack()));
                 String priceStr = plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency());
 
                 for (var loreLine : meta.lore()) {

@@ -80,6 +80,10 @@ public abstract class AbstractGui implements InventoryHolder {
                 .decoration(TextDecoration.ITALIC, false);
     }
 
+    protected static String escapeMiniMessage(String value) {
+        return MiniMessage.miniMessage().escapeTags(value == null ? "" : value);
+    }
+
     /**
      * Checks click cooldown to prevent rapid-fire item duplication.
      * Returns true if the click should be allowed.
