@@ -5,6 +5,7 @@ import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Manages migration operations from other auction house plugins.
@@ -15,7 +16,7 @@ public class MigrationManager {
 
     private final NexAuctionHouse plugin;
     private final Map<String, AbstractMigrator> migrators = new LinkedHashMap<>();
-    private boolean migrationInProgress;
+    private final AtomicBoolean migrationInProgress = new AtomicBoolean();
 
     public MigrationManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
@@ -57,7 +58,7 @@ public class MigrationManager {
     }
 
     public boolean isMigrationInProgress() {
-        return migrationInProgress;
+        return migrationInProgress.get();
     }
 
     /**
@@ -68,11 +69,10 @@ public class MigrationManager {
      * @return The migration report, or null if validation/backup failed
      */
     public MigrationReport executeMigration(AbstractMigrator migrator) {
-        if (migrationInProgress) {
+        if (!migrationInProgress.compareAndSet(false, true)) {
             return null;
         }
 
-        migrationInProgress = true;
         try {
             // Step 1: Validate source data exists
             String validationError = migrator.validate();
@@ -97,7 +97,7 @@ public class MigrationManager {
 
             return report;
         } finally {
-            migrationInProgress = false;
+            migrationInProgress.set(false);
         }
     }
 }

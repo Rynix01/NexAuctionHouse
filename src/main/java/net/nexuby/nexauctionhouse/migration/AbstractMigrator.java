@@ -99,7 +99,14 @@ public abstract class AbstractMigrator {
         File backupFile = new File(plugin.getDataFolder(), backupName);
 
         try {
-            java.nio.file.Files.copy(dbFile.toPath(), backupFile.toPath());
+            String escapedPath = backupFile.getAbsolutePath().replace("'", "''");
+            Connection connection = plugin.getDatabaseManager().getConnection();
+            synchronized (connection) {
+                try (Statement statement = connection.createStatement()) {
+                    // VACUUM INTO uses SQLite's snapshot machinery and includes committed WAL data.
+                    statement.execute("VACUUM INTO '" + escapedPath + "'");
+                }
+            }
             plugin.getLogger().info("Database backup created: " + backupName);
             return true;
         } catch (Exception e) {
