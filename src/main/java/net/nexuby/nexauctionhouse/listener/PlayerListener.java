@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class PlayerListener implements Listener {
 
@@ -91,7 +92,13 @@ public class PlayerListener implements Listener {
             }
 
             // Process pending revenue queue
-            List<PendingRevenue> pendingRevenues = dao.getPendingRevenue(player.getUniqueId());
+            List<PendingRevenue> loadedRevenues = dao.getPendingRevenue(player.getUniqueId());
+            long claimTime = System.currentTimeMillis();
+            String revenueClaimToken = UUID.randomUUID().toString();
+            List<PendingRevenue> pendingRevenues = loadedRevenues.stream()
+                    .filter(revenue -> dao.claimPendingRevenue(revenue.getId(), player.getUniqueId(),
+                            revenueClaimToken, claimTime, claimTime - 300_000L))
+                    .toList();
             if (!pendingRevenues.isEmpty()) {
                 // Group totals by currency for deposit
                 Map<String, List<PendingRevenue>> revenuesByCurrency = new HashMap<>();
@@ -102,7 +109,12 @@ public class PlayerListener implements Listener {
 
                 // Deposit all pending money on the main thread
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    if (!player.isOnline()) return;
+                    if (!player.isOnline()) {
+                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,
+                                () -> pendingRevenues.forEach(revenue ->
+                                        dao.releasePendingRevenue(revenue.getId(), revenueClaimToken)));
+                        return;
+                    }
 
                     Map<String, Double> depositedByCurrency = new HashMap<>();
                     List<PendingRevenue> depositedRevenues = new ArrayList<>();
@@ -114,10 +126,15 @@ public class PlayerListener implements Listener {
                         }
                     }
 
-                    if (!depositedRevenues.isEmpty()) {
-                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,
-                                () -> depositedRevenues.forEach(revenue -> dao.deletePendingRevenue(revenue.getId())));
-                    }
+                    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                        for (PendingRevenue revenue : pendingRevenues) {
+                            if (depositedRevenues.contains(revenue)) {
+                                dao.acknowledgePendingRevenue(revenue.getId(), revenueClaimToken);
+                            } else {
+                                dao.releasePendingRevenue(revenue.getId(), revenueClaimToken);
+                            }
+                        }
+                    });
 
                     // Send notifications
                     if (canReceiveLogin && !depositedRevenues.isEmpty()) {

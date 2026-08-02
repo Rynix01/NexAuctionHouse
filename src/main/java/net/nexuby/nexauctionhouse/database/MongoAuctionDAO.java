@@ -336,6 +336,47 @@ public class MongoAuctionDAO extends AuctionDAO {
     }
 
     @Override
+    public boolean claimPendingRevenue(int id, UUID playerUuid, String claimToken,
+                                       long claimedAt, long leaseCutoff) {
+        try {
+            return mongo.pendingRevenue().updateOne(
+                    Filters.and(Filters.eq("_id", id),
+                            Filters.eq("player_uuid", playerUuid.toString()),
+                            Filters.or(Filters.eq("claim_token", null), Filters.lt("claimed_at", leaseCutoff))),
+                    Updates.combine(Updates.set("claim_token", claimToken), Updates.set("claimed_at", claimedAt))
+            ).getModifiedCount() > 0;
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to claim pending revenue (MongoDB)", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean acknowledgePendingRevenue(int id, String claimToken) {
+        try {
+            return mongo.pendingRevenue().deleteOne(Filters.and(
+                    Filters.eq("_id", id), Filters.eq("claim_token", claimToken)
+            )).getDeletedCount() > 0;
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to acknowledge pending revenue (MongoDB)", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean releasePendingRevenue(int id, String claimToken) {
+        try {
+            return mongo.pendingRevenue().updateOne(
+                    Filters.and(Filters.eq("_id", id), Filters.eq("claim_token", claimToken)),
+                    Updates.combine(Updates.unset("claim_token"), Updates.set("claimed_at", 0L))
+            ).getModifiedCount() > 0;
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to release pending revenue claim (MongoDB)", e);
+            return false;
+        }
+    }
+
+    @Override
     public boolean claimExpiredItem(int id, UUID ownerUuid) {
         try {
             return mongo.expiredItems().deleteOne(Filters.and(

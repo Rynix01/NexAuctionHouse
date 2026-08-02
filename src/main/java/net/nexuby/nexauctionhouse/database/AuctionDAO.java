@@ -345,6 +345,47 @@ public class AuctionDAO {
         }
     }
 
+    public boolean claimPendingRevenue(int id, UUID playerUuid, String claimToken,
+                                       long claimedAt, long leaseCutoff) {
+        String sql = "UPDATE pending_revenue SET claim_token = ?, claimed_at = ? "
+                + "WHERE id = ? AND player_uuid = ? AND (claim_token IS NULL OR claimed_at < ?)";
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, claimToken);
+            stmt.setLong(2, claimedAt);
+            stmt.setInt(3, id);
+            stmt.setString(4, playerUuid.toString());
+            stmt.setLong(5, leaseCutoff);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to claim pending revenue", e);
+            return false;
+        }
+    }
+
+    public boolean acknowledgePendingRevenue(int id, String claimToken) {
+        String sql = "DELETE FROM pending_revenue WHERE id = ? AND claim_token = ?";
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, claimToken);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to acknowledge pending revenue", e);
+            return false;
+        }
+    }
+
+    public boolean releasePendingRevenue(int id, String claimToken) {
+        String sql = "UPDATE pending_revenue SET claim_token = NULL, claimed_at = 0 WHERE id = ? AND claim_token = ?";
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, claimToken);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to release pending revenue claim", e);
+            return false;
+        }
+    }
+
     /**
      * Atomically claims an expired item for its owner so concurrent menus cannot deliver it twice.
      */

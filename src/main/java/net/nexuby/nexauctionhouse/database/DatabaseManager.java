@@ -144,7 +144,9 @@ public class DatabaseManager {
                 + "source_auction_id INTEGER NOT NULL,"
                 + "item_name VARCHAR(128) NOT NULL,"
                 + "buyer_name VARCHAR(16) NOT NULL,"
-                + "created_at BIGINT NOT NULL"
+                + "created_at BIGINT NOT NULL,"
+                + "claim_token VARCHAR(64) DEFAULT NULL,"
+                + "claimed_at BIGINT NOT NULL DEFAULT 0"
                 + ")";
 
         // Rescued items - cursor/crash protection
@@ -221,6 +223,8 @@ public class DatabaseManager {
         migrateColumn("is_bundle", "BOOLEAN NOT NULL DEFAULT 0");
         migrateColumn("bundle_data", "LONGTEXT DEFAULT NULL");
         migrateTableColumn("transaction_logs", "material_name", "VARCHAR(64) NOT NULL DEFAULT ''");
+        migrateTableColumn("pending_revenue", "claim_token", "VARCHAR(64) DEFAULT NULL");
+        migrateTableColumn("pending_revenue", "claimed_at", "BIGINT NOT NULL DEFAULT 0");
 
         // player_settings migrations
         migrateSettingsColumn("theme", "VARCHAR(32) DEFAULT 'default'");
