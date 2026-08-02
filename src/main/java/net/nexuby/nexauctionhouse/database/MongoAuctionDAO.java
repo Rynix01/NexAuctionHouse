@@ -180,7 +180,7 @@ public class MongoAuctionDAO extends AuctionDAO {
     // -- Expired items --
 
     @Override
-    public void insertExpiredItem(UUID ownerUuid, String ownerName, ItemStack itemStack, String reason) {
+    public boolean insertExpiredItem(UUID ownerUuid, String ownerName, ItemStack itemStack, String reason) {
         try {
             int id = mongo.getNextId("expired_items");
             Document doc = new Document("_id", id)
@@ -190,8 +190,10 @@ public class MongoAuctionDAO extends AuctionDAO {
                     .append("reason", reason)
                     .append("created_at", System.currentTimeMillis());
             mongo.expiredItems().insertOne(doc);
+            return true;
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to insert expired item (MongoDB)", e);
+            return false;
         }
     }
 

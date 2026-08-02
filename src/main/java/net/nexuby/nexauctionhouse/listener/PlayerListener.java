@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,17 +47,31 @@ public class PlayerListener implements Listener {
 
                     int returned = 0;
                     int stored = 0;
+                    List<Integer> deliveredIds = new ArrayList<>();
                     for (CursorProtectionManager.RescuedItem rescued : rescuedItems) {
-                        var remaining = player.getInventory().addItem(rescued.itemStack());
+                        var remaining = player.getInventory().addItem(rescued.itemStack().clone());
                         if (remaining.isEmpty()) {
                             returned++;
+                            deliveredIds.add(rescued.id());
                         } else {
                             // Still can't fit - move to expired items for /ah expired
+                            boolean allStored = true;
                             for (ItemStack leftover : remaining.values()) {
-                                dao.insertExpiredItem(player.getUniqueId(), player.getName(), leftover, "RESCUED");
-                                stored++;
+                                if (dao.insertExpiredItem(player.getUniqueId(), player.getName(), leftover, "RESCUED")) {
+                                    stored++;
+                                } else {
+                                    allStored = false;
+                                }
+                            }
+                            if (allStored) {
+                                deliveredIds.add(rescued.id());
                             }
                         }
+                    }
+
+                    if (!deliveredIds.isEmpty()) {
+                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,
+                                () -> deliveredIds.forEach(cpm::deleteRescuedItem));
                     }
 
                     if (canReceiveLogin) {
@@ -73,32 +88,41 @@ public class PlayerListener implements Listener {
                         }
                     }
                 });
-
-                // Delete all rescued entries async
-                cpm.deleteAllRescuedItems(player.getUniqueId());
             }
 
             // Process pending revenue queue
             List<PendingRevenue> pendingRevenues = dao.getPendingRevenue(player.getUniqueId());
             if (!pendingRevenues.isEmpty()) {
                 // Group totals by currency for deposit
-                Map<String, Double> totalByCurrency = new HashMap<>();
+                Map<String, List<PendingRevenue>> revenuesByCurrency = new HashMap<>();
                 for (PendingRevenue revenue : pendingRevenues) {
-                    totalByCurrency.merge(revenue.getCurrency(), revenue.getAmount(), Double::sum);
+                    revenuesByCurrency.computeIfAbsent(revenue.getCurrency(), ignored -> new ArrayList<>())
+                            .add(revenue);
                 }
 
                 // Deposit all pending money on the main thread
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (!player.isOnline()) return;
 
-                    for (Map.Entry<String, Double> entry : totalByCurrency.entrySet()) {
-                        plugin.getEconomyManager().deposit(player, entry.getValue(), entry.getKey());
+                    Map<String, Double> depositedByCurrency = new HashMap<>();
+                    List<PendingRevenue> depositedRevenues = new ArrayList<>();
+                    for (Map.Entry<String, List<PendingRevenue>> entry : revenuesByCurrency.entrySet()) {
+                        double total = entry.getValue().stream().mapToDouble(PendingRevenue::getAmount).sum();
+                        if (plugin.getEconomyManager().deposit(player, total, entry.getKey())) {
+                            depositedByCurrency.put(entry.getKey(), total);
+                            depositedRevenues.addAll(entry.getValue());
+                        }
+                    }
+
+                    if (!depositedRevenues.isEmpty()) {
+                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,
+                                () -> depositedRevenues.forEach(revenue -> dao.deletePendingRevenue(revenue.getId())));
                     }
 
                     // Send notifications
-                    if (canReceiveLogin) {
-                        if (pendingRevenues.size() == 1) {
-                            PendingRevenue revenue = pendingRevenues.get(0);
+                    if (canReceiveLogin && !depositedRevenues.isEmpty()) {
+                        if (depositedRevenues.size() == 1) {
+                            PendingRevenue revenue = depositedRevenues.get(0);
                             player.sendMessage(plugin.getLangManager().prefixed("auction.offline-revenue-single",
                                     "{item}", revenue.getItemName(),
                                     "{buyer}", revenue.getBuyerName(),
@@ -106,12 +130,12 @@ public class PlayerListener implements Listener {
                         } else {
                             // Multiple sales - send summary
                             StringBuilder details = new StringBuilder();
-                            for (Map.Entry<String, Double> entry : totalByCurrency.entrySet()) {
+                            for (Map.Entry<String, Double> entry : depositedByCurrency.entrySet()) {
                                 if (!details.isEmpty()) details.append(", ");
                                 details.append(plugin.getEconomyManager().format(entry.getValue(), entry.getKey()));
                             }
                             player.sendMessage(plugin.getLangManager().prefixed("auction.offline-revenue-summary",
-                                    "{count}", String.valueOf(pendingRevenues.size()),
+                                    "{count}", String.valueOf(depositedRevenues.size()),
                                     "{total}", details.toString()));
                         }
                         if (hasSounds) {
@@ -119,9 +143,6 @@ public class PlayerListener implements Listener {
                         }
                     }
                 });
-
-                // Delete all processed entries async
-                dao.deleteAllPendingRevenue(player.getUniqueId());
             }
 
             // Notify about uncollected expired items

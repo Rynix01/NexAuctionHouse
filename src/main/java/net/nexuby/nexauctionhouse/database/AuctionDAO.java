@@ -182,7 +182,7 @@ public class AuctionDAO {
 
     // -- Expired items --
 
-    public void insertExpiredItem(UUID ownerUuid, String ownerName, ItemStack itemStack, String reason) {
+    public boolean insertExpiredItem(UUID ownerUuid, String ownerName, ItemStack itemStack, String reason) {
         String sql = "INSERT INTO expired_items (owner_uuid, owner_name, item_data, reason, created_at) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql)) {
@@ -191,9 +191,10 @@ public class AuctionDAO {
             stmt.setString(3, ItemSerializer.toBase64(itemStack));
             stmt.setString(4, reason);
             stmt.setLong(5, System.currentTimeMillis());
-            stmt.executeUpdate();
+            return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to insert expired item", e);
+            return false;
         }
     }
 
