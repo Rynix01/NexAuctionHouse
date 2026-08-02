@@ -1,6 +1,7 @@
 package net.nexuby.nexauctionhouse.economy.provider;
 
 import net.nexuby.nexauctionhouse.economy.EconomyProvider;
+import net.nexuby.nexauctionhouse.economy.AmountRules;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.Plugin;
@@ -67,8 +68,7 @@ public class PlayerPointsProvider implements EconomyProvider {
 
     @Override
     public boolean supportsAmount(double amount) {
-        return Double.isFinite(amount) && amount >= 0 && amount <= Integer.MAX_VALUE
-                && Math.abs(amount - Math.rint(amount)) < 1.0E-9;
+        return AmountRules.isWholeNumber(amount, Integer.MAX_VALUE);
     }
 
     @Override

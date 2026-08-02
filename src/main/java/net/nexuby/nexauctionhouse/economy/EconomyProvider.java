@@ -32,7 +32,7 @@ public interface EconomyProvider {
      * Returns whether this provider can represent the amount without precision loss.
      */
     default boolean supportsAmount(double amount) {
-        return Double.isFinite(amount) && amount >= 0;
+        return AmountRules.isNonNegativeFinite(amount);
     }
 
     /**

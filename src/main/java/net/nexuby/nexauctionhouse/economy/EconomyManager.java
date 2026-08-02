@@ -188,6 +188,6 @@ public class EconomyManager {
     }
 
     private boolean isValidAmount(double amount) {
-        return Double.isFinite(amount) && amount >= 0;
+        return AmountRules.isNonNegativeFinite(amount);
     }
 }
