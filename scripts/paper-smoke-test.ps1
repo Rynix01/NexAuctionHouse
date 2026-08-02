@@ -2,17 +2,32 @@ param(
     [string]$MinecraftVersion = "1.21.4",
     [int]$TimeoutSeconds = 180,
     [switch]$UseExternalServices,
+    [switch]$UseMySql,
     [string]$MongoUri = "mongodb://127.0.0.1:27018",
     [string]$MongoDatabase = "nexah_paper_smoke",
     [string]$RedisHost = "127.0.0.1",
-    [int]$RedisPort = 6379
+    [int]$RedisPort = 6379,
+    [string]$MySqlHost = "127.0.0.1",
+    [int]$MySqlPort = 3307,
+    [string]$MySqlDatabase = "nexah_test",
+    [string]$MySqlUsername = "nexah",
+    [string]$MySqlPassword = "nexah_test_password"
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$runtimeSuffix = if ($UseExternalServices) { "$MinecraftVersion-external" } else { $MinecraftVersion }
+if ($UseExternalServices -and $UseMySql) {
+    throw "UseExternalServices and UseMySql are separate smoke modes; select only one."
+}
+$runtimeSuffix = if ($UseMySql) {
+    "$MinecraftVersion-mysql"
+} elseif ($UseExternalServices) {
+    "$MinecraftVersion-external"
+} else {
+    $MinecraftVersion
+}
 $runtimeRoot = Join-Path $repositoryRoot "build\paper-smoke-$runtimeSuffix"
 $pluginsRoot = Join-Path $runtimeRoot "plugins"
 $paperJar = Join-Path $runtimeRoot "paper.jar"
@@ -62,19 +77,28 @@ Download-FileIfMissing `
 Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\libs\NexAuctionHouse-1.0.0.jar") `
     -Destination $pluginJar -Force
 
-if ($UseExternalServices) {
+if ($UseExternalServices -or $UseMySql) {
     $pluginDataRoot = Join-Path $pluginsRoot "NexAuctionHouse"
     New-Item -ItemType Directory -Force -Path $pluginDataRoot | Out-Null
     $configText = Get-Content -LiteralPath (Join-Path $repositoryRoot "src\main\resources\config.yml") -Raw
-    $configText = $configText.Replace("  type: sqlite", "  type: mongodb")
-    $configText = $configText.Replace('connection-string: "mongodb://localhost:27017"', "connection-string: `"$MongoUri`"")
-    $configText = $configText.Replace("    database: nexauctionhouse", "    database: $MongoDatabase")
-    $configText = $configText.Replace("  enabled: false`r`n`r`n  # Unique identifier for this server instance", "  enabled: true`r`n`r`n  # Unique identifier for this server instance")
-    $configText = $configText.Replace("    host: localhost", "    host: $RedisHost")
-    $configText = $configText.Replace("    port: 6379", "    port: $RedisPort")
-    $configText = $configText.Replace("    message-secret: ''", "    message-secret: 'nexah-paper-smoke-secret-at-least-32-characters'")
-    $configText = $configText.Replace("    database: 0", "    database: 15")
-    $configText = $configText.Replace('    channel-prefix: "nexah"', '    channel-prefix: "nexah-paper-smoke"')
+    if ($UseMySql) {
+        $configText = $configText.Replace("  type: sqlite", "  type: mysql")
+        $configText = $configText.Replace("    host: localhost", "    host: $MySqlHost")
+        $configText = $configText.Replace("    port: 3306", "    port: $MySqlPort")
+        $configText = $configText.Replace("    database: nexauctionhouse", "    database: $MySqlDatabase")
+        $configText = $configText.Replace("    username: root", "    username: $MySqlUsername")
+        $configText = $configText.Replace("    password: ''", "    password: '$MySqlPassword'")
+    } else {
+        $configText = $configText.Replace("  type: sqlite", "  type: mongodb")
+        $configText = $configText.Replace('connection-string: "mongodb://localhost:27017"', "connection-string: `"$MongoUri`"")
+        $configText = $configText.Replace("    database: nexauctionhouse", "    database: $MongoDatabase")
+        $configText = $configText.Replace("  enabled: false`r`n`r`n  # Unique identifier for this server instance", "  enabled: true`r`n`r`n  # Unique identifier for this server instance")
+        $configText = $configText.Replace("    host: localhost", "    host: $RedisHost")
+        $configText = $configText.Replace("    port: 6379", "    port: $RedisPort")
+        $configText = $configText.Replace("    message-secret: ''", "    message-secret: 'nexah-paper-smoke-secret-at-least-32-characters'")
+        $configText = $configText.Replace("    database: 0", "    database: 15")
+        $configText = $configText.Replace('    channel-prefix: "nexah"', '    channel-prefix: "nexah-paper-smoke"')
+    }
     Set-Content -LiteralPath (Join-Path $pluginDataRoot "config.yml") -Encoding UTF8 -Value $configText
 }
 
@@ -120,6 +144,7 @@ $enabled = $false
 $economyReady = $false
 $mongoReady = -not $UseExternalServices
 $redisReady = -not $UseExternalServices
+$mysqlReady = -not $UseMySql
 $fatal = $false
 
 try {
@@ -129,6 +154,7 @@ try {
             $economyReady = $logText -match "Economy provider registered: Money"
             $mongoReady = $mongoReady -or $logText -match "MongoDB connection established"
             $redisReady = $redisReady -or $logText -match "Redis connection established"
+            $mysqlReady = $mysqlReady -or $logText -match "Database connection established\. \(MySQL\)"
             $enabled = $logText -match "NexAuctionHouse v.+ has been enabled"
             $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|No economy provider available"
         }
@@ -168,10 +194,19 @@ if (-not $mongoReady) {
 if (-not $redisReady) {
     throw "Redis integration did not become ready. See $logFile"
 }
+if (-not $mysqlReady) {
+    throw "MySQL integration did not become ready. See $logFile"
+}
 if ($fatal) {
     throw "NexAuctionHouse reported a fatal startup error. See $logFile"
 }
 
-$databaseLabel = if ($UseExternalServices) { "MongoDB, Redis cross-server mode" } else { "SQLite" }
+$databaseLabel = if ($UseMySql) {
+    "MySQL"
+} elseif ($UseExternalServices) {
+    "MongoDB, Redis cross-server mode"
+} else {
+    "SQLite"
+}
 Write-Host "PASS: Paper, Vault, EssentialsX, $databaseLabel and NexAuctionHouse started successfully."
 Write-Host "Log: $logFile"

@@ -46,6 +46,7 @@ dependencies {
     testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     testImplementation("com.github.MilkBowl:VaultAPI:1.7.1")
     testImplementation("org.xerial:sqlite-jdbc:3.50.3.0")
+    testImplementation("com.mysql:mysql-connector-j:9.1.0")
     testImplementation("org.mockito:mockito-core:5.20.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -134,6 +135,16 @@ tasks {
                 providers.systemProperty("nexah.redis.port").orElse("6379").get())
         systemProperty("nexah.redis.password",
                 providers.systemProperty("nexah.redis.password").orElse("").get())
+        systemProperty("nexah.mysql.host",
+                providers.systemProperty("nexah.mysql.host").orElse("127.0.0.1").get())
+        systemProperty("nexah.mysql.port",
+                providers.systemProperty("nexah.mysql.port").orElse("3307").get())
+        systemProperty("nexah.mysql.database",
+                providers.systemProperty("nexah.mysql.database").orElse("nexah_test").get())
+        systemProperty("nexah.mysql.username",
+                providers.systemProperty("nexah.mysql.username").orElse("nexah").get())
+        systemProperty("nexah.mysql.password",
+                providers.systemProperty("nexah.mysql.password").orElse("nexah_test_password").get())
         shouldRunAfter(test)
     }
 }

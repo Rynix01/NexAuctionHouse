@@ -16,7 +16,7 @@ market, GUI, command, delivery, migration, API and concurrency behavior.
 
 The HTML report is generated at `build/reports/tests/test/index.html`.
 
-## Live MongoDB and Redis integration suite
+## Live MySQL, MongoDB and Redis integration suite
 
 Run the provider contract tests against local Docker services:
 
@@ -24,11 +24,17 @@ Run the provider contract tests against local Docker services:
 .\gradlew.bat externalIntegrationTest --no-daemon `
   "-Dnexah.mongo.uri=mongodb://127.0.0.1:27018" `
   "-Dnexah.redis.host=127.0.0.1" `
-  "-Dnexah.redis.port=6379"
+  "-Dnexah.redis.port=6379" `
+  "-Dnexah.mysql.host=127.0.0.1" `
+  "-Dnexah.mysql.port=3307" `
+  "-Dnexah.mysql.database=nexah_test" `
+  "-Dnexah.mysql.username=nexah" `
+  "-Dnexah.mysql.password=nexah_test_password"
 ```
 
 This task creates a uniquely named temporary MongoDB database, uses an isolated
-Redis key/channel prefix, and drops only that temporary database after each
+Redis key/channel prefix, and confines MySQL operations to the configured test
+database. Temporary MongoDB data and MySQL table contents are cleaned after each
 test. It is excluded from the normal CI task because it needs live services.
 
 ## Real Paper smoke test
@@ -53,10 +59,15 @@ To start the same Paper harness with MongoDB and Redis cross-server mode:
 
 The external Paper run uses the dedicated `nexah_paper_smoke` MongoDB database.
 
+To start the real Paper harness with MySQL:
+
+```powershell
+.\scripts\paper-smoke-test.ps1 -UseMySql
+```
+
 ## External integration coverage
 
-MySQL, BungeeCord/Velocity, PlaceholderAPI and custom-item or
-alternate-economy plugins require their own running services or third-party
-plugin binaries. They remain explicit manual/infrastructure tests in
-`TEST_CHECKLIST.md`; they are not reported as passing unless those dependencies
-are installed and the scenarios are executed.
+BungeeCord/Velocity, PlaceholderAPI and custom-item or alternate-economy plugins
+require their own running services or third-party plugin binaries. They remain
+explicit manual/infrastructure tests in `TEST_CHECKLIST.md`; they are not reported
+as passing unless those dependencies are installed and the scenarios are executed.

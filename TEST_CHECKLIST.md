@@ -294,8 +294,8 @@
 - [X] İstatistik cache'i çalışıyor (ikinci sorgu daha hızlı)
 
 ### 7.4 Veritabanı Tipleri
-- [ ] `database.type: sqlite` → tüm temel testler geçiyor
-- [ ] `database.type: mysql` → MySQL bağlantısı çalışıyor, tüm temel testler geçiyor
+- [X] `database.type: sqlite` → tüm temel testler geçiyor
+- [X] `database.type: mysql` → Docker MySQL 8.4 bağlantısı ve temel DAO sözleşmeleri geçiyor
 
 ### 7.5 Çoklu Dil
 - [X] `general.language: en` → İngilizce mesajlar

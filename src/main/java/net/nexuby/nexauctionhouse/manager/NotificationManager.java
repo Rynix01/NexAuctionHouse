@@ -54,11 +54,7 @@ public class NotificationManager {
         cache.put(settings.getPlayerUuid(), settings);
 
         AuctionDAO dao = plugin.getAuctionManager().getDao();
-        if (!plugin.getDatabaseManager().isUsingSQLite() && !plugin.getDatabaseManager().isUsingMongoDB()) {
-            dao.saveNotificationSettingsMySQL(settings);
-        } else {
-            dao.saveNotificationSettings(settings);
-        }
+        dao.saveNotificationSettings(settings);
     }
 
     /**

@@ -3,6 +3,8 @@ package net.nexuby.nexauctionhouse;
 import com.mongodb.client.MongoCollection;
 import net.nexuby.nexauctionhouse.database.MongoAuctionDAO;
 import net.nexuby.nexauctionhouse.database.MongoManager;
+import net.nexuby.nexauctionhouse.database.AuctionDAO;
+import net.nexuby.nexauctionhouse.database.DatabaseManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionStatus;
 import net.nexuby.nexauctionhouse.model.AuctionType;
@@ -21,6 +23,10 @@ import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
 
 import java.time.Duration;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +45,7 @@ class ExternalServicesIntegrationTest extends MockPluginTestSupport {
     private static final String REDIS_SECRET = "nexah-external-test-secret-32-characters-minimum";
 
     private MongoManager mongo;
+    private DatabaseManager mysql;
     private RedisManager redisA;
     private RedisManager redisB;
     private String mongoDatabase;
@@ -78,6 +85,113 @@ class ExternalServicesIntegrationTest extends MockPluginTestSupport {
         if (mongo != null) {
             if (mongo.getDatabase() != null) mongo.getDatabase().drop();
             mongo.disconnect();
+        }
+        if (mysql != null) {
+            cleanMySqlTables();
+            mysql.disconnect();
+        }
+    }
+
+    @Test
+    void mysqlConnectsCreatesEveryTableAndMigrationColumn() throws Exception {
+        connectMySql();
+        String[] tables = {
+                "auctions", "expired_items", "transaction_logs", "pending_revenue",
+                "rescued_items", "bids", "favorites", "player_settings"
+        };
+        for (String table : tables) {
+            try (ResultSet rs = mysql.getConnection().getMetaData()
+                    .getTables(null, null, table, new String[]{"TABLE"})) {
+                assertTrue(rs.next(), "Missing MySQL table: " + table);
+            }
+        }
+        try (ResultSet rs = mysql.getConnection().getMetaData()
+                .getColumns(null, null, "player_settings", "theme")) {
+            assertTrue(rs.next(), "Missing MySQL migration column: player_settings.theme");
+        }
+    }
+
+    @Test
+    void mysqlAuctionBidAndFavoriteLifecycleMatchesDaoContract() throws Exception {
+        AuctionDAO dao = connectMySqlDao();
+        UUID seller = UUID.randomUUID();
+        UUID bidderA = UUID.randomUUID();
+        UUID bidderB = UUID.randomUUID();
+
+        int id = dao.insertAuction(auction(seller));
+        assertTrue(id > 0);
+        assertEquals(100.0, dao.getAuctionById(id).getPrice());
+        assertTrue(dao.compareAndSetHighestBid(id, 0, null, 120, bidderA, "BidderA"));
+        assertFalse(dao.compareAndSetHighestBid(id, 0, null, 130, bidderB, "BidderB"));
+        assertTrue(dao.compareAndSetHighestBid(id, 120, bidderA, 130, bidderB, "BidderB"));
+        assertTrue(dao.insertBid(id, bidderA, "BidderA", 120) > 0);
+        assertTrue(dao.insertBid(id, bidderB, "BidderB", 130) > 0);
+        assertEquals(bidderB, dao.getHighestBid(id).getBidderUuid());
+        assertEquals(2, dao.getUniqueBiddersByAuction(id).size());
+
+        UUID watcher = UUID.randomUUID();
+        assertTrue(dao.addFavorite(watcher, id));
+        assertFalse(dao.addFavorite(watcher, id));
+        assertTrue(dao.isFavorited(watcher, id));
+        assertEquals(1, dao.getFavoriteCount(watcher));
+        assertEquals(watcher, dao.getPlayersWhoFavorited(id).getFirst());
+        assertTrue(dao.removeFavorite(watcher, id));
+    }
+
+    @Test
+    void mysqlClaimsRevenueAndExpiredItemsOnlyForTheirOwner() throws Exception {
+        AuctionDAO dao = connectMySqlDao();
+        UUID owner = UUID.randomUUID();
+        UUID attacker = UUID.randomUUID();
+        dao.insertPendingRevenue(owner, "Owner", 42.5, "money", 7, "Diamond", "Buyer");
+        PendingRevenue revenue = dao.getPendingRevenue(owner).getFirst();
+        long now = System.currentTimeMillis();
+
+        assertFalse(dao.claimPendingRevenue(revenue.getId(), attacker, "attacker", now, now - 60_000));
+        assertTrue(dao.claimPendingRevenue(revenue.getId(), owner, "token-a", now, now - 60_000));
+        assertFalse(dao.acknowledgePendingRevenue(revenue.getId(), "wrong"));
+        assertTrue(dao.releasePendingRevenue(revenue.getId(), "token-a"));
+        assertTrue(dao.claimPendingRevenue(revenue.getId(), owner, "token-b", now + 1, now - 60_000));
+        assertTrue(dao.acknowledgePendingRevenue(revenue.getId(), "token-b"));
+
+        assertTrue(dao.insertExpiredItem(owner, "Owner", new ItemStack(Material.DIAMOND, 4), "EXPIRED"));
+        ExpiredItem expired = dao.getExpiredItems(owner).getFirst();
+        assertFalse(dao.claimExpiredItem(expired.getId(), attacker));
+        assertTrue(dao.claimExpiredItem(expired.getId(), owner));
+        assertFalse(dao.claimExpiredItem(expired.getId(), owner));
+    }
+
+    @Test
+    void mysqlSettingsStatisticsAndConcurrentStatusClaimsWork() throws Exception {
+        AuctionDAO dao = connectMySqlDao();
+        UUID seller = UUID.randomUUID();
+        UUID buyer = UUID.randomUUID();
+        NotificationSettings settings = new NotificationSettings(seller, true, false, true, false, true);
+        dao.saveNotificationSettings(settings);
+        dao.setPlayerTheme(seller, "dark");
+        assertEquals("dark", dao.getPlayerTheme(seller));
+        assertFalse(dao.getNotificationSettings(seller).isBidNotifications());
+
+        ItemStack diamond = new ItemStack(Material.DIAMOND);
+        dao.logTransaction(1, seller, buyer, diamond, 100, 10, "SALE");
+        dao.logTransaction(2, seller, buyer, diamond, 200, 20, "AUCTION_COMPLETE");
+        assertEquals(2, dao.getPlayerTotalSales(seller));
+        assertEquals(270, dao.getPlayerTotalRevenue(seller), 0.001);
+        assertEquals(150, dao.getAveragePrice("diamond", 7), 0.001);
+
+        int auctionId = dao.insertAuction(auction(seller));
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+        try {
+            Set<Future<Boolean>> claims = new HashSet<>();
+            for (int i = 0; i < 16; i++) {
+                claims.add(executor.submit(() ->
+                        dao.transitionAuctionStatus(auctionId, AuctionStatus.ACTIVE, AuctionStatus.SOLD)));
+            }
+            int winners = 0;
+            for (Future<Boolean> claim : claims) if (claim.get(5, TimeUnit.SECONDS)) winners++;
+            assertEquals(1, winners);
+        } finally {
+            executor.shutdownNow();
         }
     }
 
@@ -238,6 +352,42 @@ class ExternalServicesIntegrationTest extends MockPluginTestSupport {
     private MongoAuctionDAO connectMongoDao() {
         connectMongo();
         return new MongoAuctionDAO(plugin, mongo);
+    }
+
+    private void connectMySql() throws Exception {
+        plugin.getConfig().set("database.type", "mysql");
+        plugin.getConfig().set("database.mysql.host", System.getProperty("nexah.mysql.host", "127.0.0.1"));
+        plugin.getConfig().set("database.mysql.port", Integer.parseInt(System.getProperty("nexah.mysql.port", "3307")));
+        plugin.getConfig().set("database.mysql.database", System.getProperty("nexah.mysql.database", "nexah_test"));
+        plugin.getConfig().set("database.mysql.username", System.getProperty("nexah.mysql.username", "nexah"));
+        plugin.getConfig().set("database.mysql.password", System.getProperty("nexah.mysql.password", "nexah_test_password"));
+        plugin.getConfig().set("database.mysql.use-ssl", false);
+
+        plugin.getDatabaseManager().disconnect();
+        mysql = new DatabaseManager(plugin);
+        assertTimeoutPreemptively(Duration.ofSeconds(10), () -> assertTrue(mysql.connect()));
+        Field field = NexAuctionHouse.class.getDeclaredField("databaseManager");
+        field.setAccessible(true);
+        field.set(plugin, mysql);
+        cleanMySqlTables();
+    }
+
+    private AuctionDAO connectMySqlDao() throws Exception {
+        connectMySql();
+        return new AuctionDAO(plugin);
+    }
+
+    private void cleanMySqlTables() {
+        if (mysql == null) return;
+        String[] tables = {
+                "bids", "favorites", "transaction_logs", "pending_revenue",
+                "expired_items", "rescued_items", "player_settings", "auctions"
+        };
+        try (Connection connection = mysql.getConnection(); Statement statement = connection.createStatement()) {
+            for (String table : tables) statement.executeUpdate("DELETE FROM " + table);
+        } catch (Exception ignored) {
+            // A failed connection test may not have created the schema yet.
+        }
     }
 
     private RedisManager connectRedis() {
