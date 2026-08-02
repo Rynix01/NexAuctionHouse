@@ -1,14 +1,10 @@
 package net.nexuby.nexauctionhouse.api;
 
-import net.nexuby.nexauctionhouse.NexAuctionHouse;
-import net.nexuby.nexauctionhouse.database.AuctionDAO;
-import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Public API for NexAuctionHouse.
@@ -39,10 +35,10 @@ public final class NexAuctionHouseAPI {
 
     private static NexAuctionHouseAPI instance;
 
-    private final NexAuctionHouse plugin;
+    private final NexAuctionHouseApiProvider provider;
 
-    public NexAuctionHouseAPI(NexAuctionHouse plugin) {
-        this.plugin = plugin;
+    public NexAuctionHouseAPI(NexAuctionHouseApiProvider provider) {
+        this.provider = Objects.requireNonNull(provider, "provider");
     }
 
     /**
@@ -66,7 +62,7 @@ public final class NexAuctionHouseAPI {
      * @return active auctions
      */
     public Collection<AuctionItem> getActiveAuctions() {
-        return plugin.getAuctionManager().getActiveAuctionsList();
+        return provider.getActiveAuctions();
     }
 
     /**
@@ -76,9 +72,7 @@ public final class NexAuctionHouseAPI {
      * @return list of auctions by the player
      */
     public List<AuctionItem> getAuctionsByPlayer(UUID playerUuid) {
-        return plugin.getAuctionManager().getActiveAuctionsList().stream()
-                .filter(item -> item.getSellerUuid().equals(playerUuid))
-                .collect(Collectors.toList());
+        return provider.getAuctionsByPlayer(playerUuid);
     }
 
     /**
@@ -88,7 +82,7 @@ public final class NexAuctionHouseAPI {
      * @return the auction item, or null
      */
     public AuctionItem getAuction(int auctionId) {
-        return plugin.getAuctionManager().getAuction(auctionId);
+        return provider.getAuction(auctionId);
     }
 
     /**
@@ -99,12 +93,7 @@ public final class NexAuctionHouseAPI {
      * @return player statistics
      */
     public PlayerStats getPlayerStats(UUID playerUuid) {
-        AuctionDAO dao = plugin.getAuctionManager().getDao();
-        int totalSales = dao.getPlayerTotalSales(playerUuid);
-        double totalRevenue = dao.getPlayerTotalRevenue(playerUuid);
-        int totalPurchases = dao.getPlayerTotalPurchases(playerUuid);
-        int activeListings = plugin.getAuctionManager().getPlayerActiveListings(playerUuid);
-        return new PlayerStats(playerUuid, totalSales, totalRevenue, totalPurchases, activeListings);
+        return provider.getPlayerStats(playerUuid);
     }
 
     /**
@@ -114,7 +103,7 @@ public final class NexAuctionHouseAPI {
      * @return average price, or 0.0 if no data
      */
     public double getAveragePrice(String materialName) {
-        return plugin.getAuctionManager().getAveragePrice(materialName);
+        return provider.getAveragePrice(materialName);
     }
 
     // ---- Write Operations ----
@@ -135,7 +124,7 @@ public final class NexAuctionHouseAPI {
      * @return the auction ID, or -1 if it failed or was cancelled
      */
     public int forceCreateAuction(Player seller, ItemStack item, double price, String currency) {
-        return plugin.getAuctionManager().listItem(seller, item, price, currency);
+        return provider.forceCreateAuction(seller, item, price, currency);
     }
 
     /**
@@ -147,11 +136,7 @@ public final class NexAuctionHouseAPI {
      * @return true if the auction was found and removed
      */
     public boolean forceRemoveAuction(int auctionId) {
-        AuctionItem item = plugin.getAuctionManager().getAuction(auctionId);
-        if (item == null) return false;
-
-        // Use cancel with admin flag to bypass owner check
-        return plugin.getAuctionManager().cancelAuction(null, auctionId, true);
+        return provider.forceRemoveAuction(auctionId);
     }
 
     /**
@@ -161,7 +146,7 @@ public final class NexAuctionHouseAPI {
      * @return true if the item is blacklisted
      */
     public boolean isBlacklisted(ItemStack item) {
-        return plugin.getAuctionManager().isBlacklisted(item);
+        return provider.isBlacklisted(item);
     }
 
     /**
@@ -170,6 +155,6 @@ public final class NexAuctionHouseAPI {
      * @return version string
      */
     public String getVersion() {
-        return plugin.getDescription().getVersion();
+        return provider.getVersion();
     }
 }

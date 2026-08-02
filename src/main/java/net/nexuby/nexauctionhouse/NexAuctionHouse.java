@@ -13,6 +13,7 @@ import net.nexuby.nexauctionhouse.listener.GuiListener;
 import net.nexuby.nexauctionhouse.listener.PlayerListener;
 import net.nexuby.nexauctionhouse.listener.BungeeCordListener;
 import net.nexuby.nexauctionhouse.api.NexAuctionHouseAPI;
+import net.nexuby.nexauctionhouse.internal.api.BukkitNexAuctionHouseApiProvider;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.manager.CursorProtectionManager;
 import net.nexuby.nexauctionhouse.manager.NotificationManager;
@@ -135,7 +136,7 @@ public class NexAuctionHouse extends JavaPlugin {
         }
 
         // Initialize Developer API
-        NexAuctionHouseAPI.setInstance(new NexAuctionHouseAPI(this));
+        NexAuctionHouseAPI.setInstance(new NexAuctionHouseAPI(new BukkitNexAuctionHouseApiProvider(this)));
 
         getLogger().info("NexAuctionHouse v" + getDescription().getVersion() + " has been enabled!");
     }

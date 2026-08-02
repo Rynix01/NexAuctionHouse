@@ -65,7 +65,7 @@ tasks {
         exclude("META-INF/native-image/**")
     }
 
-    register<Jar>("apiJar") {
+    val apiJar = register<Jar>("apiJar") {
         archiveClassifier.set("api")
         archiveFileName.set("NexAuctionHouse-${project.version}-api.jar")
         from(sourceSets.main.get().output) {
@@ -76,8 +76,41 @@ tasks {
         }
     }
 
+    register<JavaCompile>("verifyApiJar") {
+        description = "Compiles a third-party consumer using only the API JAR and Paper API."
+        group = "verification"
+        dependsOn(apiJar)
+        source(fileTree("src/apiConsumerTest/java") { include("**/*.java") })
+        classpath = files(apiJar.flatMap { it.archiveFile }) + configurations.compileClasspath.get()
+        destinationDirectory.set(layout.buildDirectory.dir("classes/apiConsumerTest"))
+        options.release.set(21)
+        options.encoding = "UTF-8"
+
+        doLast {
+            val jarFile = apiJar.get().archiveFile.get().asFile
+            val forbiddenReferences = listOf(
+                    "net/nexuby/nexauctionhouse/NexAuctionHouse",
+                    "net/nexuby/nexauctionhouse/database/",
+                    "net/nexuby/nexauctionhouse/manager/"
+            )
+            val leakingClasses = zipTree(jarFile).matching {
+                include("net/nexuby/nexauctionhouse/api/**/*.class")
+            }.files.filter { classFile ->
+                val constantPool = classFile.readBytes().toString(Charsets.ISO_8859_1)
+                forbiddenReferences.any(constantPool::contains)
+            }
+            check(leakingClasses.isEmpty()) {
+                "Public API classes reference plugin internals: ${leakingClasses.map { it.name }}"
+            }
+        }
+    }
+
     build {
         dependsOn(shadowJar)
+    }
+
+    assemble {
+        dependsOn(apiJar)
     }
 
     register("verifyShadedJar") {
@@ -101,6 +134,7 @@ tasks {
 
     check {
         dependsOn("verifyShadedJar")
+        dependsOn("verifyApiJar")
     }
 
     processResources {

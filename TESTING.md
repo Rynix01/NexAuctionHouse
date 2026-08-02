@@ -16,6 +16,11 @@ market, GUI, command, delivery, migration, API and concurrency behavior.
 
 The HTML report is generated at `build/reports/tests/test/index.html`.
 
+The normal `check`/`build` lifecycle also creates
+`build/libs/NexAuctionHouse-1.0.0-api.jar` and compiles the source under
+`src/apiConsumerTest` using only that API JAR plus the Paper compile API. This
+prevents public API classes from accidentally depending on plugin internals.
+
 ## Live MySQL, MongoDB and Redis integration suite
 
 Run the provider contract tests against local Docker services:
