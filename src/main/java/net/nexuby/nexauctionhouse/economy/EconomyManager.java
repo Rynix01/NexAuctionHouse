@@ -138,14 +138,17 @@ public class EconomyManager {
     }
 
     public boolean has(OfflinePlayer player, double amount, String currency) {
+        if (!isValidAmount(amount)) return false;
         return getProvider(currency).has(player, amount);
     }
 
     public boolean withdraw(OfflinePlayer player, double amount, String currency) {
+        if (!isValidAmount(amount)) return false;
         return getProvider(currency).withdraw(player, amount);
     }
 
     public boolean deposit(OfflinePlayer player, double amount, String currency) {
+        if (!isValidAmount(amount)) return false;
         return getProvider(currency).deposit(player, amount);
     }
 
@@ -160,18 +163,25 @@ public class EconomyManager {
     }
 
     public boolean has(OfflinePlayer player, double amount) {
+        if (!isValidAmount(amount)) return false;
         return defaultProvider.has(player, amount);
     }
 
     public boolean withdraw(OfflinePlayer player, double amount) {
+        if (!isValidAmount(amount)) return false;
         return defaultProvider.withdraw(player, amount);
     }
 
     public boolean deposit(OfflinePlayer player, double amount) {
+        if (!isValidAmount(amount)) return false;
         return defaultProvider.deposit(player, amount);
     }
 
     public String format(double amount) {
         return defaultProvider.format(amount);
+    }
+
+    private boolean isValidAmount(double amount) {
+        return Double.isFinite(amount) && amount >= 0;
     }
 }

@@ -105,6 +105,8 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listItem(Player seller, ItemStack itemStack, double price, String currency, boolean autoRelist) {
+        if (!isValidAuctionAmount(price)) return -1;
+
         ConfigManager config = plugin.getConfigManager();
 
         // Determine tax rate for this player
@@ -167,6 +169,8 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency, boolean autoRelist) {
+        if (!isValidAuctionAmount(startingPrice)) return -1;
+
         double taxRate = getPlayerTaxRate(seller);
         int durationHours = plugin.getConfigManager().getBidDefaultDuration();
         long now = System.currentTimeMillis();
@@ -220,6 +224,8 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listBundle(Player seller, List<ItemStack> items, double price, String currency) {
+        if (!isValidAuctionAmount(price) || items == null || items.isEmpty()) return -1;
+
         ConfigManager config = plugin.getConfigManager();
         double taxRate = getPlayerTaxRate(seller);
         int durationHours = getPlayerAuctionDuration(seller);
@@ -270,7 +276,8 @@ public class AuctionManager {
      */
     public boolean purchaseItem(Player buyer, int auctionId) {
         AuctionItem item = activeAuctions.get(auctionId);
-        if (item == null || item.isExpired() || item.isBidAuction()) {
+        if (item == null || item.isExpired() || item.isBidAuction()
+                || !isValidAuctionAmount(item.getPrice())) {
             return false;
         }
 
@@ -394,6 +401,10 @@ public class AuctionManager {
      * Returns true if the bid was placed successfully.
      */
     public boolean placeBid(Player bidder, int auctionId, double amount) {
+        if (!isValidAuctionAmount(amount)) {
+            return false;
+        }
+
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired() || !item.isBidAuction()) {
             return false;
@@ -619,6 +630,10 @@ public class AuctionManager {
      * Only the seller can update the price.
      */
     public boolean updatePrice(Player seller, int auctionId, double newPrice) {
+        if (!isValidAuctionAmount(newPrice)) {
+            return false;
+        }
+
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired()) {
             return false;
@@ -1267,6 +1282,12 @@ public class AuctionManager {
                               int auctionId, ItemStack itemStack, String counterparty) {
         dao.insertPendingRevenue(playerUuid, playerName, amount, currency, auctionId,
                 getItemName(itemStack), counterparty);
+    }
+
+    private boolean isValidAuctionAmount(double amount) {
+        return Double.isFinite(amount) && amount > 0
+                && amount >= plugin.getConfigManager().getMinPrice()
+                && amount <= plugin.getConfigManager().getMaxPrice();
     }
 
     // -- Price History & Statistics --
