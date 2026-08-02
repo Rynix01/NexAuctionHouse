@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import net.nexuby.nexauctionhouse.api.event.*;
 import net.nexuby.nexauctionhouse.redis.CrossServerManager;
@@ -27,6 +28,7 @@ public class AuctionManager {
     private final NexAuctionHouse plugin;
     private final AuctionDAO dao;
     private final DiscordWebhook discordWebhook;
+    private BukkitTask expirationTask;
 
     // Cache of active auctions keyed by auction id
     private final Map<Integer, AuctionItem> activeAuctions = new ConcurrentHashMap<>();
@@ -74,7 +76,11 @@ public class AuctionManager {
      * Periodically checks for expired auctions every minute.
      */
     private void startExpirationTask() {
-        new BukkitRunnable() {
+        if (expirationTask != null && !expirationTask.isCancelled()) {
+            return;
+        }
+
+        expirationTask = new BukkitRunnable() {
             @Override
             public void run() {
                 List<AuctionItem> expired = new ArrayList<>();
