@@ -126,6 +126,21 @@ public class MongoAuctionDAO extends AuctionDAO {
     }
 
     @Override
+    public boolean transitionAuctionStatus(int auctionId, AuctionStatus expected, AuctionStatus next) {
+        try {
+            return mongo.auctions().updateOne(
+                    Filters.and(
+                            Filters.eq("_id", auctionId),
+                            Filters.eq("status", expected.name())),
+                    Updates.set("status", next.name())
+            ).getModifiedCount() == 1;
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to transition auction status (MongoDB)", e);
+            return false;
+        }
+    }
+
+    @Override
     public AuctionItem getAuctionById(int id) {
         try {
             Document doc = mongo.auctions().find(Filters.eq("_id", id)).first();
@@ -313,6 +328,30 @@ public class MongoAuctionDAO extends AuctionDAO {
             ).getModifiedCount() > 0;
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to update highest bid (MongoDB)", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean compareAndSetHighestBid(int auctionId, double expectedAmount, UUID expectedBidderUuid,
+                                           double amount, UUID bidderUuid, String bidderName) {
+        try {
+            Bson expectedBidder = expectedBidderUuid == null
+                    ? Filters.eq("highest_bidder_uuid", null)
+                    : Filters.eq("highest_bidder_uuid", expectedBidderUuid.toString());
+            return mongo.auctions().updateOne(
+                    Filters.and(
+                            Filters.eq("_id", auctionId),
+                            Filters.eq("status", AuctionStatus.ACTIVE.name()),
+                            Filters.eq("highest_bid", expectedAmount),
+                            expectedBidder),
+                    Updates.combine(
+                            Updates.set("highest_bid", amount),
+                            Updates.set("highest_bidder_uuid", bidderUuid.toString()),
+                            Updates.set("highest_bidder_name", bidderName))
+            ).getModifiedCount() == 1;
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to atomically update highest bid (MongoDB)", e);
             return false;
         }
     }

@@ -259,7 +259,7 @@ public class AuctionManager {
      */
     public boolean purchaseItem(Player buyer, int auctionId) {
         AuctionItem item = activeAuctions.get(auctionId);
-        if (item == null || item.isExpired()) {
+        if (item == null || item.isExpired() || item.isBidAuction()) {
             return false;
         }
 
@@ -295,16 +295,26 @@ public class AuctionManager {
         Bukkit.getPluginManager().callEvent(purchaseEvent);
         if (purchaseEvent.isCancelled()) return false;
 
-        // Remove from active list first to prevent double-buy
-        if (activeAuctions.remove(auctionId) == null) {
+        // Claim in the shared database before any irreversible side effect.
+        if (!dao.transitionAuctionStatus(auctionId, AuctionStatus.ACTIVE, AuctionStatus.PROCESSING)) {
+            activeAuctions.remove(auctionId);
             return false;
         }
+        item.setStatus(AuctionStatus.PROCESSING);
+        activeAuctions.remove(auctionId);
 
         // Cross-server sync: remove from other servers immediately
         publishCrossServer("REMOVE", auctionId);
 
         // Process economy
-        plugin.getEconomyManager().withdraw(buyer, item.getPrice(), currency);
+        if (!plugin.getEconomyManager().withdraw(buyer, item.getPrice(), currency)) {
+            item.setStatus(AuctionStatus.ACTIVE);
+            if (dao.transitionAuctionStatus(auctionId, AuctionStatus.PROCESSING, AuctionStatus.ACTIVE)) {
+                activeAuctions.put(auctionId, item);
+                publishCrossServer("CREATE", auctionId);
+            }
+            return false;
+        }
 
         double taxAmount = item.getTaxAmount();
         double sellerReceives = item.getSellerReceives();
@@ -330,7 +340,7 @@ public class AuctionManager {
 
         // Update database
         item.setStatus(AuctionStatus.SOLD);
-        dao.updateAuctionStatus(auctionId, AuctionStatus.SOLD);
+        dao.transitionAuctionStatus(auctionId, AuctionStatus.PROCESSING, AuctionStatus.SOLD);
         dao.logTransaction(auctionId, item.getSellerUuid(), buyer.getUniqueId(),
                 item.getItemStack(), item.getPrice(), taxAmount, "SALE");
 
@@ -407,12 +417,28 @@ public class AuctionManager {
         Bukkit.getPluginManager().callEvent(bidEvent);
         if (bidEvent.isCancelled()) return false;
 
-        // Withdraw from bidder
-        plugin.getEconomyManager().withdraw(bidder, amount, currency);
-
-        // Refund previous highest bidder
+        // Capture the state used for the database compare-and-set.
         UUID previousBidderUuid = item.getHighestBidderUuid();
         double previousBidAmount = item.getHighestBid();
+
+        // Withdraw before publishing the bid; a failed database race is compensated below.
+        if (!plugin.getEconomyManager().withdraw(bidder, amount, currency)) {
+            return false;
+        }
+
+        if (!dao.compareAndSetHighestBid(auctionId, previousBidAmount, previousBidderUuid,
+                amount, bidder.getUniqueId(), bidder.getName())) {
+            plugin.getEconomyManager().deposit(bidder, amount, currency);
+            AuctionItem persisted = dao.getAuctionById(auctionId);
+            if (persisted != null && persisted.getStatus() == AuctionStatus.ACTIVE && !persisted.isExpired()) {
+                activeAuctions.put(auctionId, persisted);
+            } else {
+                activeAuctions.remove(auctionId);
+            }
+            return false;
+        }
+
+        // Refund previous highest bidder
         if (previousBidderUuid != null && previousBidAmount > 0) {
             Player previousBidder = Bukkit.getPlayer(previousBidderUuid);
             if (previousBidder != null && previousBidder.isOnline()) {
@@ -444,7 +470,6 @@ public class AuctionManager {
         item.setHighestBid(amount);
         item.setHighestBidderUuid(bidder.getUniqueId());
         item.setHighestBidderName(bidder.getName());
-        dao.updateHighestBid(auctionId, amount, bidder.getUniqueId(), bidder.getName());
         dao.insertBid(auctionId, bidder.getUniqueId(), bidder.getName(), amount);
         dao.logTransaction(auctionId, item.getSellerUuid(), bidder.getUniqueId(),
                 item.getItemStack(), amount, 0, "BID");

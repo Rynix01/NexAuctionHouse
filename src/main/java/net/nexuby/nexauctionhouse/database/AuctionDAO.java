@@ -121,6 +121,23 @@ public class AuctionDAO {
         }
     }
 
+    /**
+     * Atomically transitions an auction from one status to another.
+     */
+    public boolean transitionAuctionStatus(int auctionId, AuctionStatus expected, AuctionStatus next) {
+        String sql = "UPDATE auctions SET status = ? WHERE id = ? AND status = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setString(1, next.name());
+            stmt.setInt(2, auctionId);
+            stmt.setString(3, expected.name());
+            return stmt.executeUpdate() == 1;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to transition auction status", e);
+            return false;
+        }
+    }
+
     public AuctionItem getAuctionById(int id) {
         String sql = "SELECT * FROM auctions WHERE id = ?";
 
@@ -322,6 +339,33 @@ public class AuctionDAO {
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to update highest bid", e);
+            return false;
+        }
+    }
+
+    /**
+     * Atomically replaces the highest bid when the persisted bid still matches the caller's snapshot.
+     */
+    public boolean compareAndSetHighestBid(int auctionId, double expectedAmount, UUID expectedBidderUuid,
+                                           double amount, UUID bidderUuid, String bidderName) {
+        String bidderPredicate = expectedBidderUuid == null
+                ? "highest_bidder_uuid IS NULL"
+                : "highest_bidder_uuid = ?";
+        String sql = "UPDATE auctions SET highest_bid = ?, highest_bidder_uuid = ?, highest_bidder_name = ? "
+                + "WHERE id = ? AND status = 'ACTIVE' AND highest_bid = ? AND " + bidderPredicate;
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setDouble(1, amount);
+            stmt.setString(2, bidderUuid.toString());
+            stmt.setString(3, bidderName);
+            stmt.setInt(4, auctionId);
+            stmt.setDouble(5, expectedAmount);
+            if (expectedBidderUuid != null) {
+                stmt.setString(6, expectedBidderUuid.toString());
+            }
+            return stmt.executeUpdate() == 1;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to atomically update highest bid", e);
             return false;
         }
     }
