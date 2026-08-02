@@ -322,25 +322,31 @@ public class AuctionManager {
         // Pay the seller - direct deposit if online, queue if offline
         Player seller = Bukkit.getPlayer(item.getSellerUuid());
         if (seller != null && seller.isOnline()) {
-            plugin.getEconomyManager().deposit(seller, sellerReceives, currency);
+            if (!plugin.getEconomyManager().deposit(seller, sellerReceives, currency)) {
+                queueRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives, currency,
+                        auctionId, item.getItemStack(), buyer.getName());
+            }
         } else {
             // Seller is offline - queue revenue for delivery on login
-            dao.insertPendingRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives,
-                    currency, auctionId, getItemName(item.getItemStack()), buyer.getName());
+            queueRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives, currency,
+                    auctionId, item.getItemStack(), buyer.getName());
         }
 
         // Give item(s) to buyer
         if (item.isBundle()) {
             for (ItemStack bundleItem : item.getBundleItems()) {
-                buyer.getInventory().addItem(bundleItem);
+                deliverOrStore(buyer, bundleItem, "PURCHASED");
             }
         } else {
-            buyer.getInventory().addItem(item.getItemStack());
+            deliverOrStore(buyer, item.getItemStack(), "PURCHASED");
         }
 
         // Update database
         item.setStatus(AuctionStatus.SOLD);
-        dao.transitionAuctionStatus(auctionId, AuctionStatus.PROCESSING, AuctionStatus.SOLD);
+        if (!dao.transitionAuctionStatus(auctionId, AuctionStatus.PROCESSING, AuctionStatus.SOLD)) {
+            plugin.getLogger().severe("Auction #" + auctionId
+                    + " was settled but its database status could not be finalized.");
+        }
         dao.logTransaction(auctionId, item.getSellerUuid(), buyer.getUniqueId(),
                 item.getItemStack(), item.getPrice(), taxAmount, "SALE");
 
@@ -428,7 +434,10 @@ public class AuctionManager {
 
         if (!dao.compareAndSetHighestBid(auctionId, previousBidAmount, previousBidderUuid,
                 amount, bidder.getUniqueId(), bidder.getName())) {
-            plugin.getEconomyManager().deposit(bidder, amount, currency);
+            if (!plugin.getEconomyManager().deposit(bidder, amount, currency)) {
+                queueRevenue(bidder.getUniqueId(), bidder.getName(), amount, currency,
+                        auctionId, item.getItemStack(), "BID_RACE_REFUND");
+            }
             AuctionItem persisted = dao.getAuctionById(auctionId);
             if (persisted != null && persisted.getStatus() == AuctionStatus.ACTIVE && !persisted.isExpired()) {
                 activeAuctions.put(auctionId, persisted);
@@ -442,7 +451,10 @@ public class AuctionManager {
         if (previousBidderUuid != null && previousBidAmount > 0) {
             Player previousBidder = Bukkit.getPlayer(previousBidderUuid);
             if (previousBidder != null && previousBidder.isOnline()) {
-                plugin.getEconomyManager().deposit(previousBidder, previousBidAmount, currency);
+                if (!plugin.getEconomyManager().deposit(previousBidder, previousBidAmount, currency)) {
+                    queueRevenue(previousBidderUuid, item.getHighestBidderName(), previousBidAmount,
+                            currency, auctionId, item.getItemStack(), bidder.getName());
+                }
                 if (plugin.getNotificationManager().canReceiveBidNotification(previousBidderUuid)) {
                     previousBidder.sendMessage(plugin.getLangManager().prefixed("bid.outbid",
                             "{item}", getItemName(item.getItemStack()),
@@ -557,7 +569,7 @@ public class AuctionManager {
                 }
                 if (emptySlots >= item.getBundleItems().size()) {
                     for (ItemStack bundleItem : item.getBundleItems()) {
-                        seller.getInventory().addItem(bundleItem);
+                        deliverOrStore(seller, bundleItem, "CANCELLED");
                     }
                 } else {
                     for (ItemStack bundleItem : item.getBundleItems()) {
@@ -571,7 +583,7 @@ public class AuctionManager {
             }
         } else {
             if (seller != null && seller.isOnline() && seller.getInventory().firstEmpty() != -1) {
-                seller.getInventory().addItem(item.getItemStack());
+                deliverOrStore(seller, item.getItemStack(), "CANCELLED");
             } else {
                 dao.insertExpiredItem(item.getSellerUuid(), item.getSellerName(), item.getItemStack(), "CANCELLED");
             }
@@ -765,13 +777,16 @@ public class AuctionManager {
                         "{cost}", plugin.getEconomyManager().format(cost, item.getCurrency())));
                 return false;
             }
-            plugin.getEconomyManager().withdraw(seller, cost, item.getCurrency());
+            if (!plugin.getEconomyManager().withdraw(seller, cost, item.getCurrency())) {
+                return false;
+            }
         }
 
         int newRelistCount = item.getRelistCount() + 1;
         item.setRelistCount(newRelistCount);
 
         int durationHours = plugin.getConfigManager().getDefaultAuctionDuration();
+        long previousExpiresAt = item.getExpiresAt();
         long newExpiresAt = System.currentTimeMillis() + (durationHours * 3600000L);
         item.setExpiresAt(newExpiresAt);
         item.setStatus(AuctionStatus.ACTIVE);
@@ -784,7 +799,20 @@ public class AuctionManager {
             dao.deleteBidsByAuction(item.getId());
         }
 
-        dao.updateAutoRelistData(item.getId(), newRelistCount, newExpiresAt);
+        if (!dao.updateAutoRelistData(item.getId(), newRelistCount, newExpiresAt)) {
+            if (cost > 0) {
+                Player seller = Bukkit.getPlayer(item.getSellerUuid());
+                if (seller != null && seller.isOnline()
+                        && !plugin.getEconomyManager().deposit(seller, cost, item.getCurrency())) {
+                    queueRevenue(item.getSellerUuid(), item.getSellerName(), cost, item.getCurrency(),
+                            item.getId(), item.getItemStack(), "AUTO_RELIST_REFUND");
+                }
+            }
+            item.setRelistCount(newRelistCount - 1);
+            item.setExpiresAt(previousExpiresAt);
+            item.setStatus(AuctionStatus.EXPIRED);
+            return false;
+        }
         activeAuctions.put(item.getId(), item);
 
         // Cross-server sync: notify other servers of the re-listed auction
@@ -826,7 +854,10 @@ public class AuctionManager {
         // Pay the seller
         Player seller = Bukkit.getPlayer(item.getSellerUuid());
         if (seller != null && seller.isOnline()) {
-            plugin.getEconomyManager().deposit(seller, sellerReceives, currency);
+            if (!plugin.getEconomyManager().deposit(seller, sellerReceives, currency)) {
+                queueRevenue(item.getSellerUuid(), item.getSellerName(), sellerReceives, currency,
+                        item.getId(), item.getItemStack(), item.getHighestBidderName());
+            }
             if (plugin.getNotificationManager().canReceiveSaleNotification(seller.getUniqueId())) {
                 seller.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-seller",
                         "{item}", getItemName(item.getItemStack()),
@@ -860,7 +891,7 @@ public class AuctionManager {
                 }
                 if (emptySlots >= item.getBundleItems().size()) {
                     for (ItemStack bundleItem : item.getBundleItems()) {
-                        winner.getInventory().addItem(bundleItem);
+                        deliverOrStore(winner, bundleItem, "AUCTION_WON");
                     }
                     if (plugin.getNotificationManager().canReceiveSaleNotification(winner.getUniqueId())) {
                         winner.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-buyer",
@@ -882,7 +913,7 @@ public class AuctionManager {
             }
         } else {
             if (winner != null && winner.isOnline() && winner.getInventory().firstEmpty() != -1) {
-                winner.getInventory().addItem(item.getItemStack());
+                deliverOrStore(winner, item.getItemStack(), "AUCTION_WON");
                 if (plugin.getNotificationManager().canReceiveSaleNotification(winner.getUniqueId())) {
                     winner.sendMessage(plugin.getLangManager().prefixed("bid.auction-won-buyer",
                             "{item}", getItemName(item.getItemStack()),
@@ -917,7 +948,10 @@ public class AuctionManager {
         Player bidder = Bukkit.getPlayer(item.getHighestBidderUuid());
         String currency = item.getCurrency();
         if (bidder != null && bidder.isOnline()) {
-            plugin.getEconomyManager().deposit(bidder, item.getHighestBid(), currency);
+            if (!plugin.getEconomyManager().deposit(bidder, item.getHighestBid(), currency)) {
+                queueRevenue(item.getHighestBidderUuid(), item.getHighestBidderName(),
+                        item.getHighestBid(), currency, item.getId(), item.getItemStack(), "REFUND");
+            }
             bidder.sendMessage(plugin.getLangManager().prefixed("bid.refund",
                     "{item}", getItemName(item.getItemStack()),
                     "{amount}", plugin.getEconomyManager().format(item.getHighestBid(), currency)));
@@ -1209,6 +1243,19 @@ public class AuctionManager {
             formatted.append(word.charAt(0)).append(word.substring(1).toLowerCase());
         }
         return formatted.toString();
+    }
+
+    private void deliverOrStore(Player recipient, ItemStack itemStack, String reason) {
+        Map<Integer, ItemStack> leftovers = recipient.getInventory().addItem(itemStack.clone());
+        for (ItemStack leftover : leftovers.values()) {
+            dao.insertExpiredItem(recipient.getUniqueId(), recipient.getName(), leftover, reason);
+        }
+    }
+
+    private void queueRevenue(UUID playerUuid, String playerName, double amount, String currency,
+                              int auctionId, ItemStack itemStack, String counterparty) {
+        dao.insertPendingRevenue(playerUuid, playerName, amount, currency, auctionId,
+                getItemName(itemStack), counterparty);
     }
 
     // -- Price History & Statistics --
