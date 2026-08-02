@@ -1,7 +1,10 @@
 package net.nexuby.nexauctionhouse.migration;
 
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -17,9 +20,13 @@ public class MigrationManager {
     private final NexAuctionHouse plugin;
     private final Map<String, AbstractMigrator> migrators = new LinkedHashMap<>();
     private final AtomicBoolean migrationInProgress = new AtomicBoolean();
+    private final File ledgerFile;
+    private final YamlConfiguration ledger;
 
     public MigrationManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
+        this.ledgerFile = new File(plugin.getDataFolder(), "migration-ledger.yml");
+        this.ledger = YamlConfiguration.loadConfiguration(ledgerFile);
         registerMigrators();
     }
 
@@ -74,6 +81,13 @@ public class MigrationManager {
         }
 
         try {
+            String ledgerKey = "sources." + migrator.getSourceName().toLowerCase();
+            if (ledger.contains(ledgerKey + ".status")) {
+                plugin.getLogger().warning("[Migration] Refusing to run " + migrator.getSourceName()
+                        + " again. Review migration-ledger.yml before retrying an attempted migration.");
+                return null;
+            }
+
             // Step 1: Validate source data exists
             String validationError = migrator.validate();
             if (validationError != null) {
@@ -87,10 +101,23 @@ public class MigrationManager {
                 return null;
             }
 
+            // Persist the attempt before the first target write. A crash cannot silently cause a replay.
+            if (!writeLedgerState(ledgerKey, "in_progress")) {
+                plugin.getLogger().warning("[Migration] Could not persist migration ledger; aborting safely.");
+                return null;
+            }
+
             // Step 3: Run the migration
             plugin.getLogger().info("[Migration] Starting migration from " + migrator.getSourceName() + "...");
             MigrationReport report = migrator.migrate();
             plugin.getLogger().info("[Migration] " + report.getSummary());
+
+            if (report.getErrors() == 0) {
+                writeLedgerState(ledgerKey, "completed");
+            } else {
+                plugin.getLogger().warning("[Migration] Errors occurred. The ledger remains in_progress "
+                        + "to prevent an unsafe automatic replay.");
+            }
 
             // Step 4: Reload active auctions to include migrated data
             plugin.getAuctionManager().loadActiveAuctions();
@@ -98,6 +125,18 @@ public class MigrationManager {
             return report;
         } finally {
             migrationInProgress.set(false);
+        }
+    }
+
+    private boolean writeLedgerState(String ledgerKey, String status) {
+        ledger.set(ledgerKey + ".status", status);
+        ledger.set(ledgerKey + ".updated-at", System.currentTimeMillis());
+        try {
+            ledger.save(ledgerFile);
+            return true;
+        } catch (IOException e) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, "Failed to save migration ledger", e);
+            return false;
         }
     }
 }
