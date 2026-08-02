@@ -37,11 +37,16 @@ public final class OptionalIntegrationProbe extends JavaPlugin {
             throw new IllegalStateException("PlayerPoints withdraw/balance contract failed");
         }
 
+        EconomyProvider coins = nexAuctionHouse.getEconomyManager().getProviderById("coinsengine");
+        if (coins == null || coins.format(12.5).isBlank()) {
+            throw new IllegalStateException("CoinsEngine provider/API contract failed");
+        }
+
         String listings = PlaceholderAPI.setPlaceholders(probePlayer, "%nexauction_total_listings%");
         if (!listings.matches("\\d+")) {
             throw new IllegalStateException("PlaceholderAPI returned an unresolved value: " + listings);
         }
 
-        getLogger().info("NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 totalListings=" + listings);
+        getLogger().info("NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 coinsFormat=true totalListings=" + listings);
     }
 }

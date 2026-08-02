@@ -220,6 +220,7 @@
 ### 6.1 Alternatif Ekonomi Sistemi
 - [ ] `economy.providers.vault.enabled: true` → Vault ile çalışıyor
 - [X] PlayerPoints sağlayıcısı gerçek Paper'da kayıt + yatırma/bakiye/çekme turunu geçiyor
+- [X] CoinsEngine 2.6.0 sağlayıcısı gerçek Paper'da API/currency bağlama ve format testini geçiyor
 - [ ] PlayerPoints yüklüyse: `playerpoints.enabled: true` → `/ah sell 100 points` çalışıyor
 - [ ] TokenManager yüklüyse: `tokenmanager.enabled: true` → token ile satış
 - [ ] İki ekonomi aynı anda aktif → ilan açarken para birimi seçimi çalışıyor

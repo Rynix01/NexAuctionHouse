@@ -97,6 +97,14 @@ if ($UseOptionalPlugins) {
         -Url "https://cdn.modrinth.com/data/bPX4jcVd/versions/Jgohk2ua/PlayerPoints-3.3.5.jar" `
         -Destination (Join-Path $pluginsRoot "PlayerPoints.jar") `
         -ExpectedSha256 "4B15BA1654463A3F7363DC3D9B7330D5675B800D55EFE70631B32EED03669AC3"
+    Download-FileIfMissing `
+        -Url "https://cdn.modrinth.com/data/Y4NRwMW5/versions/1uVZSFRI/nightcore-2.9.4.jar" `
+        -Destination (Join-Path $pluginsRoot "nightcore.jar") `
+        -ExpectedSha256 "94FE8E46C8FCC8022C93E84A7CF541B452135534423AC6232AB2369D64EE9645"
+    Download-FileIfMissing `
+        -Url "https://cdn.modrinth.com/data/r0FB9U1e/versions/G0BJaAkm/CoinsEngine-2.6.0.jar" `
+        -Destination (Join-Path $pluginsRoot "CoinsEngine.jar") `
+        -ExpectedSha256 "9319808FBD1AD6C24AC4D5C75949F839474C2926829E0EC279C7404E7199B864"
     Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\test-plugins\NexAuctionHouse-optional-smoke-probe.jar") `
         -Destination (Join-Path $pluginsRoot "NexAuctionHouse-optional-smoke-probe.jar") -Force
 }
@@ -109,6 +117,11 @@ if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
     $configText = Get-Content -LiteralPath (Join-Path $repositoryRoot "src\main\resources\config.yml") -Raw
     if ($UseOptionalPlugins) {
         $configText = $configText -replace '(?m)(^    playerpoints:\r?\n      enabled:) false', '$1 true'
+        $configText = $configText -replace '(?m)(^    coinsengine:\r?\n      enabled:) false', '$1 true'
+        $configText = [regex]::Replace(
+            $configText,
+            '(?ms)(^    coinsengine:.*?^      plugin-currency:) "gems"',
+            '$1 "money"')
     } elseif ($UseMySql) {
         $configText = $configText.Replace("  type: sqlite", "  type: mysql")
         $configText = $configText.Replace("    host: localhost", "    host: $MySqlHost")
@@ -128,6 +141,19 @@ if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
         $configText = $configText.Replace('    channel-prefix: "nexah"', '    channel-prefix: "nexah-paper-smoke"')
     }
     Set-Content -LiteralPath (Join-Path $pluginDataRoot "config.yml") -Encoding UTF8 -Value $configText
+}
+
+if ($UseOptionalPlugins) {
+    foreach ($engineFile in @(
+        (Join-Path $pluginsRoot "nightcore\engine.yml"),
+        (Join-Path $pluginsRoot "CoinsEngine\engine.yml")
+    )) {
+        if (Test-Path -LiteralPath $engineFile) {
+            $engineText = Get-Content -LiteralPath $engineFile -Raw
+            $engineText = $engineText -replace '(?m)^  Language: .+$', '  Language: en'
+            Set-Content -LiteralPath $engineFile -Encoding UTF8 -Value $engineText
+        }
+    }
 }
 
 Set-Content -LiteralPath (Join-Path $runtimeRoot "eula.txt") -Encoding ASCII -Value "eula=true"
@@ -160,7 +186,7 @@ $stderrFile = Join-Path $runtimeRoot "console-error.log"
 $serverLog = Join-Path $runtimeRoot "logs\latest.log"
 Remove-Item -LiteralPath $stdoutFile, $stderrFile, $serverLog -Force -ErrorAction SilentlyContinue
 $process = Start-Process -FilePath $java `
-    -ArgumentList @("-Xms512M", "-Xmx1G", "-jar", $paperJar, "--nogui") `
+    -ArgumentList @("-Duser.language=en", "-Duser.country=US", "-Xms512M", "-Xmx1G", "-jar", $paperJar, "--nogui") `
     -WorkingDirectory $runtimeRoot `
     -RedirectStandardOutput $stdoutFile `
     -RedirectStandardError $stderrFile `
@@ -175,6 +201,7 @@ $redisReady = -not $UseExternalServices
 $mysqlReady = -not $UseMySql
 $placeholderReady = -not $UseOptionalPlugins
 $playerPointsReady = -not $UseOptionalPlugins
+$coinsEngineReady = -not $UseOptionalPlugins
 $optionalProbeReady = -not $UseOptionalPlugins
 $fatal = $false
 
@@ -188,9 +215,10 @@ try {
             $mysqlReady = $mysqlReady -or $logText -match "Database connection established\. \(MySQL\)"
             $placeholderReady = $placeholderReady -or $logText -match "PlaceholderAPI hook registered\."
             $playerPointsReady = $playerPointsReady -or $logText -match "Economy provider registered: Points \(currency: points\)"
-            $optionalProbeReady = $optionalProbeReady -or $logText -match "NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 totalListings=\d+"
+            $coinsEngineReady = $coinsEngineReady -or $logText -match "Economy provider registered: Gems \(currency: gems\)"
+            $optionalProbeReady = $optionalProbeReady -or $logText -match "NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 coinsFormat=true totalListings=\d+"
             $enabled = $logText -match "NexAuctionHouse v.+ has been enabled"
-            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|Failed to hook into PlayerPoints API|No economy provider available|nexauction expansion could not be registered"
+            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|Failed to hook into PlayerPoints API|Failed to hook into CoinsEngine API|No economy provider available|nexauction expansion could not be registered"
         }
 
         if ($enabled -or $fatal) {
@@ -237,6 +265,9 @@ if (-not $placeholderReady) {
 if (-not $playerPointsReady) {
     throw "PlayerPoints integration did not become ready. See $logFile"
 }
+if (-not $coinsEngineReady) {
+    throw "CoinsEngine integration did not become ready. See $logFile"
+}
 if (-not $optionalProbeReady) {
     throw "Optional integration transaction/placeholder probe did not pass. See $logFile"
 }
@@ -245,7 +276,7 @@ if ($fatal) {
 }
 
 $databaseLabel = if ($UseOptionalPlugins) {
-    "SQLite, PlaceholderAPI, PlayerPoints"
+    "SQLite, PlaceholderAPI, PlayerPoints, CoinsEngine"
 } elseif ($UseMySql) {
     "MySQL"
 } elseif ($UseExternalServices) {

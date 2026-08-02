@@ -70,18 +70,21 @@ To start the real Paper harness with MySQL:
 .\scripts\paper-smoke-test.ps1 -UseMySql
 ```
 
-To verify the real PlaceholderAPI expansion and PlayerPoints economy provider:
+To verify the real PlaceholderAPI expansion plus PlayerPoints and CoinsEngine
+economy providers:
 
 ```powershell
 .\scripts\paper-smoke-test.ps1 -UseOptionalPlugins
 ```
 
-This mode downloads PlaceholderAPI 2.12.3 from the official PaperMC Hangar CDN
-and PlayerPoints 3.3.5 from the project's official Modrinth distribution. It
+This mode downloads PlaceholderAPI 2.12.3 from the official PaperMC Hangar CDN;
+PlayerPoints 3.3.5, CoinsEngine 2.6.0 and NightCore 2.9.4 from their official
+Modrinth distributions. All downloaded optional JARs are SHA-256 pinned. It
 requires both the `nexauction` expansion and `points` economy provider to register,
 then runs a disposable probe plugin that verifies placeholder resolution and a
-real PlayerPoints deposit/balance/withdraw round trip. The probe is not included
-in the production plugin or API JAR.
+real PlayerPoints deposit/balance/withdraw round trip. CoinsEngine must bind its
+configured `money` currency through the reflected API and format a value. The
+probe is not included in the production plugin or API JAR.
 
 ## External integration coverage
 
