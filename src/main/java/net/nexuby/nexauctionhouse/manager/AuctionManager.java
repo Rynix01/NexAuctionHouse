@@ -1157,11 +1157,12 @@ public class AuctionManager {
     // -- Utility --
 
     public Collection<AuctionItem> getActiveAuctionsList() {
-        return Collections.unmodifiableCollection(activeAuctions.values());
+        return activeAuctions.values().stream().map(AuctionItem::snapshot).toList();
     }
 
     public AuctionItem getAuction(int id) {
-        return activeAuctions.get(id);
+        AuctionItem item = activeAuctions.get(id);
+        return item != null ? item.snapshot() : null;
     }
 
     public AuctionDAO getDao() {

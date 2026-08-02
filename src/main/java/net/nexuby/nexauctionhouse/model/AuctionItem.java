@@ -39,7 +39,7 @@ public class AuctionItem {
         this.id = id;
         this.sellerUuid = sellerUuid;
         this.sellerName = sellerName;
-        this.itemStack = itemStack;
+        this.itemStack = itemStack.clone();
         this.price = price;
         this.currency = currency;
         this.taxRate = taxRate;
@@ -70,7 +70,7 @@ public class AuctionItem {
     }
 
     public ItemStack getItemStack() {
-        return itemStack;
+        return itemStack.clone();
     }
 
     public double getPrice() {
@@ -208,10 +208,27 @@ public class AuctionItem {
     }
 
     public List<ItemStack> getBundleItems() {
-        return bundleItems;
+        return bundleItems.stream().map(ItemStack::clone).toList();
     }
 
     public void setBundleItems(List<ItemStack> bundleItems) {
-        this.bundleItems = bundleItems != null ? bundleItems : new ArrayList<>();
+        this.bundleItems = bundleItems != null
+                ? bundleItems.stream().map(ItemStack::clone).collect(java.util.stream.Collectors.toCollection(ArrayList::new))
+                : new ArrayList<>();
+    }
+
+    /**
+     * Creates a detached deep snapshot suitable for public/read-only consumers.
+     */
+    public AuctionItem snapshot() {
+        AuctionItem copy = new AuctionItem(id, sellerUuid, sellerName, itemStack, price, currency,
+                taxRate, createdAt, expiresAt, status, auctionType, highestBid,
+                highestBidderUuid, highestBidderName);
+        copy.setAutoRelist(autoRelist);
+        copy.setRelistCount(relistCount);
+        copy.setMaxRelists(maxRelists);
+        copy.setBundle(bundle);
+        copy.setBundleItems(bundleItems);
+        return copy;
     }
 }
