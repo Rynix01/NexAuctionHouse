@@ -116,6 +116,7 @@ public class DatabaseManager {
                 + "seller_uuid VARCHAR(36) NOT NULL,"
                 + "buyer_uuid VARCHAR(36),"
                 + "item_data LONGTEXT NOT NULL,"
+                + "material_name VARCHAR(64) NOT NULL DEFAULT '',"
                 + "price DOUBLE NOT NULL,"
                 + "tax_amount DOUBLE NOT NULL DEFAULT 0,"
                 + "action VARCHAR(16) NOT NULL,"
@@ -208,6 +209,7 @@ public class DatabaseManager {
         migrateColumn("max_relists", "INT NOT NULL DEFAULT 0");
         migrateColumn("is_bundle", "BOOLEAN NOT NULL DEFAULT 0");
         migrateColumn("bundle_data", "LONGTEXT DEFAULT NULL");
+        migrateTableColumn("transaction_logs", "material_name", "VARCHAR(64) NOT NULL DEFAULT ''");
 
         // player_settings migrations
         migrateSettingsColumn("theme", "VARCHAR(32) DEFAULT 'default'");
@@ -249,10 +251,14 @@ public class DatabaseManager {
     }
 
     private void migrateSettingsColumn(String columnName, String columnDef) {
+        migrateTableColumn("player_settings", columnName, columnDef);
+    }
+
+    private void migrateTableColumn(String tableName, String columnName, String columnDef) {
         try {
             String checkSql = usingSQLite
-                    ? "PRAGMA table_info(player_settings)"
-                    : "SHOW COLUMNS FROM player_settings LIKE '" + columnName + "'";
+                    ? "PRAGMA table_info(" + tableName + ")"
+                    : "SHOW COLUMNS FROM " + tableName + " LIKE '" + columnName + "'";
 
             boolean hasColumn = false;
 
@@ -272,14 +278,14 @@ public class DatabaseManager {
             }
 
             if (!hasColumn) {
-                String alterSql = "ALTER TABLE player_settings ADD COLUMN " + columnName + " " + columnDef;
+                String alterSql = "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnDef;
                 try (PreparedStatement stmt = connection.prepareStatement(alterSql)) {
                     stmt.executeUpdate();
                 }
-                plugin.getLogger().info("Database migrated: added '" + columnName + "' column to player_settings table.");
+                plugin.getLogger().info("Database migrated: added '" + columnName + "' column to " + tableName + " table.");
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Database migration check failed for column: " + columnName, e);
+            plugin.getLogger().log(Level.WARNING, "Database migration check failed for " + tableName + "." + columnName, e);
         }
     }
 

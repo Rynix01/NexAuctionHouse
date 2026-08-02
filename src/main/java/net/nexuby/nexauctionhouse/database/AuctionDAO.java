@@ -246,18 +246,19 @@ public class AuctionDAO {
 
     public void logTransaction(int auctionId, UUID sellerUuid, UUID buyerUuid,
                                ItemStack itemStack, double price, double taxAmount, String action) {
-        String sql = "INSERT INTO transaction_logs (auction_id, seller_uuid, buyer_uuid, item_data, price, tax_amount, action, timestamp) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO transaction_logs (auction_id, seller_uuid, buyer_uuid, item_data, material_name, price, tax_amount, action, timestamp) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql)) {
             stmt.setInt(1, auctionId);
             stmt.setString(2, sellerUuid.toString());
             stmt.setString(3, buyerUuid != null ? buyerUuid.toString() : null);
             stmt.setString(4, ItemSerializer.toBase64(itemStack));
-            stmt.setDouble(5, price);
-            stmt.setDouble(6, taxAmount);
-            stmt.setString(7, action);
-            stmt.setLong(8, System.currentTimeMillis());
+            stmt.setString(5, itemStack.getType().name());
+            stmt.setDouble(6, price);
+            stmt.setDouble(7, taxAmount);
+            stmt.setString(8, action);
+            stmt.setLong(9, System.currentTimeMillis());
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to log transaction", e);
@@ -805,23 +806,14 @@ public class AuctionDAO {
      */
     public double getAveragePrice(String materialName, int days) {
         long since = System.currentTimeMillis() - (days * 86400000L);
-        String sql = "SELECT t.price, t.item_data FROM transaction_logs t "
-                + "WHERE t.action IN ('SALE', 'AUCTION_COMPLETE') AND t.timestamp > ?";
+        String sql = "SELECT AVG(price) FROM transaction_logs "
+                + "WHERE action IN ('SALE', 'AUCTION_COMPLETE') AND timestamp > ? AND material_name = ?";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql)) {
             stmt.setLong(1, since);
+            stmt.setString(2, materialName.toUpperCase());
             ResultSet rs = stmt.executeQuery();
-
-            double total = 0;
-            int count = 0;
-            while (rs.next()) {
-                ItemStack item = ItemSerializer.fromBase64(rs.getString("item_data"));
-                if (item != null && item.getType().name().equalsIgnoreCase(materialName)) {
-                    total += rs.getDouble("price");
-                    count++;
-                }
-            }
-            return count > 0 ? Math.round(total / count * 100.0) / 100.0 : 0;
+            return rs.next() ? Math.round(rs.getDouble(1) * 100.0) / 100.0 : 0;
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to calculate average price for " + materialName, e);
         }
@@ -835,29 +827,18 @@ public class AuctionDAO {
     public Map<String, Double> getAllAveragePrices(int days) {
         Map<String, Double> result = new HashMap<>();
         long since = System.currentTimeMillis() - (days * 86400000L);
-        String sql = "SELECT t.price, t.item_data FROM transaction_logs t "
-                + "WHERE t.action IN ('SALE', 'AUCTION_COMPLETE') AND t.timestamp > ?";
+        String sql = "SELECT material_name, AVG(price) AS average_price FROM transaction_logs "
+                + "WHERE action IN ('SALE', 'AUCTION_COMPLETE') AND timestamp > ? AND material_name <> '' "
+                + "GROUP BY material_name";
 
         try (PreparedStatement stmt = conn().prepareStatement(sql)) {
             stmt.setLong(1, since);
             ResultSet rs = stmt.executeQuery();
 
-            Map<String, double[]> accum = new HashMap<>(); // [total, count]
             while (rs.next()) {
-                ItemStack item = ItemSerializer.fromBase64(rs.getString("item_data"));
-                if (item != null) {
-                    String mat = item.getType().name().toUpperCase();
-                    double price = rs.getDouble("price");
-                    accum.computeIfAbsent(mat, k -> new double[]{0, 0});
-                    accum.get(mat)[0] += price;
-                    accum.get(mat)[1] += 1;
-                }
-            }
-
-            for (Map.Entry<String, double[]> entry : accum.entrySet()) {
-                double avg = Math.round(entry.getValue()[0] / entry.getValue()[1] * 100.0) / 100.0;
+                double avg = Math.round(rs.getDouble("average_price") * 100.0) / 100.0;
                 if (avg > 0) {
-                    result.put(entry.getKey(), avg);
+                    result.put(rs.getString("material_name").toUpperCase(), avg);
                 }
             }
         } catch (SQLException e) {

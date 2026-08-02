@@ -22,6 +22,7 @@ import net.nexuby.nexauctionhouse.redis.CrossServerManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AuctionManager {
 
@@ -36,6 +37,7 @@ public class AuctionManager {
     // Cache of average prices by material name
     private final Map<String, Double> avgPriceCache = new ConcurrentHashMap<>();
     private long lastStatsCacheRefresh = 0;
+    private final AtomicBoolean statsRefreshInProgress = new AtomicBoolean();
 
     public AuctionManager(NexAuctionHouse plugin) {
         this.plugin = plugin;
@@ -1316,10 +1318,18 @@ public class AuctionManager {
      * that have been sold in the last 7 days.
      */
     public void refreshStatsCache() {
-        Map<String, Double> freshCache = dao.getAllAveragePrices(7);
-        avgPriceCache.clear();
-        avgPriceCache.putAll(freshCache);
-        lastStatsCacheRefresh = System.currentTimeMillis();
+        if (!statsRefreshInProgress.compareAndSet(false, true)) return;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                Map<String, Double> freshCache = dao.getAllAveragePrices(7);
+                avgPriceCache.clear();
+                avgPriceCache.putAll(freshCache);
+                lastStatsCacheRefresh = System.currentTimeMillis();
+            } finally {
+                statsRefreshInProgress.set(false);
+            }
+        });
     }
 
     /**

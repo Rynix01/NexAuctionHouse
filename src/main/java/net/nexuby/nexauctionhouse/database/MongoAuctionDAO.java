@@ -247,6 +247,7 @@ public class MongoAuctionDAO extends AuctionDAO {
                     .append("seller_uuid", sellerUuid.toString())
                     .append("buyer_uuid", buyerUuid != null ? buyerUuid.toString() : null)
                     .append("item_data", ItemSerializer.toBase64(itemStack))
+                    .append("material_name", itemStack.getType().name())
                     .append("price", price)
                     .append("tax_amount", taxAmount)
                     .append("action", action)
@@ -653,19 +654,15 @@ public class MongoAuctionDAO extends AuctionDAO {
     public double getAveragePrice(String materialName, int days) {
         long since = System.currentTimeMillis() - (days * 86400000L);
         try {
-            double total = 0;
-            int count = 0;
-            for (Document doc : mongo.transactionLogs()
-                    .find(Filters.and(
+            List<Bson> pipeline = Arrays.asList(
+                    Aggregates.match(Filters.and(
                             Filters.in("action", "SALE", "AUCTION_COMPLETE"),
-                            Filters.gt("timestamp", since)))) {
-                ItemStack item = ItemSerializer.fromBase64(doc.getString("item_data"));
-                if (item != null && item.getType().name().equalsIgnoreCase(materialName)) {
-                    total += doc.getDouble("price");
-                    count++;
-                }
-            }
-            return count > 0 ? Math.round(total / count * 100.0) / 100.0 : 0;
+                            Filters.gt("timestamp", since),
+                            Filters.eq("material_name", materialName.toUpperCase()))),
+                    Aggregates.group(null, Accumulators.avg("average_price", "$price"))
+            );
+            Document result = mongo.transactionLogs().aggregate(pipeline).first();
+            return result != null ? Math.round(result.getDouble("average_price") * 100.0) / 100.0 : 0;
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to calculate average price (MongoDB)", e);
             return 0;
@@ -677,23 +674,16 @@ public class MongoAuctionDAO extends AuctionDAO {
         Map<String, Double> result = new HashMap<>();
         long since = System.currentTimeMillis() - (days * 86400000L);
         try {
-            Map<String, double[]> accum = new HashMap<>();
-            for (Document doc : mongo.transactionLogs()
-                    .find(Filters.and(
+            List<Bson> pipeline = Arrays.asList(
+                    Aggregates.match(Filters.and(
                             Filters.in("action", "SALE", "AUCTION_COMPLETE"),
-                            Filters.gt("timestamp", since)))) {
-                ItemStack item = ItemSerializer.fromBase64(doc.getString("item_data"));
-                if (item != null) {
-                    String mat = item.getType().name().toUpperCase();
-                    double price = doc.getDouble("price");
-                    accum.computeIfAbsent(mat, k -> new double[]{0, 0});
-                    accum.get(mat)[0] += price;
-                    accum.get(mat)[1] += 1;
-                }
-            }
-            for (Map.Entry<String, double[]> entry : accum.entrySet()) {
-                double avg = Math.round(entry.getValue()[0] / entry.getValue()[1] * 100.0) / 100.0;
-                if (avg > 0) result.put(entry.getKey(), avg);
+                            Filters.gt("timestamp", since),
+                            Filters.ne("material_name", null))),
+                    Aggregates.group("$material_name", Accumulators.avg("average_price", "$price"))
+            );
+            for (Document doc : mongo.transactionLogs().aggregate(pipeline)) {
+                double avg = Math.round(doc.getDouble("average_price") * 100.0) / 100.0;
+                if (avg > 0) result.put(doc.getString("_id").toUpperCase(), avg);
             }
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to calculate all average prices (MongoDB)", e);
