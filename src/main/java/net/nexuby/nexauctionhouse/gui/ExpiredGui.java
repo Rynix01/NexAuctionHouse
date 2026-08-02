@@ -80,13 +80,18 @@ public class ExpiredGui extends PaginatedGui {
     }
 
     private void collectItem(ExpiredItem expired) {
-        if (viewer.getInventory().firstEmpty() == -1) {
-            viewer.sendMessage(plugin.getLangManager().prefixed("auction.inventory-full"));
+        AuctionDAO dao = plugin.getAuctionManager().getDao();
+        if (!dao.claimExpiredItem(expired.getId(), viewer.getUniqueId())) {
             return;
         }
 
-        viewer.getInventory().addItem(expired.getItemStack());
-        plugin.getAuctionManager().getDao().deleteExpiredItem(expired.getId());
+        var leftovers = viewer.getInventory().addItem(expired.getItemStack().clone());
+        for (ItemStack leftover : leftovers.values()) {
+            dao.insertExpiredItem(viewer.getUniqueId(), viewer.getName(), leftover, expired.getReason());
+        }
+        if (!leftovers.isEmpty()) {
+            viewer.sendMessage(plugin.getLangManager().prefixed("auction.inventory-full"));
+        }
     }
 
     @Override
@@ -132,12 +137,20 @@ public class ExpiredGui extends PaginatedGui {
         int collected = 0;
 
         for (ExpiredItem expired : new ArrayList<>(expiredItems)) {
-            if (viewer.getInventory().firstEmpty() == -1) {
+            AuctionDAO dao = plugin.getAuctionManager().getDao();
+            if (!dao.claimExpiredItem(expired.getId(), viewer.getUniqueId())) {
+                continue;
+            }
+
+            var leftovers = viewer.getInventory().addItem(expired.getItemStack().clone());
+            for (ItemStack leftover : leftovers.values()) {
+                dao.insertExpiredItem(viewer.getUniqueId(), viewer.getName(), leftover, expired.getReason());
+            }
+            collected++;
+
+            if (!leftovers.isEmpty()) {
                 break;
             }
-            viewer.getInventory().addItem(expired.getItemStack());
-            plugin.getAuctionManager().getDao().deleteExpiredItem(expired.getId());
-            collected++;
         }
 
         if (collected > 0) {

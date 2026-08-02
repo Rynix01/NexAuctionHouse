@@ -345,6 +345,22 @@ public class AuctionDAO {
     }
 
     /**
+     * Atomically claims an expired item for its owner so concurrent menus cannot deliver it twice.
+     */
+    public boolean claimExpiredItem(int id, UUID ownerUuid) {
+        String sql = "DELETE FROM expired_items WHERE id = ? AND owner_uuid = ?";
+
+        try (PreparedStatement stmt = conn().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, ownerUuid.toString());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to claim expired item", e);
+            return false;
+        }
+    }
+
+    /**
      * Atomically replaces the highest bid when the persisted bid still matches the caller's snapshot.
      */
     public boolean compareAndSetHighestBid(int auctionId, double expectedAmount, UUID expectedBidderUuid,

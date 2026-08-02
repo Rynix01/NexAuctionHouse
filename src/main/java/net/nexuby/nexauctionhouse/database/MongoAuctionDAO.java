@@ -335,6 +335,19 @@ public class MongoAuctionDAO extends AuctionDAO {
     }
 
     @Override
+    public boolean claimExpiredItem(int id, UUID ownerUuid) {
+        try {
+            return mongo.expiredItems().deleteOne(Filters.and(
+                    Filters.eq("_id", id),
+                    Filters.eq("owner_uuid", ownerUuid.toString())
+            )).getDeletedCount() > 0;
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to claim expired item (MongoDB)", e);
+            return false;
+        }
+    }
+
+    @Override
     public boolean compareAndSetHighestBid(int auctionId, double expectedAmount, UUID expectedBidderUuid,
                                            double amount, UUID bidderUuid, String bidderName) {
         try {
