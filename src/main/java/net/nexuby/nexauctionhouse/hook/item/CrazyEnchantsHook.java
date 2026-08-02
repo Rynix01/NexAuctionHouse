@@ -8,32 +8,21 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 /**
- * Hook for CrazyEnchantments / ExcellentEnchants custom enchantment items.
+ * Hook for CrazyEnchantments custom enchantment items.
  * Detects items that have custom enchantment data stored in PDC.
  */
 public class CrazyEnchantsHook implements ItemHook {
 
     private static final NamespacedKey CE_KEY = new NamespacedKey("crazyenchantments", "enchantments");
-    private static final NamespacedKey EE_KEY = new NamespacedKey("excellentenchants", "enchant-id");
     private final boolean available;
-    private final String activePlugin;
 
     public CrazyEnchantsHook() {
-        if (Bukkit.getPluginManager().getPlugin("CrazyEnchantments") != null) {
-            this.available = true;
-            this.activePlugin = "CrazyEnchantments";
-        } else if (Bukkit.getPluginManager().getPlugin("ExcellentEnchants") != null) {
-            this.available = true;
-            this.activePlugin = "ExcellentEnchants";
-        } else {
-            this.available = false;
-            this.activePlugin = "CrazyEnchantments";
-        }
+        this.available = Bukkit.getPluginManager().getPlugin("CrazyEnchantments") != null;
     }
 
     @Override
     public String getPluginName() {
-        return activePlugin;
+        return "CrazyEnchantments";
     }
 
     @Override
@@ -54,9 +43,6 @@ public class CrazyEnchantsHook implements ItemHook {
 
         if (pdc.has(CE_KEY, PersistentDataType.STRING)) {
             return "ce:" + pdc.get(CE_KEY, PersistentDataType.STRING);
-        }
-        if (pdc.has(EE_KEY, PersistentDataType.STRING)) {
-            return "ee:" + pdc.get(EE_KEY, PersistentDataType.STRING);
         }
         return null;
     }

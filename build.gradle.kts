@@ -1,6 +1,6 @@
 plugins {
     java
-    id("com.gradleup.shadow") version "9.0.0-beta12"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "net.nexuby"
@@ -16,7 +16,6 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://jitpack.io")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
-    maven("https://mvn.lumine.io/repository/maven-public/") // MythicMobs, ModelEngine
 }
 
 dependencies {
@@ -24,14 +23,23 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("com.github.LoneDev6:API-ItemsAdder:3.6.3-beta-14")
-    compileOnly("io.lumine:Mythic-Dist:5.7.2")
-    compileOnly("io.lumine:MythicCrucible-Dist:2.1.0")
+
+    // The other optional plugins are accessed through Bukkit metadata/PDC or
+    // reflection. Keep them as soft dependencies instead of bundling their APIs.
 
     // MongoDB driver (shaded into the plugin jar)
     implementation("org.mongodb:mongodb-driver-sync:5.1.0")
 
     // Redis client (shaded into the plugin jar)
-    implementation("redis.clients:jedis:5.2.0")
+    implementation("redis.clients:jedis:5.2.0") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "com.google.code.gson", module = "gson")
+    }
+
+    // Used directly by cross-server messages and Discord webhooks.
+    implementation("com.google.code.gson:gson:2.11.0") {
+        exclude(group = "com.google.errorprone", module = "error_prone_annotations")
+    }
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.40.2")
@@ -51,6 +59,8 @@ tasks {
         relocate("redis.clients", "net.nexuby.nexauctionhouse.libs.redis")
         relocate("org.apache.commons.pool2", "net.nexuby.nexauctionhouse.libs.pool2")
         relocate("org.json", "net.nexuby.nexauctionhouse.libs.json")
+        relocate("com.google.gson", "net.nexuby.nexauctionhouse.libs.gson")
+        exclude("org/slf4j/**")
         exclude("META-INF/native-image/**")
     }
 
@@ -67,6 +77,29 @@ tasks {
 
     build {
         dependsOn(shadowJar)
+    }
+
+    register("verifyShadedJar") {
+        dependsOn(shadowJar)
+        doLast {
+            val jarFile = shadowJar.get().archiveFile.get().asFile
+            val forbidden = zipTree(jarFile).matching {
+                include("org/slf4j/**")
+                include("com/google/gson/**")
+            }.files
+            check(forbidden.isEmpty()) {
+                "Unisolated runtime dependency classes found in ${jarFile.name}: $forbidden"
+            }
+
+            val relocatedGson = zipTree(jarFile).matching {
+                include("net/nexuby/nexauctionhouse/libs/gson/Gson.class")
+            }.files
+            check(relocatedGson.size == 1) { "Relocated Gson runtime is missing from ${jarFile.name}" }
+        }
+    }
+
+    check {
+        dependsOn("verifyShadedJar")
     }
 
     processResources {

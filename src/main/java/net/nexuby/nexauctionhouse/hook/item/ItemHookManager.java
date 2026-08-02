@@ -30,11 +30,15 @@ public class ItemHookManager {
         registerHook(new OraxenHook());
         registerHook(new MMOItemsHook());
         registerHook(new MythicMobsHook());
+        registerHook(new MythicCrucibleHook());
         registerHook(new ExecutableItemsHook());
         registerHook(new EcoItemsHook());
+        registerHook(new EcoArmorHook());
+        registerHook(new TalismansHook());
         registerHook(new SlimefunHook());
         registerHook(new HeadDatabaseHook());
         registerHook(new CrazyEnchantsHook());
+        registerHook(new ExcellentEnchantsHook());
         registerHook(new NexoHook());
         registerHook(new CustomModelDataHook());
 

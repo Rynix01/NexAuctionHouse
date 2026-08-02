@@ -10,19 +10,14 @@ import org.bukkit.persistence.PersistentDataType;
 /**
  * Hook for EcoItems (from Auxilor's Eco plugin suite).
  * Detects items via PersistentDataContainer key "ecoitems:item".
- * Also detects Talismans, EcoArmor and other Eco family items.
  */
 public class EcoItemsHook implements ItemHook {
 
     private static final NamespacedKey ECO_ITEM = new NamespacedKey("ecoitems", "item");
-    private static final NamespacedKey ECO_ARMOR = new NamespacedKey("ecoarmor", "set");
-    private static final NamespacedKey TALISMANS = new NamespacedKey("talismans", "talisman");
     private final boolean available;
 
     public EcoItemsHook() {
-        this.available = Bukkit.getPluginManager().getPlugin("EcoItems") != null
-                || Bukkit.getPluginManager().getPlugin("EcoArmor") != null
-                || Bukkit.getPluginManager().getPlugin("Talismans") != null;
+        this.available = Bukkit.getPluginManager().getPlugin("EcoItems") != null;
     }
 
     @Override
@@ -48,12 +43,6 @@ public class EcoItemsHook implements ItemHook {
 
         if (pdc.has(ECO_ITEM, PersistentDataType.STRING)) {
             return pdc.get(ECO_ITEM, PersistentDataType.STRING);
-        }
-        if (pdc.has(ECO_ARMOR, PersistentDataType.STRING)) {
-            return "armor:" + pdc.get(ECO_ARMOR, PersistentDataType.STRING);
-        }
-        if (pdc.has(TALISMANS, PersistentDataType.STRING)) {
-            return "talisman:" + pdc.get(TALISMANS, PersistentDataType.STRING);
         }
         return null;
     }

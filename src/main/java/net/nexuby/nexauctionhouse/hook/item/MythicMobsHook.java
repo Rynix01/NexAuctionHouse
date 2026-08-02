@@ -10,12 +10,10 @@ import org.bukkit.persistence.PersistentDataType;
 /**
  * Hook for MythicMobs custom drop items.
  * Detects items via PersistentDataContainer key "mythicmobs:type".
- * Also supports MythicCrucible items via "mythiccrucible:id".
  */
 public class MythicMobsHook implements ItemHook {
 
     private static final NamespacedKey MYTHIC_TYPE = new NamespacedKey("mythicmobs", "type");
-    private static final NamespacedKey CRUCIBLE_ID = new NamespacedKey("mythiccrucible", "id");
     private final boolean available;
 
     public MythicMobsHook() {
@@ -46,11 +44,6 @@ public class MythicMobsHook implements ItemHook {
         // MythicMobs drop items
         if (pdc.has(MYTHIC_TYPE, PersistentDataType.STRING)) {
             return pdc.get(MYTHIC_TYPE, PersistentDataType.STRING);
-        }
-
-        // MythicCrucible custom items
-        if (pdc.has(CRUCIBLE_ID, PersistentDataType.STRING)) {
-            return "crucible:" + pdc.get(CRUCIBLE_ID, PersistentDataType.STRING);
         }
 
         return null;
