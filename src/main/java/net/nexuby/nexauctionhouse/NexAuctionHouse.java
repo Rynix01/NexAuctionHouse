@@ -23,7 +23,7 @@ import net.nexuby.nexauctionhouse.redis.RedisManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class NexAuctionHouse extends JavaPlugin {
+public class NexAuctionHouse extends JavaPlugin {
 
     private static NexAuctionHouse instance;
 

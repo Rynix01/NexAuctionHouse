@@ -34,6 +34,11 @@ dependencies {
     implementation("redis.clients:jedis:5.2.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.40.2")
+    testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    testImplementation("com.github.MilkBowl:VaultAPI:1.7.1")
+    testImplementation("org.xerial:sqlite-jdbc:3.50.3.0")
+    testImplementation("org.mockito:mockito-core:5.20.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
