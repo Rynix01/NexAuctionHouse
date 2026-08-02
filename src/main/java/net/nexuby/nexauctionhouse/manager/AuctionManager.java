@@ -49,6 +49,11 @@ public class AuctionManager {
      * Loads all active auctions from the database into memory.
      */
     public void loadActiveAuctions() {
+        if (!Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTask(plugin, this::loadActiveAuctions);
+            return;
+        }
+
         activeAuctions.clear();
         List<AuctionItem> auctions = dao.getActiveAuctions();
 
@@ -82,7 +87,7 @@ public class AuctionManager {
                     expireAuction(item);
                 }
             }
-        }.runTaskTimerAsynchronously(plugin, 20L * 60, 20L * 60); // every 60 seconds
+        }.runTaskTimer(plugin, 20L * 60, 20L * 60); // every 60 seconds
     }
 
     public int listItem(Player seller, ItemStack itemStack, double price, String currency) {
