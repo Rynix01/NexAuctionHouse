@@ -107,6 +107,7 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listItem(Player seller, ItemStack itemStack, double price, String currency, boolean autoRelist) {
+        if (writesPausedForMigration()) return -1;
         if (!isValidAuctionAmount(price, currency)) return -1;
 
         ConfigManager config = plugin.getConfigManager();
@@ -172,6 +173,7 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency, boolean autoRelist) {
+        if (writesPausedForMigration()) return -1;
         if (!isValidAuctionAmount(startingPrice, currency)) return -1;
 
         double taxRate = getPlayerTaxRate(seller);
@@ -228,6 +230,7 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listBundle(Player seller, List<ItemStack> items, double price, String currency) {
+        if (writesPausedForMigration()) return -1;
         if (!isValidAuctionAmount(price, currency) || items == null || items.isEmpty()) return -1;
 
         ConfigManager config = plugin.getConfigManager();
@@ -280,6 +283,7 @@ public class AuctionManager {
      * Returns true if successful.
      */
     public boolean purchaseItem(Player buyer, int auctionId) {
+        if (writesPausedForMigration()) return false;
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired() || item.isBidAuction()
                 || !isValidAuctionAmount(item.getPrice(), item.getCurrency())
@@ -407,6 +411,7 @@ public class AuctionManager {
      * Returns true if the bid was placed successfully.
      */
     public boolean placeBid(Player bidder, int auctionId, double amount) {
+        if (writesPausedForMigration()) return false;
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || !isValidAuctionAmount(amount, item.getCurrency())
                 || !isValidSettlementAmount(amount, item.getTaxRate(), item.getCurrency())) {
@@ -555,6 +560,7 @@ public class AuctionManager {
      * Cancels an auction and returns the item to the seller.
      */
     public boolean cancelAuction(Player requester, int auctionId, boolean isAdmin) {
+        if (writesPausedForMigration()) return false;
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null) {
             return false;
@@ -636,6 +642,7 @@ public class AuctionManager {
      * Only the seller can update the price.
      */
     public boolean updatePrice(Player seller, int auctionId, double newPrice) {
+        if (writesPausedForMigration()) return false;
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || !isValidAuctionAmount(newPrice, item.getCurrency())
                 || !isValidSettlementAmount(newPrice, item.getTaxRate(), item.getCurrency())) {
@@ -683,6 +690,7 @@ public class AuctionManager {
      * Only the seller can extend the duration.
      */
     public boolean extendDuration(Player seller, int auctionId, int additionalHours) {
+        if (writesPausedForMigration()) return false;
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired()) {
             return false;
@@ -730,6 +738,8 @@ public class AuctionManager {
      * In cross-server mode, uses distributed locking to prevent double processing.
      */
     private void expireAuction(AuctionItem item) {
+        if (writesPausedForMigration()) return;
+
         // In cross-server mode, acquire distributed lock before processing
         CrossServerManager csm = plugin.getCrossServerManager();
         if (csm != null) {
@@ -1301,6 +1311,11 @@ public class AuctionManager {
     private boolean isValidSettlementAmount(double grossAmount, double taxRate, String currency) {
         double sellerAmount = grossAmount - (grossAmount * taxRate / 100.0);
         return plugin.getEconomyManager().supportsAmount(sellerAmount, currency);
+    }
+
+    private boolean writesPausedForMigration() {
+        return plugin.getMigrationManager() != null
+                && plugin.getMigrationManager().isMigrationInProgress();
     }
 
     // -- Price History & Statistics --
