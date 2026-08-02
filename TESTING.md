@@ -70,9 +70,22 @@ To start the real Paper harness with MySQL:
 .\scripts\paper-smoke-test.ps1 -UseMySql
 ```
 
+To verify the real PlaceholderAPI expansion and PlayerPoints economy provider:
+
+```powershell
+.\scripts\paper-smoke-test.ps1 -UseOptionalPlugins
+```
+
+This mode downloads PlaceholderAPI 2.12.3 from the official PaperMC Hangar CDN
+and PlayerPoints 3.3.5 from the project's official Modrinth distribution. It
+requires both the `nexauction` expansion and `points` economy provider to register,
+then runs a disposable probe plugin that verifies placeholder resolution and a
+real PlayerPoints deposit/balance/withdraw round trip. The probe is not included
+in the production plugin or API JAR.
+
 ## External integration coverage
 
-BungeeCord/Velocity, PlaceholderAPI and custom-item or alternate-economy plugins
+BungeeCord/Velocity and the remaining custom-item or alternate-economy plugins
 require their own running services or third-party plugin binaries. They remain
 explicit manual/infrastructure tests in `TEST_CHECKLIST.md`; they are not reported
 as passing unless those dependencies are installed and the scenarios are executed.

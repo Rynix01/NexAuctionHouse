@@ -52,6 +52,23 @@ dependencies {
 }
 
 tasks {
+    val compileOptionalSmokeProbe = register<JavaCompile>("compileOptionalSmokeProbe") {
+        description = "Compiles the disposable real-Paper optional integration probe."
+        source(fileTree("src/optionalSmokeTest/java") { include("**/*.java") })
+        classpath = sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+        destinationDirectory.set(layout.buildDirectory.dir("classes/optionalSmokeProbe"))
+        options.release.set(21)
+        options.encoding = "UTF-8"
+    }
+
+    register<Jar>("optionalSmokeProbeJar") {
+        dependsOn(compileOptionalSmokeProbe)
+        archiveFileName.set("NexAuctionHouse-optional-smoke-probe.jar")
+        destinationDirectory.set(layout.buildDirectory.dir("test-plugins"))
+        from(compileOptionalSmokeProbe.flatMap { it.destinationDirectory })
+        from("src/optionalSmokeTest/resources")
+    }
+
     shadowJar {
         archiveClassifier.set("")
         archiveFileName.set("NexAuctionHouse-${project.version}.jar")

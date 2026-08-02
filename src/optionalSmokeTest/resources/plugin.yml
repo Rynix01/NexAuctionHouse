@@ -1,0 +1,5 @@
+name: NexAuctionHouseOptionalProbe
+version: '1.0.0'
+main: net.nexuby.nexauctionhouse.smoke.OptionalIntegrationProbe
+api-version: '1.21'
+depend: [NexAuctionHouse, PlaceholderAPI, PlayerPoints]

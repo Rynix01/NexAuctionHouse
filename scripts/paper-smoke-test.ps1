@@ -3,6 +3,7 @@ param(
     [int]$TimeoutSeconds = 180,
     [switch]$UseExternalServices,
     [switch]$UseMySql,
+    [switch]$UseOptionalPlugins,
     [string]$MongoUri = "mongodb://127.0.0.1:27018",
     [string]$MongoDatabase = "nexah_paper_smoke",
     [string]$RedisHost = "127.0.0.1",
@@ -18,10 +19,12 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-if ($UseExternalServices -and $UseMySql) {
-    throw "UseExternalServices and UseMySql are separate smoke modes; select only one."
+if (@($UseExternalServices, $UseMySql, $UseOptionalPlugins).Where({ $_ }).Count -gt 1) {
+    throw "UseExternalServices, UseMySql and UseOptionalPlugins are separate smoke modes; select only one."
 }
-$runtimeSuffix = if ($UseMySql) {
+$runtimeSuffix = if ($UseOptionalPlugins) {
+    "$MinecraftVersion-optional"
+} elseif ($UseMySql) {
     "$MinecraftVersion-mysql"
 } elseif ($UseExternalServices) {
     "$MinecraftVersion-external"
@@ -36,19 +39,30 @@ $userAgent = "NexAuctionHouse-TestHarness/1.0 (https://github.com/Rynix01/NexAuc
 function Download-FileIfMissing {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
-        [Parameter(Mandatory = $true)][string]$Destination
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [string]$ExpectedSha256 = ""
     )
 
     if (Test-Path -LiteralPath $Destination) {
+        if ($ExpectedSha256 -and (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash -ne $ExpectedSha256) {
+            throw "Checksum mismatch for existing file $Destination"
+        }
         return
     }
 
     Write-Host "Downloading $([IO.Path]::GetFileName($Destination))..."
     Invoke-WebRequest -Uri $Url -OutFile $Destination -Headers @{ "User-Agent" = $userAgent }
+    if ($ExpectedSha256 -and (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash -ne $ExpectedSha256) {
+        throw "Checksum mismatch for downloaded file $Destination"
+    }
 }
 
 Write-Host "Building NexAuctionHouse..."
-& (Join-Path $repositoryRoot "gradlew.bat") shadowJar --no-daemon
+$gradleTasks = @("shadowJar")
+if ($UseOptionalPlugins) {
+    $gradleTasks += "optionalSmokeProbeJar"
+}
+& (Join-Path $repositoryRoot "gradlew.bat") @gradleTasks --no-daemon
 if ($LASTEXITCODE -ne 0) {
     throw "Gradle build failed."
 }
@@ -74,14 +88,28 @@ Download-FileIfMissing `
 Download-FileIfMissing `
     -Url "https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar" `
     -Destination $essentialsJar
+if ($UseOptionalPlugins) {
+    Download-FileIfMissing `
+        -Url "https://hangarcdn.papermc.io/plugins/HelpChat/PlaceholderAPI/versions/2.12.3/PAPER/PlaceholderAPI-2.12.3.jar" `
+        -Destination (Join-Path $pluginsRoot "PlaceholderAPI.jar") `
+        -ExpectedSha256 "FDE03259F5AF6938F3C33EEB4D814000A1ADABF1D2304CE14970BE81F609A437"
+    Download-FileIfMissing `
+        -Url "https://cdn.modrinth.com/data/bPX4jcVd/versions/Jgohk2ua/PlayerPoints-3.3.5.jar" `
+        -Destination (Join-Path $pluginsRoot "PlayerPoints.jar") `
+        -ExpectedSha256 "4B15BA1654463A3F7363DC3D9B7330D5675B800D55EFE70631B32EED03669AC3"
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\test-plugins\NexAuctionHouse-optional-smoke-probe.jar") `
+        -Destination (Join-Path $pluginsRoot "NexAuctionHouse-optional-smoke-probe.jar") -Force
+}
 Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\libs\NexAuctionHouse-1.0.0.jar") `
     -Destination $pluginJar -Force
 
-if ($UseExternalServices -or $UseMySql) {
+if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
     $pluginDataRoot = Join-Path $pluginsRoot "NexAuctionHouse"
     New-Item -ItemType Directory -Force -Path $pluginDataRoot | Out-Null
     $configText = Get-Content -LiteralPath (Join-Path $repositoryRoot "src\main\resources\config.yml") -Raw
-    if ($UseMySql) {
+    if ($UseOptionalPlugins) {
+        $configText = $configText -replace '(?m)(^    playerpoints:\r?\n      enabled:) false', '$1 true'
+    } elseif ($UseMySql) {
         $configText = $configText.Replace("  type: sqlite", "  type: mysql")
         $configText = $configText.Replace("    host: localhost", "    host: $MySqlHost")
         $configText = $configText.Replace("    port: 3306", "    port: $MySqlPort")
@@ -145,6 +173,9 @@ $economyReady = $false
 $mongoReady = -not $UseExternalServices
 $redisReady = -not $UseExternalServices
 $mysqlReady = -not $UseMySql
+$placeholderReady = -not $UseOptionalPlugins
+$playerPointsReady = -not $UseOptionalPlugins
+$optionalProbeReady = -not $UseOptionalPlugins
 $fatal = $false
 
 try {
@@ -155,8 +186,11 @@ try {
             $mongoReady = $mongoReady -or $logText -match "MongoDB connection established"
             $redisReady = $redisReady -or $logText -match "Redis connection established"
             $mysqlReady = $mysqlReady -or $logText -match "Database connection established\. \(MySQL\)"
+            $placeholderReady = $placeholderReady -or $logText -match "PlaceholderAPI hook registered\."
+            $playerPointsReady = $playerPointsReady -or $logText -match "Economy provider registered: Points \(currency: points\)"
+            $optionalProbeReady = $optionalProbeReady -or $logText -match "NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 totalListings=\d+"
             $enabled = $logText -match "NexAuctionHouse v.+ has been enabled"
-            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|No economy provider available"
+            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|Failed to hook into PlayerPoints API|No economy provider available|nexauction expansion could not be registered"
         }
 
         if ($enabled -or $fatal) {
@@ -197,11 +231,22 @@ if (-not $redisReady) {
 if (-not $mysqlReady) {
     throw "MySQL integration did not become ready. See $logFile"
 }
+if (-not $placeholderReady) {
+    throw "PlaceholderAPI integration did not become ready. See $logFile"
+}
+if (-not $playerPointsReady) {
+    throw "PlayerPoints integration did not become ready. See $logFile"
+}
+if (-not $optionalProbeReady) {
+    throw "Optional integration transaction/placeholder probe did not pass. See $logFile"
+}
 if ($fatal) {
     throw "NexAuctionHouse reported a fatal startup error. See $logFile"
 }
 
-$databaseLabel = if ($UseMySql) {
+$databaseLabel = if ($UseOptionalPlugins) {
+    "SQLite, PlaceholderAPI, PlayerPoints"
+} elseif ($UseMySql) {
     "MySQL"
 } elseif ($UseExternalServices) {
     "MongoDB, Redis cross-server mode"

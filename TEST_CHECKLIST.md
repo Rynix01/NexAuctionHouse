@@ -182,6 +182,7 @@
 - [X] `/ah history Rynix` (admin yetkisiyle) → başka oyuncunun geçmişi
 - [X] Menüde eşya hover → "Ortalama Piyasa Fiyatı: X₺" bilgisi
 - [ ] PlaceholderAPI testleri (PAPI yüklü olmalı):
+  - [X] Gerçek Paper'da `nexauction` expansion kaydı ve `%nexauction_total_listings%` çözümlemesi
   - [ ] `%nexauction_player_total_sales%` → doğru toplam satış sayısı
   - [ ] `%nexauction_player_total_revenue%` → doğru toplam kazanç
   - [ ] `%nexauction_player_total_purchases%` → doğru toplam alış
@@ -218,6 +219,7 @@
 
 ### 6.1 Alternatif Ekonomi Sistemi
 - [ ] `economy.providers.vault.enabled: true` → Vault ile çalışıyor
+- [X] PlayerPoints sağlayıcısı gerçek Paper'da kayıt + yatırma/bakiye/çekme turunu geçiyor
 - [ ] PlayerPoints yüklüyse: `playerpoints.enabled: true` → `/ah sell 100 points` çalışıyor
 - [ ] TokenManager yüklüyse: `tokenmanager.enabled: true` → token ile satış
 - [ ] İki ekonomi aynı anda aktif → ilan açarken para birimi seçimi çalışıyor
@@ -249,6 +251,7 @@
 ### 6.4 PlaceholderAPI (Tam Test)
 > PAPI yüklü olmalı. Test için placeholder'ları chat/scoreboard/tab'da göster.
 
+- [X] Gerçek PlaceholderAPI, `nexauction` expansion'ını kaydediyor ve toplam ilan değerini çözüyor
 - [ ] `%nexauction_player_total_sales%` — doğru değer
 - [ ] `%nexauction_player_total_revenue%` — doğru değer
 - [ ] `%nexauction_player_total_purchases%` — doğru değer

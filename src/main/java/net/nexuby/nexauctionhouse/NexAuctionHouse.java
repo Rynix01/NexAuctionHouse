@@ -131,8 +131,11 @@ public class NexAuctionHouse extends JavaPlugin {
 
         // Hook into PlaceholderAPI if available
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new AuctionPlaceholders(this).register();
-            getLogger().info("PlaceholderAPI hook registered.");
+            if (new AuctionPlaceholders(this).register()) {
+                getLogger().info("PlaceholderAPI hook registered.");
+            } else {
+                getLogger().warning("PlaceholderAPI is available, but the nexauction expansion could not be registered.");
+            }
         }
 
         // Initialize Developer API
