@@ -8,12 +8,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 public class DatabaseManager {
 
     private final NexAuctionHouse plugin;
     private Connection connection;
+    private final Map<Thread, Connection> threadConnections = new ConcurrentHashMap<>();
     private boolean usingSQLite;
     private boolean usingMongoDB;
     private MongoManager mongoManager;
@@ -39,6 +42,7 @@ public class DatabaseManager {
 
             createTables();
             migrateDatabase();
+            threadConnections.put(Thread.currentThread(), connection);
             plugin.getLogger().info("Database connection established. (" + (usingSQLite ? "SQLite" : "MySQL") + ")");
             return true;
 
@@ -55,14 +59,21 @@ public class DatabaseManager {
     }
 
     private void connectSQLite() throws SQLException {
-        File dbFile = new File(plugin.getDataFolder(), "data.db");
-        String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
-        this.connection = DriverManager.getConnection(url);
+        this.connection = openSQLiteConnection();
 
         // Enable WAL mode for better concurrent read performance
         try (PreparedStatement stmt = connection.prepareStatement("PRAGMA journal_mode=WAL")) {
             stmt.execute();
         }
+    }
+
+    private Connection openSQLiteConnection() throws SQLException {
+        File dbFile = new File(plugin.getDataFolder(), "data.db");
+        Connection result = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        try (PreparedStatement stmt = result.prepareStatement("PRAGMA busy_timeout=5000")) {
+            stmt.execute();
+        }
+        return result;
     }
 
     private void connectMySQL(ConfigManager config) throws SQLException {
@@ -289,16 +300,30 @@ public class DatabaseManager {
         }
     }
 
-    public Connection getConnection() {
+    public synchronized Connection getConnection() {
         if (usingMongoDB) return null;
         try {
-            if (connection == null || connection.isClosed()) {
-                connect();
+            Thread currentThread = Thread.currentThread();
+            Connection current = threadConnections.get(currentThread);
+            if (current == null || current.isClosed()) {
+                current = usingSQLite
+                        ? openSQLiteConnection()
+                        : openMySQLConnection(plugin.getConfigManager());
+                threadConnections.put(currentThread, current);
             }
+            return current;
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to validate database connection", e);
+            return null;
         }
-        return connection;
+    }
+
+    private Connection openMySQLConnection(ConfigManager config) throws SQLException {
+        String url = "jdbc:mysql://" + config.getMySQLHost() + ":" + config.getMySQLPort()
+                + "/" + config.getMySQLDatabase()
+                + "?useSSL=" + config.getMySQLSSL()
+                + "&autoReconnect=true&characterEncoding=UTF-8";
+        return DriverManager.getConnection(url, config.getMySQLUsername(), config.getMySQLPassword());
     }
 
     public boolean isUsingSQLite() {
@@ -320,13 +345,16 @@ public class DatabaseManager {
             }
             return;
         }
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-                plugin.getLogger().info("Database connection closed.");
+        for (Connection openConnection : threadConnections.values()) {
+            try {
+                if (openConnection != null && !openConnection.isClosed()) {
+                    openConnection.close();
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.WARNING, "Error while closing database connection", e);
             }
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Error while closing database connection", e);
         }
+        threadConnections.clear();
+        plugin.getLogger().info("Database connections closed.");
     }
 }
