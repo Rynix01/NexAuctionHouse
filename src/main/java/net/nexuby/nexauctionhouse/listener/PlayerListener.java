@@ -41,15 +41,29 @@ public class PlayerListener implements Listener {
             boolean hasSounds = plugin.getNotificationManager().hasSoundEnabled(player.getUniqueId());
 
             // Process rescued items (crash/disconnect protection)
-            List<CursorProtectionManager.RescuedItem> rescuedItems = cpm.getRescuedItems(player.getUniqueId());
+            List<CursorProtectionManager.RescuedItem> loadedRescuedItems = cpm.getRescuedItems(player.getUniqueId());
+            long rescuedClaimTime = System.currentTimeMillis();
+            String rescuedClaimToken = UUID.randomUUID().toString();
+            List<CursorProtectionManager.RescuedItem> rescuedItems = loadedRescuedItems.stream()
+                    .filter(rescued -> cpm.claimRescuedItem(rescued.id(), player.getUniqueId(),
+                            rescuedClaimToken, rescuedClaimTime, rescuedClaimTime - 300_000L))
+                    .toList();
             if (!rescuedItems.isEmpty()) {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    if (!player.isOnline()) return;
+                    if (!player.isOnline()) {
+                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,
+                                () -> rescuedItems.forEach(rescued ->
+                                        cpm.releaseRescuedItem(rescued.id(), rescuedClaimToken)));
+                        return;
+                    }
 
                     int returned = 0;
                     int stored = 0;
                     List<Integer> deliveredIds = new ArrayList<>();
                     for (CursorProtectionManager.RescuedItem rescued : rescuedItems) {
+                        if (player.getInventory().firstEmpty() == -1) {
+                            continue;
+                        }
                         var remaining = player.getInventory().addItem(rescued.itemStack().clone());
                         if (remaining.isEmpty()) {
                             returned++;
@@ -70,10 +84,15 @@ public class PlayerListener implements Listener {
                         }
                     }
 
-                    if (!deliveredIds.isEmpty()) {
-                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,
-                                () -> deliveredIds.forEach(cpm::deleteRescuedItem));
-                    }
+                    plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                        for (CursorProtectionManager.RescuedItem rescued : rescuedItems) {
+                            if (deliveredIds.contains(rescued.id())) {
+                                cpm.acknowledgeRescuedItem(rescued.id(), rescuedClaimToken);
+                            } else {
+                                cpm.releaseRescuedItem(rescued.id(), rescuedClaimToken);
+                            }
+                        }
+                    });
 
                     if (canReceiveLogin) {
                         if (returned > 0) {

@@ -117,7 +117,9 @@ public class DatabaseManager {
                 + "owner_name VARCHAR(16) NOT NULL,"
                 + "item_data LONGTEXT NOT NULL,"
                 + "reason VARCHAR(32) NOT NULL,"
-                + "created_at BIGINT NOT NULL"
+                + "created_at BIGINT NOT NULL,"
+                + "claim_token VARCHAR(64) DEFAULT NULL,"
+                + "claimed_at BIGINT NOT NULL DEFAULT 0"
                 + ")";
 
         // Transaction log table
@@ -225,6 +227,8 @@ public class DatabaseManager {
         migrateTableColumn("transaction_logs", "material_name", "VARCHAR(64) NOT NULL DEFAULT ''");
         migrateTableColumn("pending_revenue", "claim_token", "VARCHAR(64) DEFAULT NULL");
         migrateTableColumn("pending_revenue", "claimed_at", "BIGINT NOT NULL DEFAULT 0");
+        migrateTableColumn("rescued_items", "claim_token", "VARCHAR(64) DEFAULT NULL");
+        migrateTableColumn("rescued_items", "claimed_at", "BIGINT NOT NULL DEFAULT 0");
 
         // player_settings migrations
         migrateSettingsColumn("theme", "VARCHAR(32) DEFAULT 'default'");

@@ -2,6 +2,7 @@ package net.nexuby.nexauctionhouse.manager;
 
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Updates;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.database.MongoManager;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
@@ -230,6 +231,84 @@ public class CursorProtectionManager {
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to delete rescued item", e);
+        }
+    }
+
+    public boolean claimRescuedItem(int id, UUID playerUuid, String claimToken,
+                                    long claimedAt, long leaseCutoff) {
+        if (isMongo()) {
+            try {
+                return mongo().rescuedItems().updateOne(
+                        Filters.and(Filters.eq("_id", id),
+                                Filters.eq("player_uuid", playerUuid.toString()),
+                                Filters.or(Filters.eq("claim_token", null), Filters.lt("claimed_at", leaseCutoff))),
+                        Updates.combine(Updates.set("claim_token", claimToken), Updates.set("claimed_at", claimedAt))
+                ).getModifiedCount() > 0;
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to claim rescued item (MongoDB)", e);
+                return false;
+            }
+        }
+
+        String sql = "UPDATE rescued_items SET claim_token = ?, claimed_at = ? "
+                + "WHERE id = ? AND player_uuid = ? AND (claim_token IS NULL OR claimed_at < ?)";
+        try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
+            stmt.setString(1, claimToken);
+            stmt.setLong(2, claimedAt);
+            stmt.setInt(3, id);
+            stmt.setString(4, playerUuid.toString());
+            stmt.setLong(5, leaseCutoff);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to claim rescued item", e);
+            return false;
+        }
+    }
+
+    public boolean acknowledgeRescuedItem(int id, String claimToken) {
+        if (isMongo()) {
+            try {
+                return mongo().rescuedItems().deleteOne(Filters.and(
+                        Filters.eq("_id", id), Filters.eq("claim_token", claimToken)
+                )).getDeletedCount() > 0;
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to acknowledge rescued item (MongoDB)", e);
+                return false;
+            }
+        }
+
+        String sql = "DELETE FROM rescued_items WHERE id = ? AND claim_token = ?";
+        try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, claimToken);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to acknowledge rescued item", e);
+            return false;
+        }
+    }
+
+    public boolean releaseRescuedItem(int id, String claimToken) {
+        if (isMongo()) {
+            try {
+                return mongo().rescuedItems().updateOne(
+                        Filters.and(Filters.eq("_id", id), Filters.eq("claim_token", claimToken)),
+                        Updates.combine(Updates.unset("claim_token"), Updates.set("claimed_at", 0L))
+                ).getModifiedCount() > 0;
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to release rescued item claim (MongoDB)", e);
+                return false;
+            }
+        }
+
+        String sql = "UPDATE rescued_items SET claim_token = NULL, claimed_at = 0 WHERE id = ? AND claim_token = ?";
+        try (PreparedStatement stmt = plugin.getDatabaseManager().getConnection().prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setString(2, claimToken);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to release rescued item claim", e);
+            return false;
         }
     }
 
