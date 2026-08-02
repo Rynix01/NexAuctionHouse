@@ -66,6 +66,12 @@ public class PlayerPointsProvider implements EconomyProvider {
     }
 
     @Override
+    public boolean supportsAmount(double amount) {
+        return Double.isFinite(amount) && amount >= 0 && amount <= Integer.MAX_VALUE
+                && Math.abs(amount - Math.rint(amount)) < 1.0E-9;
+    }
+
+    @Override
     public double getBalance(OfflinePlayer player) {
         try {
             return (int) lookMethod.invoke(apiInstance, player.getUniqueId());
@@ -81,6 +87,7 @@ public class PlayerPointsProvider implements EconomyProvider {
 
     @Override
     public boolean withdraw(OfflinePlayer player, double amount) {
+        if (!supportsAmount(amount)) return false;
         try {
             return (boolean) takeMethod.invoke(apiInstance, player.getUniqueId(), (int) amount);
         } catch (Exception e) {
@@ -90,6 +97,7 @@ public class PlayerPointsProvider implements EconomyProvider {
 
     @Override
     public boolean deposit(OfflinePlayer player, double amount) {
+        if (!supportsAmount(amount)) return false;
         try {
             return (boolean) giveMethod.invoke(apiInstance, player.getUniqueId(), (int) amount);
         } catch (Exception e) {

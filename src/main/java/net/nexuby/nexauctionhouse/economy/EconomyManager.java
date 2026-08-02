@@ -128,7 +128,13 @@ public class EconomyManager {
     }
 
     public boolean isValidCurrency(String currency) {
-        return providersByCurrency.containsKey(currency.toLowerCase());
+        return currency != null && providersByCurrency.containsKey(currency.toLowerCase());
+    }
+
+    public boolean supportsAmount(double amount, String currency) {
+        if (!isValidCurrency(currency)) return false;
+        EconomyProvider provider = getProvider(currency);
+        return provider != null && isValidAmount(amount) && provider.supportsAmount(amount);
     }
 
     // -- Convenience methods that use currency parameter --
@@ -138,18 +144,18 @@ public class EconomyManager {
     }
 
     public boolean has(OfflinePlayer player, double amount, String currency) {
-        if (!isValidAmount(amount)) return false;
-        return getProvider(currency).has(player, amount);
+        EconomyProvider provider = getProvider(currency);
+        return provider != null && supportsAmount(amount, currency) && provider.has(player, amount);
     }
 
     public boolean withdraw(OfflinePlayer player, double amount, String currency) {
-        if (!isValidAmount(amount)) return false;
-        return getProvider(currency).withdraw(player, amount);
+        EconomyProvider provider = getProvider(currency);
+        return provider != null && supportsAmount(amount, currency) && provider.withdraw(player, amount);
     }
 
     public boolean deposit(OfflinePlayer player, double amount, String currency) {
-        if (!isValidAmount(amount)) return false;
-        return getProvider(currency).deposit(player, amount);
+        EconomyProvider provider = getProvider(currency);
+        return provider != null && supportsAmount(amount, currency) && provider.deposit(player, amount);
     }
 
     public String format(double amount, String currency) {
@@ -163,18 +169,18 @@ public class EconomyManager {
     }
 
     public boolean has(OfflinePlayer player, double amount) {
-        if (!isValidAmount(amount)) return false;
-        return defaultProvider.has(player, amount);
+        return defaultProvider != null && supportsAmount(amount, defaultProvider.getCurrencyName())
+                && defaultProvider.has(player, amount);
     }
 
     public boolean withdraw(OfflinePlayer player, double amount) {
-        if (!isValidAmount(amount)) return false;
-        return defaultProvider.withdraw(player, amount);
+        return defaultProvider != null && supportsAmount(amount, defaultProvider.getCurrencyName())
+                && defaultProvider.withdraw(player, amount);
     }
 
     public boolean deposit(OfflinePlayer player, double amount) {
-        if (!isValidAmount(amount)) return false;
-        return defaultProvider.deposit(player, amount);
+        return defaultProvider != null && supportsAmount(amount, defaultProvider.getCurrencyName())
+                && defaultProvider.deposit(player, amount);
     }
 
     public String format(double amount) {

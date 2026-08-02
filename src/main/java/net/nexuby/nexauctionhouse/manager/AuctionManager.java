@@ -107,12 +107,13 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listItem(Player seller, ItemStack itemStack, double price, String currency, boolean autoRelist) {
-        if (!isValidAuctionAmount(price)) return -1;
+        if (!isValidAuctionAmount(price, currency)) return -1;
 
         ConfigManager config = plugin.getConfigManager();
 
         // Determine tax rate for this player
         double taxRate = getPlayerTaxRate(seller);
+        if (!isValidSettlementAmount(price, taxRate, currency)) return -1;
 
         // Determine auction duration for this player
         int durationHours = getPlayerAuctionDuration(seller);
@@ -171,9 +172,10 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listBidItem(Player seller, ItemStack itemStack, double startingPrice, String currency, boolean autoRelist) {
-        if (!isValidAuctionAmount(startingPrice)) return -1;
+        if (!isValidAuctionAmount(startingPrice, currency)) return -1;
 
         double taxRate = getPlayerTaxRate(seller);
+        if (!isValidSettlementAmount(startingPrice, taxRate, currency)) return -1;
         int durationHours = plugin.getConfigManager().getBidDefaultDuration();
         long now = System.currentTimeMillis();
         long expiresAt = now + (durationHours * 3600000L);
@@ -226,10 +228,11 @@ public class AuctionManager {
      * Returns the auction id, or -1 if it failed.
      */
     public int listBundle(Player seller, List<ItemStack> items, double price, String currency) {
-        if (!isValidAuctionAmount(price) || items == null || items.isEmpty()) return -1;
+        if (!isValidAuctionAmount(price, currency) || items == null || items.isEmpty()) return -1;
 
         ConfigManager config = plugin.getConfigManager();
         double taxRate = getPlayerTaxRate(seller);
+        if (!isValidSettlementAmount(price, taxRate, currency)) return -1;
         int durationHours = getPlayerAuctionDuration(seller);
         long now = System.currentTimeMillis();
         long expiresAt = now + (durationHours * 3600000L);
@@ -279,7 +282,8 @@ public class AuctionManager {
     public boolean purchaseItem(Player buyer, int auctionId) {
         AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired() || item.isBidAuction()
-                || !isValidAuctionAmount(item.getPrice())) {
+                || !isValidAuctionAmount(item.getPrice(), item.getCurrency())
+                || !isValidSettlementAmount(item.getPrice(), item.getTaxRate(), item.getCurrency())) {
             return false;
         }
 
@@ -403,11 +407,11 @@ public class AuctionManager {
      * Returns true if the bid was placed successfully.
      */
     public boolean placeBid(Player bidder, int auctionId, double amount) {
-        if (!isValidAuctionAmount(amount)) {
+        AuctionItem item = activeAuctions.get(auctionId);
+        if (item == null || !isValidAuctionAmount(amount, item.getCurrency())
+                || !isValidSettlementAmount(amount, item.getTaxRate(), item.getCurrency())) {
             return false;
         }
-
-        AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired() || !item.isBidAuction()) {
             return false;
         }
@@ -632,11 +636,11 @@ public class AuctionManager {
      * Only the seller can update the price.
      */
     public boolean updatePrice(Player seller, int auctionId, double newPrice) {
-        if (!isValidAuctionAmount(newPrice)) {
+        AuctionItem item = activeAuctions.get(auctionId);
+        if (item == null || !isValidAuctionAmount(newPrice, item.getCurrency())
+                || !isValidSettlementAmount(newPrice, item.getTaxRate(), item.getCurrency())) {
             return false;
         }
-
-        AuctionItem item = activeAuctions.get(auctionId);
         if (item == null || item.isExpired()) {
             return false;
         }
@@ -1286,10 +1290,16 @@ public class AuctionManager {
                 getItemName(itemStack), counterparty);
     }
 
-    private boolean isValidAuctionAmount(double amount) {
+    private boolean isValidAuctionAmount(double amount, String currency) {
         return Double.isFinite(amount) && amount > 0
                 && amount >= plugin.getConfigManager().getMinPrice()
-                && amount <= plugin.getConfigManager().getMaxPrice();
+                && amount <= plugin.getConfigManager().getMaxPrice()
+                && plugin.getEconomyManager().supportsAmount(amount, currency);
+    }
+
+    private boolean isValidSettlementAmount(double grossAmount, double taxRate, String currency) {
+        double sellerAmount = grossAmount - (grossAmount * taxRate / 100.0);
+        return plugin.getEconomyManager().supportsAmount(sellerAmount, currency);
     }
 
     // -- Price History & Statistics --

@@ -29,6 +29,13 @@ public interface EconomyProvider {
     boolean isAvailable();
 
     /**
+     * Returns whether this provider can represent the amount without precision loss.
+     */
+    default boolean supportsAmount(double amount) {
+        return Double.isFinite(amount) && amount >= 0;
+    }
+
+    /**
      * Returns the player's current balance in this economy.
      */
     double getBalance(OfflinePlayer player);

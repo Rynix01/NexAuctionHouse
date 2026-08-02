@@ -73,6 +73,12 @@ public class TokenManagerProvider implements EconomyProvider {
     }
 
     @Override
+    public boolean supportsAmount(double amount) {
+        return Double.isFinite(amount) && amount >= 0 && amount <= Long.MAX_VALUE
+                && Math.abs(amount - Math.rint(amount)) < 1.0E-9;
+    }
+
+    @Override
     public double getBalance(OfflinePlayer player) {
         try {
             Object result = getTokensMethod.invoke(tokenManagerInstance, player);
@@ -93,6 +99,7 @@ public class TokenManagerProvider implements EconomyProvider {
 
     @Override
     public boolean withdraw(OfflinePlayer player, double amount) {
+        if (!supportsAmount(amount)) return false;
         try {
             double current = getBalance(player);
             if (current < amount) return false;
@@ -106,6 +113,7 @@ public class TokenManagerProvider implements EconomyProvider {
 
     @Override
     public boolean deposit(OfflinePlayer player, double amount) {
+        if (!supportsAmount(amount)) return false;
         try {
             double current = getBalance(player);
             long newBalance = (long) (current + amount);
