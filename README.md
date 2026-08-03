@@ -1,6 +1,9 @@
 # NexAuctionHouse
 
-A modern, secure Auction House plugin for Paper 1.21+ servers. Built with performance and user experience in mind.
+![NexAuctionHouse marketplace banner](assets/NexAuctionHouse-banner.png)
+
+A modern, secure Auction House plugin for Paper servers. Tested end-to-end on
+Paper 1.21.4 and Paper 26.2, with performance and player experience in mind.
 
 ## Features
 
@@ -21,7 +24,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - **Configurable GUI** — Every menu is driven by YAML configs (slot layout, buttons, filler, lore templates)
 - **Category Filtering** — Browse auctions by material type (Blocks, Food, Weapons, Armor, etc.)
 - **Pagination** — Smooth page navigation for large auction lists
-- **Anti-Dupe Protection** — Click cooldowns, cursor protection, and shadow GUI logic prevent all known duplication exploits
+- **Anti-Dupe Protection** — Click cooldowns, cursor protection, and shadow GUI logic mitigate common duplication and double-click exploits
 - **Tax System** — Configurable sale tax with per-permission overrides (`nexauctions.tax.<rate>`)
 - **VIP Permissions** — Per-group listing limits (`nexauctions.limit.<count>`) and auction duration (`nexauctions.time.<hours>`)
 - **Blacklist** — Block specific materials and lore keywords from being listed
@@ -32,13 +35,14 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 - **Discord Webhooks** — Send listing, sale, and cancellation notifications to a Discord channel
 - **PlaceholderAPI** — Expose auction data to scoreboards, holograms, and other plugins
 - **Admin GUI** — Admins can browse all auctions and force-remove any listing, returning the item to the seller
-- **Custom Item Compatibility** — Full support for [ItemsAdder](https://www.spigotmc.org/resources/itemsadder.73355/), [Oraxen](https://www.spigotmc.org/resources/oraxen.72448/), [Nexo](https://www.spigotmc.org/resources/nexo.93464/), [MMOItems](https://www.spigotmc.org/resources/mmoitems.39267/), [MythicMobs](https://www.spigotmc.org/resources/mythicmobs.5702/) / [MythicCrucible](https://www.spigotmc.org/resources/mythiccrucible.91404/), [ExecutableItems](https://www.spigotmc.org/resources/executableitems.77578/), [EcoItems](https://www.spigotmc.org/resources/ecoitems.94648/) / [EcoArmor](https://www.spigotmc.org/resources/ecoarmor.94648/) / [Talismans](https://www.spigotmc.org/resources/talismans.94648/), [Slimefun](https://github.com/Slimefun/Slimefun4), [ModelEngine](https://www.spigotmc.org/resources/conxeptworks-model-engine.79477/), [HeadDatabase](https://www.spigotmc.org/resources/head-database.14280/), [CrazyEnchantments](https://www.spigotmc.org/resources/crazyenchantments.16470/), [ExcellentEnchants](https://www.spigotmc.org/resources/excellentenchants.61693/), and NexEngine/NexItems
+- **Custom Item Compatibility Hooks** — Detection hooks for ItemsAdder, Oraxen, Nexo, MMOItems, MythicMobs/Crucible, ExecutableItems, EcoItems/EcoArmor/Talismans, Slimefun, ModelEngine, HeadDatabase, CrazyEnchantments, ExcellentEnchants, and NexEngine/NexItems. Actual compatibility depends on the installed third-party plugin version
 - **Crash Protection** — Cursor items are persisted to database in real-time. Server crashes, kicks, and timeouts cannot cause item loss. Rescued items are automatically returned on next login
 
 ## Requirements
 
-- Paper 1.21+ (or any fork: Purpur, Folia-compatible coming soon)
-- Java 21+
+- Paper 1.21 or newer; Paper 1.21.4 and 26.2 are the verified release targets
+- Java 21 for Paper 1.21.x; Java 25 for Paper 26.2
+- Other Paper forks, including Purpur and Folia, are not yet certified
 - At least one economy plugin (Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, or UltraEconomy)
 
 ### Optional
@@ -103,6 +107,7 @@ A modern, secure Auction House plugin for Paper 1.21+ servers. Built with perfor
 | `nexauctions.use` | Access the auction house | `true` |
 | `nexauctions.sell` | List items for sale | `true` |
 | `nexauctions.bundle` | Create bundle listings | `true` |
+| `nexauctions.autorelist` | Automatically relist eligible expired auctions | `true` |
 | `nexauctions.admin` | Access admin panel | `op` |
 | `nexauctions.reload` | Reload configuration | `op` |
 | `nexauctions.bypass.blacklist` | Bypass blacklisted items | `op` |

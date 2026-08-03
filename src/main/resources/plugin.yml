@@ -43,6 +43,12 @@ permissions:
   nexauctions.sell:
     description: Esya satisa koyma yetkisi
     default: true
+  nexauctions.bundle:
+    description: Bundle satisi olusturma yetkisi
+    default: true
+  nexauctions.autorelist:
+    description: Otomatik yeniden listeleme yetkisi
+    default: true
   nexauctions.admin:
     description: Yonetim paneli yetkisi
     default: op
@@ -51,6 +57,9 @@ permissions:
     default: op
   nexauctions.bypass.blacklist:
     description: Kara liste kontrolunu atlama yetkisi
+    default: op
+  nexauctions.bypass.world:
+    description: Devre disi birakilan dunyalarda Auction House kullanma yetkisi
     default: op
   nexauctions.bypass.tax:
     description: Vergiyi atlama yetkisi
