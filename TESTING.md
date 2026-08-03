@@ -50,11 +50,25 @@ Run the reproducible Paper 1.21.4 startup environment on Windows:
 .\scripts\paper-smoke-test.ps1
 ```
 
-The script builds the plugin, downloads an official stable Paper build plus the
-official Vault 1.7.3 and EssentialsX 2.21.2 releases, accepts the EULA for this
-temporary local server, starts it without a GUI, verifies Vault/economy, SQLite
-and NexAuctionHouse startup, then terminates the disposable test process. All runtime files stay under
-the ignored `build/paper-smoke-1.21.4` directory.
+The script builds the plugin, downloads an official stable Paper build plus
+Vault 1.7.3, and creates an isolated in-memory Vault economy provider used only
+by the smoke environment. It accepts the EULA for this temporary local server,
+starts it without a GUI, verifies Vault/economy, SQLite and NexAuctionHouse
+startup, then terminates the disposable test process. The provider is built as
+a separate test JAR and is never included in the production plugin or API JAR.
+All runtime files stay under the ignored `build/paper-smoke-1.21.4` directory.
+
+For an exact Paper 26.2 run, install JDK 25 and pass the version explicitly:
+
+```powershell
+.\scripts\paper-smoke-test.ps1 -MinecraftVersion 26.2
+.\scripts\paper-smoke-test.ps1 -MinecraftVersion 26.2 -UseMySql
+.\scripts\paper-smoke-test.ps1 -MinecraftVersion 26.2 -UseExternalServices
+```
+
+The harness selects JDK 25 for `26.x` and JDK 21 for older Paper versions. It
+stops with an error instead of silently starting Paper with the wrong Java
+major version.
 
 To start the same Paper harness with MongoDB and Redis cross-server mode:
 

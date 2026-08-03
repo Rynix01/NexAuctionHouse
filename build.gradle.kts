@@ -52,6 +52,23 @@ dependencies {
 }
 
 tasks {
+    val compileVaultSmokeProvider = register<JavaCompile>("compileVaultSmokeProvider") {
+        description = "Compiles the disposable Vault economy provider for real-Paper smoke tests."
+        source(fileTree("src/vaultSmokeTest/java") { include("**/*.java") })
+        classpath = sourceSets.main.get().compileClasspath
+        destinationDirectory.set(layout.buildDirectory.dir("classes/vaultSmokeProvider"))
+        options.release.set(21)
+        options.encoding = "UTF-8"
+    }
+
+    register<Jar>("vaultSmokeProviderJar") {
+        dependsOn(compileVaultSmokeProvider)
+        archiveFileName.set("NexAuctionHouse-vault-smoke-provider.jar")
+        destinationDirectory.set(layout.buildDirectory.dir("test-plugins"))
+        from(compileVaultSmokeProvider.flatMap { it.destinationDirectory })
+        from("src/vaultSmokeTest/resources")
+    }
+
     val compileOptionalSmokeProbe = register<JavaCompile>("compileOptionalSmokeProbe") {
         description = "Compiles the disposable real-Paper optional integration probe."
         source(fileTree("src/optionalSmokeTest/java") { include("**/*.java") })

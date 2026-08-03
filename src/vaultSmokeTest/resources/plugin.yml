@@ -1,0 +1,6 @@
+name: NexAuctionHouseVaultSmoke
+version: '1.0.0'
+main: net.nexuby.nexauctionhouse.smoke.VaultSmokeEconomyPlugin
+api-version: '1.21'
+depend: [Vault]
+loadbefore: [NexAuctionHouse]

@@ -63,7 +63,7 @@ function Download-FileIfMissing {
 }
 
 Write-Host "Building NexAuctionHouse..."
-$gradleTasks = @("shadowJar")
+$gradleTasks = @("shadowJar", "vaultSmokeProviderJar")
 if ($UseOptionalPlugins) {
     $gradleTasks += "optionalSmokeProbeJar"
 }
@@ -85,14 +85,13 @@ $paperDownload = $stableBuild.downloads.'server:default'
 Download-FileIfMissing -Url $paperDownload.url -Destination $paperJar
 
 $vaultJar = Join-Path $pluginsRoot "Vault.jar"
-$essentialsJar = Join-Path $pluginsRoot "EssentialsX.jar"
 $pluginJar = Join-Path $pluginsRoot "NexAuctionHouse.jar"
 Download-FileIfMissing `
     -Url "https://github.com/MilkBowl/Vault/releases/download/1.7.3/Vault.jar" `
     -Destination $vaultJar
-Download-FileIfMissing `
-    -Url "https://github.com/EssentialsX/Essentials/releases/download/2.21.2/EssentialsX-2.21.2.jar" `
-    -Destination $essentialsJar
+Remove-Item -LiteralPath (Join-Path $pluginsRoot "EssentialsX.jar") -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\test-plugins\NexAuctionHouse-vault-smoke-provider.jar") `
+    -Destination (Join-Path $pluginsRoot "NexAuctionHouse-vault-smoke-provider.jar") -Force
 if ($UseOptionalPlugins) {
     Download-FileIfMissing `
         -Url "https://hangarcdn.papermc.io/plugins/HelpChat/PlaceholderAPI/versions/2.12.3/PAPER/PlaceholderAPI-2.12.3.jar" `
@@ -155,6 +154,7 @@ if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
         $configText = $configText.Replace("    database: nexauctionhouse", "    database: $MySqlDatabase")
         $configText = $configText.Replace("    username: root", "    username: $MySqlUsername")
         $configText = $configText.Replace("    password: ''", "    password: '$MySqlPassword'")
+        $configText = $configText.Replace("    allow-public-key-retrieval: false", "    allow-public-key-retrieval: true")
     } else {
         $configText = $configText.Replace("  type: sqlite", "  type: mongodb")
         $configText = $configText.Replace('connection-string: "mongodb://localhost:27017"', "connection-string: `"$MongoUri`"")
@@ -222,11 +222,14 @@ Set-Content -LiteralPath (Join-Path $runtimeRoot "server.properties") -Encoding 
 $javaCandidates = @(
     Get-ChildItem -Path (Join-Path $env:ProgramFiles "Java\*\bin\java.exe") -ErrorAction SilentlyContinue
 )
-$java21 = $javaCandidates | Where-Object { $_.FullName -match "\\jdk-21(?:\\|[.-])" } | Select-Object -First 1
-if ($null -ne $java21) {
-    $java = $java21.FullName
+$requiredJavaMajor = if ($MinecraftVersion -match '^26\.') { 25 } else { 21 }
+$requiredJava = $javaCandidates | Where-Object {
+    $_.FullName -match "\\jdk-$requiredJavaMajor(?:\\|[.-])"
+} | Select-Object -First 1
+if ($null -ne $requiredJava) {
+    $java = $requiredJava.FullName
 } elseif ($javaCandidates.Count -gt 0) {
-    $java = $javaCandidates[0].FullName
+    throw "Paper $MinecraftVersion requires Java $requiredJavaMajor, but no matching JDK was found."
 } else {
     $java = (Get-Command java -ErrorAction Stop).Source
 }
@@ -347,5 +350,5 @@ $databaseLabel = if ($UseOptionalPlugins) {
 } else {
     "SQLite"
 }
-Write-Host "PASS: Paper, Vault, EssentialsX, $databaseLabel and NexAuctionHouse started successfully."
+Write-Host "PASS: Paper, Vault, isolated smoke economy, $databaseLabel and NexAuctionHouse started successfully."
 Write-Host "Log: $logFile"
