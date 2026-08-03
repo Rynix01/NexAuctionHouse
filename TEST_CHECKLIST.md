@@ -218,9 +218,10 @@
 ## ⚫ SEVİYE 6 — Entegrasyonlar & Özel Durumlar (En Zor)
 
 ### 6.1 Alternatif Ekonomi Sistemi
-- [ ] `economy.providers.vault.enabled: true` → Vault ile çalışıyor
+- [X] `economy.providers.vault.enabled: true` → gerçek Paper + EssentialsX üzerinde sağlayıcı kaydı geçiyor
 - [X] PlayerPoints sağlayıcısı gerçek Paper'da kayıt + yatırma/bakiye/çekme turunu geçiyor
 - [X] CoinsEngine 2.6.0 sağlayıcısı gerçek Paper'da API/currency bağlama ve format testini geçiyor
+- [X] GemsEconomy 4.9.2 sağlayıcısı gerçek Paper'da kayıt + yatırma/bakiye/çekme/format turunu geçiyor
 - [ ] PlayerPoints yüklüyse: `playerpoints.enabled: true` → `/ah sell 100 points` çalışıyor
 - [ ] TokenManager yüklüyse: `tokenmanager.enabled: true` → token ile satış
 - [ ] İki ekonomi aynı anda aktif → ilan açarken para birimi seçimi çalışıyor

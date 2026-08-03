@@ -77,6 +77,13 @@ economy providers:
 .\scripts\paper-smoke-test.ps1 -UseOptionalPlugins
 ```
 
+GemsEconomy 4.9.2 can be added to the same run with an official, locally
+downloaded JAR:
+
+```powershell
+.\scripts\paper-smoke-test.ps1 -UseOptionalPlugins -GemsEconomyJar 'C:\path\to\GemsEconomy-4.9.2.jar'
+```
+
 This mode downloads PlaceholderAPI 2.12.3 from the official PaperMC Hangar CDN;
 PlayerPoints 3.3.5, CoinsEngine 2.6.0 and NightCore 2.9.4 from their official
 Modrinth distributions. All downloaded optional JARs are SHA-256 pinned. It
@@ -84,6 +91,10 @@ requires both the `nexauction` expansion and `points` economy provider to regist
 then runs a disposable probe plugin that verifies placeholder resolution and a
 real PlayerPoints deposit/balance/withdraw round trip. CoinsEngine must bind its
 configured `money` currency through the reflected API and format a value. The
+optional GemsEconomy run verifies the official 4.9.2 JAR checksum, creates an
+isolated test currency/account, then checks provider registration plus a real
+deposit/balance/withdraw/format round trip. GemsEconomy is not downloaded
+automatically because its official Spigot download is browser-protected. The
 probe is not included in the production plugin or API JAR.
 
 ## External integration coverage

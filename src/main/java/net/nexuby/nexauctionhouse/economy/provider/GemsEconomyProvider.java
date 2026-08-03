@@ -75,7 +75,7 @@ public class GemsEconomyProvider implements EconomyProvider {
                 return false;
             }
 
-            Class<?> currencyClass = Class.forName("me.xanium.gemseconomy.economy.Currency");
+            Class<?> currencyClass = Class.forName("me.xanium.gemseconomy.currency.Currency");
 
             depositMethod = apiClass.getMethod("deposit", UUID.class, double.class, currencyClass);
             withdrawMethod = apiClass.getMethod("withdraw", UUID.class, double.class, currencyClass);

@@ -4,6 +4,7 @@ param(
     [switch]$UseExternalServices,
     [switch]$UseMySql,
     [switch]$UseOptionalPlugins,
+    [string]$GemsEconomyJar = "",
     [string]$MongoUri = "mongodb://127.0.0.1:27018",
     [string]$MongoDatabase = "nexah_paper_smoke",
     [string]$RedisHost = "127.0.0.1",
@@ -19,6 +20,10 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+$testGemsEconomy = $UseOptionalPlugins -and -not [string]::IsNullOrWhiteSpace($GemsEconomyJar)
+if (-not [string]::IsNullOrWhiteSpace($GemsEconomyJar) -and -not $UseOptionalPlugins) {
+    throw "GemsEconomyJar can only be used with UseOptionalPlugins."
+}
 if (@($UseExternalServices, $UseMySql, $UseOptionalPlugins).Where({ $_ }).Count -gt 1) {
     throw "UseExternalServices, UseMySql and UseOptionalPlugins are separate smoke modes; select only one."
 }
@@ -105,6 +110,16 @@ if ($UseOptionalPlugins) {
         -Url "https://cdn.modrinth.com/data/r0FB9U1e/versions/G0BJaAkm/CoinsEngine-2.6.0.jar" `
         -Destination (Join-Path $pluginsRoot "CoinsEngine.jar") `
         -ExpectedSha256 "9319808FBD1AD6C24AC4D5C75949F839474C2926829E0EC279C7404E7199B864"
+    $gemsTarget = Join-Path $pluginsRoot "GemsEconomy.jar"
+    if ($testGemsEconomy) {
+        $resolvedGemsJar = (Resolve-Path -LiteralPath $GemsEconomyJar).Path
+        if ((Get-FileHash -LiteralPath $resolvedGemsJar -Algorithm SHA256).Hash -ne "EFE60755359381E166D293404BCE2EE5D0E049FDEC0E7B2CDB089E18A14A53CB") {
+            throw "GemsEconomy 4.9.2 checksum mismatch: $resolvedGemsJar"
+        }
+        Copy-Item -LiteralPath $resolvedGemsJar -Destination $gemsTarget -Force
+    } else {
+        Remove-Item -LiteralPath $gemsTarget -Force -ErrorAction SilentlyContinue
+    }
     Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\test-plugins\NexAuctionHouse-optional-smoke-probe.jar") `
         -Destination (Join-Path $pluginsRoot "NexAuctionHouse-optional-smoke-probe.jar") -Force
 }
@@ -120,8 +135,19 @@ if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
         $configText = $configText -replace '(?m)(^    coinsengine:\r?\n      enabled:) false', '$1 true'
         $configText = [regex]::Replace(
             $configText,
+            '(?ms)(^    coinsengine:.*?^      display-name:) "Gems"',
+            '$1 "Coins"')
+        $configText = [regex]::Replace(
+            $configText,
+            '(?ms)(^    coinsengine:.*?^      currency-name:) "gems"',
+            '$1 "coins"')
+        $configText = [regex]::Replace(
+            $configText,
             '(?ms)(^    coinsengine:.*?^      plugin-currency:) "gems"',
             '$1 "money"')
+        if ($testGemsEconomy) {
+            $configText = $configText -replace '(?m)(^    gemseconomy:\r?\n      enabled:) false', '$1 true'
+        }
     } elseif ($UseMySql) {
         $configText = $configText.Replace("  type: sqlite", "  type: mysql")
         $configText = $configText.Replace("    host: localhost", "    host: $MySqlHost")
@@ -144,6 +170,30 @@ if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
 }
 
 if ($UseOptionalPlugins) {
+    if ($testGemsEconomy) {
+        $gemsDataRoot = Join-Path $pluginsRoot "GemsEconomy"
+        New-Item -ItemType Directory -Force -Path $gemsDataRoot | Out-Null
+        Set-Content -LiteralPath (Join-Path $gemsDataRoot "data.yml") -Encoding UTF8 -Value @"
+currencies:
+  932c36d4-daae-48d2-9a81-b1ed31f3a456:
+    singular: gem
+    plural: gems
+    defaultbalance: 0.0
+    symbol: G
+    decimalsupported: true
+    defaultcurrency: true
+    payable: true
+    color: AQUA
+    exchange_rate: 1.0
+accounts:
+  11111111-2222-3333-8444-555555555555:
+    nickname: nexah-smoke-probe
+    uuid: 11111111-2222-3333-8444-555555555555
+    balances:
+      932c36d4-daae-48d2-9a81-b1ed31f3a456: 0.0
+    payable: true
+"@
+    }
     foreach ($engineFile in @(
         (Join-Path $pluginsRoot "nightcore\engine.yml"),
         (Join-Path $pluginsRoot "CoinsEngine\engine.yml")
@@ -202,6 +252,7 @@ $mysqlReady = -not $UseMySql
 $placeholderReady = -not $UseOptionalPlugins
 $playerPointsReady = -not $UseOptionalPlugins
 $coinsEngineReady = -not $UseOptionalPlugins
+$gemsEconomyReady = -not $testGemsEconomy
 $optionalProbeReady = -not $UseOptionalPlugins
 $fatal = $false
 
@@ -215,13 +266,18 @@ try {
             $mysqlReady = $mysqlReady -or $logText -match "Database connection established\. \(MySQL\)"
             $placeholderReady = $placeholderReady -or $logText -match "PlaceholderAPI hook registered\."
             $playerPointsReady = $playerPointsReady -or $logText -match "Economy provider registered: Points \(currency: points\)"
-            $coinsEngineReady = $coinsEngineReady -or $logText -match "Economy provider registered: Gems \(currency: gems\)"
-            $optionalProbeReady = $optionalProbeReady -or $logText -match "NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 coinsFormat=true totalListings=\d+"
+            $coinsEngineReady = $coinsEngineReady -or $logText -match "Economy provider registered: Coins \(currency: coins\)"
+            $gemsEconomyReady = $gemsEconomyReady -or $logText -match "Economy provider registered: Gems \(currency: gems\)"
+            $expectedGemsDelta = if ($testGemsEconomy) { "15" } else { "skipped" }
+            $optionalProbeReady = $optionalProbeReady -or $logText -match "NEXAH_OPTIONAL_PROBE_PASS pointsDelta=15 coinsFormat=true gemsDelta=$expectedGemsDelta totalListings=\d+"
             $enabled = $logText -match "NexAuctionHouse v.+ has been enabled"
-            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|Failed to hook into PlayerPoints API|Failed to hook into CoinsEngine API|No economy provider available|nexauction expansion could not be registered"
+            $fatal = $logText -match "Failed to establish database connection|Failed to connect to MongoDB|Failed to connect to Redis|Failed to hook into PlayerPoints API|Failed to hook into CoinsEngine API|Failed to hook into GemsEconomy API|No economy provider available|nexauction expansion could not be registered"
         }
 
-        if ($enabled -or $fatal) {
+        $allReady = $enabled -and $economyReady -and $mongoReady -and $redisReady -and `
+            $mysqlReady -and $placeholderReady -and $playerPointsReady -and `
+            $coinsEngineReady -and $gemsEconomyReady -and $optionalProbeReady
+        if ($allReady -or $fatal) {
             break
         }
         Start-Sleep -Milliseconds 200
@@ -268,6 +324,9 @@ if (-not $playerPointsReady) {
 if (-not $coinsEngineReady) {
     throw "CoinsEngine integration did not become ready. See $logFile"
 }
+if (-not $gemsEconomyReady) {
+    throw "GemsEconomy integration did not become ready. See $logFile"
+}
 if (-not $optionalProbeReady) {
     throw "Optional integration transaction/placeholder probe did not pass. See $logFile"
 }
@@ -276,7 +335,11 @@ if ($fatal) {
 }
 
 $databaseLabel = if ($UseOptionalPlugins) {
-    "SQLite, PlaceholderAPI, PlayerPoints, CoinsEngine"
+    if ($testGemsEconomy) {
+        "SQLite, PlaceholderAPI, PlayerPoints, CoinsEngine, GemsEconomy"
+    } else {
+        "SQLite, PlaceholderAPI, PlayerPoints, CoinsEngine"
+    }
 } elseif ($UseMySql) {
     "MySQL"
 } elseif ($UseExternalServices) {
