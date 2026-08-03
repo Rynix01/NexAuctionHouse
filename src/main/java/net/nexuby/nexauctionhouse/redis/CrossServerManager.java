@@ -7,8 +7,12 @@ import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.database.AuctionDAO;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
+import java.util.Locale;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -176,10 +180,12 @@ public class CrossServerManager {
                 player.sendMessage(plugin.getLangManager().prefixed(langKey, replacements));
 
                 if (!sound.isEmpty() && plugin.getNotificationManager().hasSoundEnabled(playerUuid)) {
-                    try {
-                        org.bukkit.Sound bukSound = org.bukkit.Sound.valueOf(sound.toUpperCase());
+                    NamespacedKey key = sound.contains(":")
+                            ? NamespacedKey.fromString(sound.toLowerCase(Locale.ROOT))
+                            : NamespacedKey.minecraft(sound.toLowerCase(Locale.ROOT));
+                    Sound bukSound = key == null ? null : Registry.SOUNDS.get(key);
+                    if (bukSound != null) {
                         player.playSound(player.getLocation(), bukSound, 1.0f, 1.0f);
-                    } catch (IllegalArgumentException ignored) {
                     }
                 }
             });
