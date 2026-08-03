@@ -78,6 +78,9 @@ database:
     username: root
     password: ''
     use-ssl: false
+    # Required by some MySQL 8+ servers when TLS is disabled. Enabling it on an
+    # untrusted network permits key retrieval without server authentication.
+    allow-public-key-retrieval: false
 
   mongodb:
     # MongoDB connection string (supports standard and SRV formats)

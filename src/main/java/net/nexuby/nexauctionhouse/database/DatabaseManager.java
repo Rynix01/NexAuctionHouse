@@ -82,12 +82,7 @@ public class DatabaseManager {
         String database = config.getMySQLDatabase();
         String username = config.getMySQLUsername();
         String password = config.getMySQLPassword();
-        boolean ssl = config.getMySQLSSL();
-
-        String url = "jdbc:mysql://" + host + ":" + port + "/" + database
-                + "?sslMode=" + (ssl ? "VERIFY_IDENTITY" : "DISABLED")
-                + "&autoReconnect=true"
-                + "&characterEncoding=UTF-8";
+        String url = buildMySQLUrl(config, host, port, database);
 
         this.connection = DriverManager.getConnection(url, username, password);
     }
@@ -327,11 +322,17 @@ public class DatabaseManager {
     }
 
     private Connection openMySQLConnection(ConfigManager config) throws SQLException {
-        String url = "jdbc:mysql://" + config.getMySQLHost() + ":" + config.getMySQLPort()
-                + "/" + config.getMySQLDatabase()
-                + "?sslMode=" + (config.getMySQLSSL() ? "VERIFY_IDENTITY" : "DISABLED")
-                + "&autoReconnect=true&characterEncoding=UTF-8";
+        String url = buildMySQLUrl(config, config.getMySQLHost(), config.getMySQLPort(),
+                config.getMySQLDatabase());
         return DriverManager.getConnection(url, config.getMySQLUsername(), config.getMySQLPassword());
+    }
+
+    private String buildMySQLUrl(ConfigManager config, String host, int port, String database) {
+        return "jdbc:mysql://" + host + ":" + port + "/" + database
+                + "?sslMode=" + (config.getMySQLSSL() ? "VERIFY_IDENTITY" : "DISABLED")
+                + "&allowPublicKeyRetrieval=" + config.getMySQLAllowPublicKeyRetrieval()
+                + "&autoReconnect=true"
+                + "&characterEncoding=UTF-8";
     }
 
     public boolean isUsingSQLite() {

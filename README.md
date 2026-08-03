@@ -166,7 +166,12 @@ database:
     username: root
     password: 'yourpassword'
     use-ssl: false
+    allow-public-key-retrieval: false
 ```
+
+MySQL 8+ may require `allow-public-key-retrieval: true` when TLS is disabled and
+the account uses `caching_sha2_password`. Only enable it on a trusted network;
+prefer `use-ssl: true` for remote database connections.
 
 ### Discord Webhooks
 

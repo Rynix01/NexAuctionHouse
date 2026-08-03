@@ -56,6 +56,10 @@ public class ConfigManager {
         return config.getBoolean("database.mysql.use-ssl", false);
     }
 
+    public boolean getMySQLAllowPublicKeyRetrieval() {
+        return config.getBoolean("database.mysql.allow-public-key-retrieval", false);
+    }
+
     // -- MongoDB settings --
 
     public String getMongoConnectionString() {

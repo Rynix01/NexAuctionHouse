@@ -362,6 +362,7 @@ class ExternalServicesIntegrationTest extends MockPluginTestSupport {
         plugin.getConfig().set("database.mysql.username", System.getProperty("nexah.mysql.username", "nexah"));
         plugin.getConfig().set("database.mysql.password", System.getProperty("nexah.mysql.password", "nexah_test_password"));
         plugin.getConfig().set("database.mysql.use-ssl", false);
+        plugin.getConfig().set("database.mysql.allow-public-key-retrieval", true);
 
         plugin.getDatabaseManager().disconnect();
         mysql = new DatabaseManager(plugin);
