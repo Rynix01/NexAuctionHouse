@@ -108,6 +108,7 @@ bid:
   refund: "<green>Your bid on <yellow>{item} <green>has been refunded. Amount: <yellow>{amount}"
   cannot-cancel-with-bids: "<red>You cannot cancel a bid auction that has active bids."
   bid-disabled: "<red>The bid system is currently disabled."
+  cannot-bid-own: "<red>You cannot bid on your own auction."
   enter-bid-amount: "<yellow>Enter your bid amount in chat. <gray>(Minimum: {min})"
   bid-cancelled: "<yellow>Bid cancelled."
   no-bids-yet: "No bids yet"

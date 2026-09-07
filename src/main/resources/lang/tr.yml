@@ -108,6 +108,7 @@ bid:
   refund: "<green><yellow>{item} <green>icin teklifiniz iade edildi. Tutar: <yellow>{amount}"
   cannot-cancel-with-bids: "<red>Aktif teklifi olan bir ihaleyi iptal edemezsiniz."
   bid-disabled: "<red>Teklif sistemi su anda devre disi."
+  cannot-bid-own: "<red>Kendi acik artirma ilanina teklif veremezsin."
   enter-bid-amount: "<yellow>Teklif tutarini sohbete yazin. <gray>(Minimum: {min})"
   bid-cancelled: "<yellow>Teklif iptal edildi."
   no-bids-yet: "Henuz teklif yok"

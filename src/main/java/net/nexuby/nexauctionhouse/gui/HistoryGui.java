@@ -75,7 +75,7 @@ public class HistoryGui extends PaginatedGui {
             if (sellerName == null) sellerName = "Unknown";
 
             long elapsed = System.currentTimeMillis() - log.getTimestamp();
-            String timeAgo = TimeUtil.formatDuration(elapsed / 1000);
+            String timeAgo = TimeUtil.formatDuration(elapsed);
 
             for (String line : template) {
                 String parsed = line

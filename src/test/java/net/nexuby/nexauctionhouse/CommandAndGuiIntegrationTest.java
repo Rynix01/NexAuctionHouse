@@ -1,5 +1,6 @@
 package net.nexuby.nexauctionhouse;
 
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,10 @@ class CommandAndGuiIntegrationTest extends MockPluginTestSupport {
         assertEquals(Material.AIR, player.getInventory().getItemInMainHand().getType());
         assertEquals(27, player.getOpenInventory().getTopInventory().getSize());
         assertEquals(Material.DIAMOND_SWORD, player.getOpenInventory().getTopInventory().getItem(13).getType());
+        String confirmLore = player.getOpenInventory().getTopInventory().getItem(11).lore().stream()
+                .map(PlainTextComponentSerializer.plainText()::serialize)
+                .reduce("", (left, right) -> left + "\n" + right);
+        assertTrue(confirmLore.contains("48h"), "Confirmation should display hours, not minutes: " + confirmLore);
     }
 
     @Test

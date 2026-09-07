@@ -85,6 +85,18 @@ class AuctionFeatureIntegrationTest extends MockPluginTestSupport {
     }
 
     @Test
+    void sellerCannotBidOnOwnAuction() {
+        PlayerMock seller = server.addPlayer("Seller");
+        setBalance(seller, 1_000);
+        int id = plugin.getAuctionManager().listBidItem(
+                seller, new ItemStack(Material.NETHERITE_SWORD), 100, "money");
+
+        assertFalse(plugin.getAuctionManager().placeBid(seller, id, 100));
+        assertEquals(1_000, balanceOf(seller), 0.001);
+        assertNull(plugin.getAuctionManager().getAuction(id).getHighestBidderUuid());
+    }
+
+    @Test
     void sellerCannotCancelBidAuctionWithActiveBidButAdminCan() {
         PlayerMock seller = server.addPlayer("Seller");
         PlayerMock bidder = server.addPlayer("Bidder");

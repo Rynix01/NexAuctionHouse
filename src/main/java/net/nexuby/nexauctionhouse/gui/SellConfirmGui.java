@@ -63,7 +63,7 @@ public class SellConfirmGui extends AbstractGui {
         double taxRate = manager.getPlayerTaxRate(viewer);
 
         String priceStr = plugin.getEconomyManager().format(price, currency);
-        String durationStr = TimeUtil.formatDuration(durationHours * 3600L);
+        String durationStr = TimeUtil.formatDuration(durationHours * 3_600_000L);
         String taxStr = String.format("%.1f", taxRate);
 
         ConfigurationSection buttons = cfg.getConfigurationSection("buttons");

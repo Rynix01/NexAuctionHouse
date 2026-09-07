@@ -121,6 +121,12 @@ public class BidGui extends AbstractGui {
     }
 
     private void handleBidInput() {
+        if (viewer.getUniqueId().equals(auctionItem.getSellerUuid())) {
+            viewer.sendMessage(plugin.getLangManager().prefixed("bid.cannot-bid-own"));
+            new MainMenu(plugin, viewer).open();
+            return;
+        }
+
         double minBid = plugin.getAuctionManager().getMinBid(auctionItem);
         String minBidStr = plugin.getEconomyManager().format(minBid, auctionItem.getCurrency());
 
@@ -150,6 +156,12 @@ public class BidGui extends AbstractGui {
                 AuctionItem current = plugin.getAuctionManager().getAuction(auctionItem.getId());
                 if (current == null || current.isExpired()) {
                     viewer.sendMessage(plugin.getLangManager().prefixed("auction.auction-not-found"));
+                    return;
+                }
+
+                if (viewer.getUniqueId().equals(current.getSellerUuid())) {
+                    viewer.sendMessage(plugin.getLangManager().prefixed("bid.cannot-bid-own"));
+                    new MainMenu(plugin, viewer).open();
                     return;
                 }
 
