@@ -48,12 +48,13 @@ public class LangManager {
 
         langConfig = YamlConfiguration.loadConfiguration(langFile);
 
-        // Cache all messages for quick access
-        for (String key : langConfig.getKeys(true)) {
-            if (langConfig.isString(key)) {
-                messageCache.put(key, langConfig.getString(key));
-            }
+        // Seed missing keys from bundled files so upgrades do not display
+        // "Missing message" merely because an older lang file is preserved.
+        cacheStrings(loadBundledLanguage("en"));
+        if (!language.equalsIgnoreCase("en")) {
+            cacheStrings(loadBundledLanguage(language));
         }
+        cacheStrings(langConfig); // User file wins over bundled defaults.
 
         plugin.getLogger().info("Loaded language: " + language + " (" + messageCache.size() + " messages)");
     }
@@ -104,6 +105,23 @@ public class LangManager {
         }
 
         return miniMessage.deserialize(template, resolvers.build());
+    }
+
+    private FileConfiguration loadBundledLanguage(String language) {
+        InputStream stream = plugin.getResource("lang/" + language + ".yml");
+        if (stream == null) return new YamlConfiguration();
+        try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+            return YamlConfiguration.loadConfiguration(reader);
+        } catch (Exception exception) {
+            plugin.getLogger().warning("Could not load bundled language defaults for " + language);
+            return new YamlConfiguration();
+        }
+    }
+
+    private void cacheStrings(FileConfiguration source) {
+        for (String key : source.getKeys(true)) {
+            if (source.isString(key)) messageCache.put(key, source.getString(key));
+        }
     }
 
     /**

@@ -60,6 +60,7 @@ buttons:
 # Filler glass pane for decoration
 filler:
   enabled: true
+  use-theme: true
   material: GRAY_STAINED_GLASS_PANE
   name: " "
   slots:

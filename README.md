@@ -10,18 +10,18 @@ Paper 1.21.4 and Paper 26.2, with performance and player experience in mind.
 - **Full Auction System** — List, browse, buy, and cancel auctions through an intuitive GUI
 - **Bid / Auction System** — Create auctions with `--bid` flag. Players bid in real-time with anti-snipe protection. Automatic winner determination and loser refunds on expiry
 - **Favorites / Watchlist** — Shift+click any listing to add it to your favorites. Get notified when favorited items are sold, cancelled, or expire. Configurable per-player favorite limit
-- **Price History & Statistics** — View personal buy/sell history with `/ah history`. Admins can view any player's history. Average market price displayed in item tooltips. Admin stats GUI with top sellers, most expensive sales, and daily volume. All stats are cached for performance
+- **Price History & Statistics** — View personal buy/sell history with `/ah history`. Average market price is calculated from completed sales in a configurable rolling window and displayed in item tooltips. Admin stats GUI includes top sellers, most expensive sales, and daily volume
 - **Item Preview System** — Right-click any listing to open a detailed preview GUI. Shows full enchantment list, attribute modifiers, durability, custom item info, and average market price. Shulker box contents are displayed in-GUI. Written book pages can be browsed. Armor pieces show their slot position visually. Preview works from all GUIs (main menu, favorites, admin, history)
-- **Notification Preferences** — Per-player notification settings stored in database. Toggle sale, bid, login, favorite notifications and sound effects independently. Settings GUI accessible from main menu or `/ah notifications`. Configurable default preferences and sound effects per event type. Settings cached in memory and cleaned on logout
+- **Notification Preferences** — Per-player notification settings stored in database. Toggle individual settings in the configurable GUI or use `/ah notifications on|off|toggle`. The complete notification system also has a global master switch
 - **Auto-Relist** — Automatically relist expired auctions with `--autorelist` flag. Configurable max relist count and optional cost percentage. Relist counter displayed in item lore. Discord webhook notification on auto-relist. Falls back to normal expired flow when relist limit is reached or seller has insufficient balance. Permission-gated with `nexauctions.autorelist`
 - **Bulk Operations** — Select multiple inventory items for listing at once via `/ah sell-all <price>` or the GUI "Bulk Sell" button. Listing limit enforced per batch. Admin clear operations support `--player=<name>` and `--all` flags for targeted or global auction removal
 - **Advanced Blacklist** — Enchantment-based blacklist blocks items with specific enchantments. NBT tag blacklist blocks items with specific PersistentDataContainer keys. Per-material price limits enforce min/max price overrides per material. World-based blacklist disables the auction house in specific worlds. Whitelist mode only allows explicitly listed materials. Admin Blacklist GUI (`/ah admin blacklist`) for visual management of all blacklist settings
-- **Bundle System** — Create bundle listings containing multiple items for a single price via `/ah bundle <price>`. Select items from your inventory in a dedicated GUI. Buyers can preview all bundle contents before purchasing. Configurable min/max items per bundle and per-player bundle limit. Bundle listings are marked with a special indicator in the main menu
+- **Bundle System** — Create bundle listings containing multiple items for a single price via `/ah bundle <price>`. Creation and preview layouts are configurable, and bundle listings use a distinct chest symbol
 - **Migration Tool** — Seamlessly migrate data from other auction house plugins via `/ah admin migrate <plugin>`. Supports AuctionHouse (klip), CrazyAuctions, zAuctionHouse, and AuctionMaster. Transfers active listings, expired items, and transaction logs. Automatic database backup before migration. Detailed migration report with counts and error tracking. Confirmation prompt prevents accidental data imports
 - **Search & Sort** — Search auctions by item name, material, or seller. Sort by price, date, or name with a single click
 - **Multi-Economy Support** — 7 economy providers: Vault, PlayerPoints, TokenManager, CoinsEngine, GemsEconomy, EcoBits, UltraEconomy. Multiple economies active simultaneously with per-listing currency selection
 - **Offline Player Sync** — Queued revenue delivery and item returns when players log in. No money or items lost while offline
-- **Configurable GUI** — Every menu is driven by YAML configs (slot layout, buttons, filler, lore templates)
+- **Configurable GUI** — Core player auction menus are driven by YAML configs (slot layout, buttons, filler, lore templates)
 - **Category Filtering** — Browse auctions by material type (Blocks, Food, Weapons, Armor, etc.)
 - **Pagination** — Smooth page navigation for large auction lists
 - **Anti-Dupe Protection** — Click cooldowns, cursor protection, and shadow GUI logic mitigate common duplication and double-click exploits
@@ -90,7 +90,8 @@ Paper 1.21.4 and Paper 26.2, with performance and player experience in mind.
 | `/ah favorites` | View your favorites list | `nexauctions.use` |
 | `/ah history` | View your transaction history | `nexauctions.use` |
 | `/ah history <player>` | View a player's history (admin) | `nexauctions.admin` |
-| `/ah expired` | View & collect expired items | `nexauctions.use` |
+| `/ah expired` | View & collect expired items (also available inside My Listings) | `nexauctions.use` |
+| `/ah notifications [on\|off\|toggle]` | Open preferences or toggle all notifications | `nexauctions.use` |
 | `/ah admin` | Open admin panel | `nexauctions.admin` |
 | `/ah admin clear --all` | Clear all auctions | `nexauctions.admin` |
 | `/ah admin clear --player=<name>` | Clear a player's auctions | `nexauctions.admin` |
@@ -129,7 +130,7 @@ Paper 1.21.4 and Paper 26.2, with performance and player experience in mind.
 | `%nexauction_player_total_sales%` | Player's total completed sale count |
 | `%nexauction_player_total_revenue%` | Player's total revenue earned |
 | `%nexauction_player_total_purchases%` | Player's total purchase count |
-| `%nexauction_avg_price_<MATERIAL>%` | Average price for a material (last 7 days) |
+| `%nexauction_avg_price_<MATERIAL>%` | Average completed-sale price for the configured rolling window |
 
 ## Configuration
 
@@ -190,6 +191,21 @@ discord:
     cancel: 15548997
     admin: 16776960
 ```
+
+Webhook titles, descriptions, field labels, and placeholders are editable under
+`lang/<language>.yml` in the `discord-webhook` section. Turkish defaults are included.
+
+### GUI customization
+
+Player-facing layouts include dedicated files such as `my-auctions.yml`, `preview.yml`,
+`notifications.yml`, `bundle-create.yml`, and `bundle-preview.yml`. For every configured
+`filler` section, `use-theme: true` follows the player's selected theme. Set it to `false`
+to force that GUI's configured `material`. If a button is removed, omit its section and
+either leave `filler.slots` unset (all empty slots are filled) or add the vacated slot to
+`filler.slots`.
+
+Average market price is based only on completed `SALE` transactions. Configure its lookback
+with `stats.average-price-window-days`; active listings do not influence the value.
 
 ### Tax System
 

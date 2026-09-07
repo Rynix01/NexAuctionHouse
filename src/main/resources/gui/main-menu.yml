@@ -127,6 +127,7 @@ buttons:
 # Filler glass pane for decoration
 filler:
   enabled: true
+  use-theme: true
   material: BLACK_STAINED_GLASS_PANE
   name: " "
   slots:

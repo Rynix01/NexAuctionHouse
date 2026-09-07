@@ -30,5 +30,6 @@ buttons:
 
 filler:
   enabled: true
+  use-theme: true
   material: GRAY_STAINED_GLASS_PANE
   name: " "
