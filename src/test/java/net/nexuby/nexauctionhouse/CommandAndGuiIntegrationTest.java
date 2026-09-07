@@ -1,6 +1,7 @@
 package net.nexuby.nexauctionhouse;
 
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.nexuby.nexauctionhouse.gui.MyAuctionsGui;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,27 @@ class CommandAndGuiIntegrationTest extends MockPluginTestSupport {
 
         assertTrue(server.dispatchCommand(player, "ah"));
         assertEquals(54, player.getOpenInventory().getTopInventory().getSize());
+    }
+
+    @Test
+    void myAuctionsUsesItsOwnConfigAndKeepsThemeGlassBehindUnavailableNavigation() {
+        PlayerMock player = server.addPlayer("Seller");
+        var config = plugin.getGuiConfig().getGui("my-auctions");
+        assertNotNull(config);
+        config.set("filler.use-theme", false);
+        config.set("filler.material", "PINK_STAINED_GLASS_PANE");
+
+        new MyAuctionsGui(plugin, player).open();
+
+        var top = player.getOpenInventory().getTopInventory();
+        assertEquals(Material.HOPPER, top.getItem(49).getType(),
+                "Expired listings should be reachable from My Listings");
+        assertEquals(Material.BLACK_STAINED_GLASS_PANE, top.getItem(48).getType(),
+                "Unavailable previous page should use the active theme glass");
+        assertEquals(Material.BLACK_STAINED_GLASS_PANE, top.getItem(50).getType(),
+                "Unavailable next page should use the active theme glass");
+        assertEquals(Material.PINK_STAINED_GLASS_PANE, top.getItem(0).getType(),
+                "A GUI must be able to override theme glass through its config");
     }
 
     @Test

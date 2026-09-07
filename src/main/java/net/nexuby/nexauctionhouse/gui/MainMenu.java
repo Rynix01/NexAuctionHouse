@@ -39,7 +39,6 @@ public class MainMenu extends PaginatedGui {
     // Button slot positions loaded from config
     private int categoriesSlot = -1;
     private int myAuctionsSlot = -1;
-    private int expiredSlot = -1;
     private int refreshSlot = -1;
     private int closeSlot = -1;
     private int searchSlot = -1;
@@ -251,11 +250,12 @@ public class MainMenu extends PaginatedGui {
             }
         }
 
-        // Expired Items button
+        // Expired items were moved to My Auctions. Replace the legacy button in
+        // existing main-menu.yml files with themed glass so upgrades do not leave a hole.
         if (buttons.contains("expired-items")) {
-            expiredSlot = buttons.getInt("expired-items.slot", -1);
-            if (expiredSlot >= 0) {
-                inventory.setItem(expiredSlot, createButton(buttons.getConfigurationSection("expired-items")));
+            int legacyExpiredSlot = buttons.getInt("expired-items.slot", -1);
+            if (legacyExpiredSlot >= 0) {
+                inventory.setItem(legacyExpiredSlot, createThemedFiller());
             }
         }
 
@@ -357,8 +357,6 @@ public class MainMenu extends PaginatedGui {
             new CategoryMenu(plugin, viewer, searchQuery).open();
         } else if (slot == myAuctionsSlot) {
             new MyAuctionsGui(plugin, viewer).open();
-        } else if (slot == expiredSlot) {
-            new ExpiredGui(plugin, viewer).open();
         } else if (slot == refreshSlot) {
             refresh();
         } else if (slot == closeSlot) {

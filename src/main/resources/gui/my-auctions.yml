@@ -1,0 +1,89 @@
+# NexAuctionHouse - My Auctions GUI Configuration
+
+title: "<dark_gray>My Auctions"
+size: 54
+
+item-slots:
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+
+buttons:
+  previous-page:
+    slot: 48
+    material: ARROW
+    name: "<yellow>Previous Page"
+    lore:
+      - "<gray>Click to go back."
+  next-page:
+    slot: 50
+    material: ARROW
+    name: "<yellow>Next Page"
+    lore:
+      - "<gray>Click to go forward."
+  expired-items:
+    slot: 49
+    material: HOPPER
+    name: "<red>Expired Items"
+    lore:
+      - "<gray>Collect listings that expired."
+  back:
+    slot: 45
+    material: DARK_OAK_DOOR
+    name: "<yellow>Back"
+    lore:
+      - "<gray>Return to the auction house."
+  close:
+    slot: 53
+    material: BARRIER
+    name: "<red>Close"
+    lore:
+      - "<gray>Close the menu."
+
+filler:
+  enabled: true
+  # Set use-theme to false to force the material below for this GUI.
+  use-theme: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "
+
+auction-item-lore:
+  - ""
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  - "<gray>Price: <green>{price}"
+  - "<gray>Expires in: <yellow>{time}"
+  - "<gray>Tax rate: <red>{tax}"
+  - ""
+  - "<yellow>Click to manage this listing!"
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+bid-item-lore:
+  - ""
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  - "<gold>[AUCTION]"
+  - "<gray>Starting Price: <green>{price}"
+  - "<gray>Current Bid: <yellow>{current_bid}"
+  - "<gray>Highest Bidder: <white>{bidder}"
+  - "<gray>Expires in: <yellow>{time}"
+  - "<gray>Tax rate: <red>{tax}"
+  - ""
+  - "<yellow>Click to manage this listing!"
+  - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"

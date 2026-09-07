@@ -57,13 +57,6 @@ buttons:
     lore:
       - "<gray>View your listed items."
 
-  expired-items:
-    slot: 47
-    material: HOPPER
-    name: "<red>Expired Items"
-    lore:
-      - "<gray>Collect your expired items."
-
   refresh:
     slot: 49
     material: SUNFLOWER
@@ -158,6 +151,7 @@ filler:
     - 42
     - 43
     - 44
+    - 47
 
 # Auction item lore template (appended to item's original lore)
 auction-item-lore:

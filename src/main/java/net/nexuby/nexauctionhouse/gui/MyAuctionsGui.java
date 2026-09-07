@@ -1,13 +1,10 @@
 package net.nexuby.nexauctionhouse.gui;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
-import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -21,15 +18,15 @@ import java.util.List;
 
 /**
  * Shows the player's own active auctions with an option to cancel them.
- * Uses the main-menu GUI layout but only shows the player's listings.
+ * Uses its own fully configurable layout and only shows the player's listings.
  */
 public class MyAuctionsGui extends PaginatedGui {
 
-    private final MiniMessage mm = MiniMessage.miniMessage();
     private final List<Integer> auctionIds = new ArrayList<>();
 
     private int backSlot = -1;
     private int closeSlot = -1;
+    private int expiredSlot = -1;
 
     public MyAuctionsGui(NexAuctionHouse plugin, Player viewer) {
         super(plugin, viewer);
@@ -37,55 +34,7 @@ public class MyAuctionsGui extends PaginatedGui {
 
     @Override
     protected String getGuiConfigName() {
-        // Reuses the main-menu layout
-        return "main-menu";
-    }
-
-    @Override
-    protected void build() {
-        FileConfiguration cfg = plugin.getGuiConfig().getGui(getGuiConfigName());
-        if (cfg == null) return;
-
-        int size = cfg.getInt("size", 54);
-        inventory = Bukkit.createInventory(this, size,
-                text("<dark_gray>My Auctions"));
-
-        itemSlots = cfg.getIntegerList("item-slots");
-
-        ConfigurationSection buttons = cfg.getConfigurationSection("buttons");
-        if (buttons != null) {
-            if (buttons.contains("previous-page.slot")) {
-                prevPageSlot = buttons.getInt("previous-page.slot");
-            }
-            if (buttons.contains("next-page.slot")) {
-                nextPageSlot = buttons.getInt("next-page.slot");
-            }
-        }
-
-        pageItems = getDisplayItems();
-
-        // Manually populate since we override build()
-        int startIndex = currentPage * itemSlots.size();
-        int endIndex = Math.min(startIndex + itemSlots.size(), pageItems.size());
-
-        for (int i = 0; i < itemSlots.size(); i++) {
-            int dataIndex = startIndex + i;
-            if (dataIndex < endIndex) {
-                inventory.setItem(itemSlots.get(i), pageItems.get(dataIndex));
-            }
-        }
-
-        if (buttons != null) {
-            if (prevPageSlot >= 0 && currentPage > 0) {
-                inventory.setItem(prevPageSlot, createButton(buttons.getConfigurationSection("previous-page")));
-            }
-            if (nextPageSlot >= 0 && endIndex < pageItems.size()) {
-                inventory.setItem(nextPageSlot, createButton(buttons.getConfigurationSection("next-page")));
-            }
-        }
-
-        addExtraButtons(cfg);
-        applyFiller(cfg);
+        return "my-auctions";
     }
 
     @Override
@@ -104,34 +53,28 @@ public class MyAuctionsGui extends PaginatedGui {
         myAuctions.sort(Comparator.comparingLong(AuctionItem::getCreatedAt).reversed());
 
         List<ItemStack> displayItems = new ArrayList<>();
+        FileConfiguration cfg = plugin.getGuiConfig().getGui(getGuiConfigName());
+        List<String> binLore = cfg != null ? cfg.getStringList("auction-item-lore") : List.of();
+        List<String> bidLore = cfg != null ? cfg.getStringList("bid-item-lore") : List.of();
 
         for (AuctionItem auction : myAuctions) {
             ItemStack display = auction.getItemStack().clone();
             ItemMeta meta = display.getItemMeta();
 
             List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
-            lore.add(Component.empty());
-            lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
-
-            if (auction.isBidAuction()) {
-                lore.add(text("<gold>[AUCTION]"));
-                lore.add(text("<gray>Starting Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
-                String currentBidStr = auction.getHighestBid() > 0
-                        ? plugin.getEconomyManager().format(auction.getHighestBid(), auction.getCurrency())
-                        : plugin.getLangManager().getRaw("bid.no-bids-yet");
-                lore.add(text("<gray>Current Bid: <yellow>" + currentBidStr));
-                if (auction.getHighestBidderName() != null) {
-                    lore.add(text("<gray>Highest Bidder: <white>" + auction.getHighestBidderName()));
-                }
-            } else {
-                lore.add(text("<gray>Price: <green>" + plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency())));
+            String currentBid = auction.getHighestBid() > 0
+                    ? plugin.getEconomyManager().format(auction.getHighestBid(), auction.getCurrency())
+                    : plugin.getLangManager().getRaw("bid.no-bids-yet");
+            String bidder = auction.getHighestBidderName() != null ? auction.getHighestBidderName() : "-";
+            List<String> template = auction.isBidAuction() && !bidLore.isEmpty() ? bidLore : binLore;
+            for (String line : template) {
+                lore.add(text(line
+                        .replace("{price}", plugin.getEconomyManager().format(auction.getPrice(), auction.getCurrency()))
+                        .replace("{current_bid}", currentBid)
+                        .replace("{bidder}", escapeMiniMessage(bidder))
+                        .replace("{time}", TimeUtil.formatDuration(auction.getRemainingTime()))
+                        .replace("{tax}", String.format("%.1f%%", auction.getTaxRate()))));
             }
-
-            lore.add(text("<gray>Expires in: <yellow>" + TimeUtil.formatDuration(auction.getRemainingTime())));
-            lore.add(text("<gray>Tax rate: <red>" + String.format("%.1f%%", auction.getTaxRate())));
-            lore.add(Component.empty());
-            lore.add(text("<yellow>Click to manage this auction!"));
-            lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
 
             meta.lore(lore);
             display.setItemMeta(meta);
@@ -163,20 +106,19 @@ public class MyAuctionsGui extends PaginatedGui {
         ConfigurationSection buttons = cfg.getConfigurationSection("buttons");
         if (buttons == null) return;
 
-        // Back button (reuse close slot as back)
+        if (buttons.contains("back")) {
+            backSlot = buttons.getInt("back.slot", -1);
+            if (backSlot >= 0) inventory.setItem(backSlot, createButton(buttons.getConfigurationSection("back")));
+        }
+
+        if (buttons.contains("expired-items")) {
+            expiredSlot = buttons.getInt("expired-items.slot", -1);
+            if (expiredSlot >= 0) inventory.setItem(expiredSlot, createButton(buttons.getConfigurationSection("expired-items")));
+        }
+
         if (buttons.contains("close")) {
             closeSlot = buttons.getInt("close.slot", -1);
-            if (closeSlot >= 0) {
-                // Override close with back functionality
-                org.bukkit.Material mat = org.bukkit.Material.DARK_OAK_DOOR;
-                ItemStack back = new ItemStack(mat);
-                ItemMeta meta = back.getItemMeta();
-                meta.displayName(text("<red>Back"));
-                meta.lore(List.of(text("<gray>Return to the main menu.")));
-                back.setItemMeta(meta);
-                inventory.setItem(closeSlot, back);
-                backSlot = closeSlot;
-            }
+            if (closeSlot >= 0) inventory.setItem(closeSlot, createButton(buttons.getConfigurationSection("close")));
         }
     }
 
@@ -184,6 +126,10 @@ public class MyAuctionsGui extends PaginatedGui {
     protected void handleExtraClick(InventoryClickEvent event, int slot) {
         if (slot == backSlot) {
             new MainMenu(plugin, viewer).open();
+        } else if (slot == expiredSlot) {
+            new ExpiredGui(plugin, viewer).open();
+        } else if (slot == closeSlot) {
+            viewer.closeInventory();
         }
     }
 }

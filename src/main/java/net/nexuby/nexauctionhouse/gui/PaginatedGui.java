@@ -109,11 +109,17 @@ public abstract class PaginatedGui extends AbstractGui {
             // Previous page button - only show if not on first page
             if (prevPageSlot >= 0 && currentPage > 0) {
                 inventory.setItem(prevPageSlot, createButton(buttons.getConfigurationSection("previous-page")));
+            } else if (prevPageSlot >= 0) {
+                inventory.setItem(prevPageSlot, createNavigationPlaceholder(
+                        buttons.getConfigurationSection("previous-page")));
             }
 
             // Next page button - only show if there are more pages
             if (nextPageSlot >= 0 && endIndex < pageItems.size()) {
                 inventory.setItem(nextPageSlot, createButton(buttons.getConfigurationSection("next-page")));
+            } else if (nextPageSlot >= 0) {
+                inventory.setItem(nextPageSlot, createNavigationPlaceholder(
+                        buttons.getConfigurationSection("next-page")));
             }
         }
 
@@ -193,5 +199,22 @@ public abstract class PaginatedGui extends AbstractGui {
 
     protected int getCurrentPage() {
         return currentPage;
+    }
+
+    private ItemStack createNavigationPlaceholder(ConfigurationSection section) {
+        if (section != null) {
+            String configured = section.getString("empty-material", "THEME");
+            if (!configured.equalsIgnoreCase("THEME")) {
+                org.bukkit.Material material = org.bukkit.Material.matchMaterial(configured);
+                if (material != null) {
+                    ItemStack placeholder = new ItemStack(material);
+                    var meta = placeholder.getItemMeta();
+                    meta.displayName(text(section.getString("empty-name", " ")));
+                    placeholder.setItemMeta(meta);
+                    return placeholder;
+                }
+            }
+        }
+        return createThemedFiller();
     }
 }

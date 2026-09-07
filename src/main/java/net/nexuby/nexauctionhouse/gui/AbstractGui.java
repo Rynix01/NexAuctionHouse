@@ -156,9 +156,12 @@ public abstract class AbstractGui implements InventoryHolder {
         ConfigurationSection filler = cfg.getConfigurationSection("filler");
         if (filler == null || !filler.getBoolean("enabled", false)) return;
 
-        // Use player's theme filler material if available
+        // Theme glass is the default, but each GUI can opt out and force its
+        // own configured material with filler.use-theme: false.
         Material material = null;
-        if (viewer != null && plugin.getThemeManager() != null) {
+        if (filler.getBoolean("use-theme", true)
+                && viewer != null
+                && plugin.getThemeManager() != null) {
             material = plugin.getThemeManager().getFillerMaterial(viewer.getUniqueId());
         }
         if (material == null) {

@@ -27,6 +27,7 @@ public class GuiConfig {
 
         // Save default GUI configs
         saveDefault("main-menu.yml");
+        saveDefault("my-auctions.yml");
         saveDefault("confirm.yml");
         saveDefault("expired.yml");
         saveDefault("categories.yml");
