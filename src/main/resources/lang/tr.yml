@@ -135,6 +135,9 @@ preview:
 # Bildirim ayarlari mesajlari
 notifications:
   toggled: "{setting} <gray>artik {status}<gray>."
+  all-toggled: "<gray>Tum pazar bildirimleri artik {status}<gray>."
+  system-disabled: "<red>Pazar bildirimleri sunucu tarafindan devre disi birakildi."
+  usage: "<red>Kullanim: <yellow>/ah notifications [on|off|toggle]"
   enabled: "<green>acik"
   disabled: "<red>kapali"
   sale: "<yellow>Satis Bildirimleri"
@@ -142,6 +145,7 @@ notifications:
   sound: "<green>Ses Efektleri"
   login: "<white>Giris Bildirimleri"
   favorite: "<light_purple>Favori Bildirimleri"
+  all: "<gold>Tum Bildirimler"
 
 # Otomatik yeniden listeleme mesajlari
 auto-relist:

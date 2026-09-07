@@ -135,6 +135,9 @@ preview:
 # Notification settings messages
 notifications:
   toggled: "{setting} <gray>is now {status}<gray>."
+  all-toggled: "<gray>All auction notifications are now {status}<gray>."
+  system-disabled: "<red>Auction notifications are disabled by the server."
+  usage: "<red>Usage: <yellow>/ah notifications [on|off|toggle]"
   enabled: "<green>enabled"
   disabled: "<red>disabled"
   sale: "<yellow>Sale Notifications"
@@ -142,6 +145,7 @@ notifications:
   sound: "<green>Sound Effects"
   login: "<white>Login Notifications"
   favorite: "<light_purple>Favorite Notifications"
+  all: "<gold>All Notifications"
 
 # Auto-relist messages
 auto-relist:

@@ -80,7 +80,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
             case "search" -> handleSearch(sender, args);
             case "favorites" -> handleFavorites(sender);
             case "history" -> handleHistory(sender, args);
-            case "notifications" -> handleNotifications(sender);
+            case "notifications" -> handleNotifications(sender, args);
             case "theme" -> handleTheme(sender, args);
             case "expired" -> handleExpired(sender);
             case "admin" -> handleAdmin(sender, args);
@@ -464,7 +464,7 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
         new FavoritesGui(plugin, player).open();
     }
 
-    private void handleNotifications(CommandSender sender) {
+    private void handleNotifications(CommandSender sender, String[] args) {
         LangManager lang = plugin.getLangManager();
 
         if (!(sender instanceof Player player)) {
@@ -474,6 +474,30 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (!player.hasPermission("nexauctions.use")) {
             player.sendMessage(lang.prefixed("general.no-permission"));
+            return;
+        }
+
+        if (!plugin.getNotificationManager().isEnabled()) {
+            player.sendMessage(lang.prefixed("notifications.system-disabled"));
+            return;
+        }
+
+        if (args.length >= 2) {
+            var settings = plugin.getNotificationManager().getSettings(player.getUniqueId());
+            boolean enabled;
+            switch (args[1].toLowerCase()) {
+                case "on" -> enabled = true;
+                case "off" -> enabled = false;
+                case "toggle" -> enabled = !settings.areAllEnabled();
+                default -> {
+                    player.sendMessage(lang.prefixed("notifications.usage"));
+                    return;
+                }
+            }
+            settings.setAll(enabled);
+            plugin.getNotificationManager().saveSettings(settings);
+            player.sendMessage(lang.prefixed("notifications.all-toggled",
+                    "{status}", lang.getRaw(enabled ? "notifications.enabled" : "notifications.disabled")));
             return;
         }
 
@@ -804,6 +828,13 @@ public class AuctionCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2 && args[0].equalsIgnoreCase("search")) {
             return Arrays.asList("<keyword>");
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("notifications")) {
+            List<String> options = new ArrayList<>(List.of("on", "off", "toggle"));
+            String input = args[1].toLowerCase();
+            options.removeIf(s -> !s.startsWith(input));
+            return options;
         }
 
         if (args.length == 2 && args[0].equalsIgnoreCase("theme")) {

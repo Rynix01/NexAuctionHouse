@@ -116,6 +116,34 @@ class CommandAndGuiIntegrationTest extends MockPluginTestSupport {
     }
 
     @Test
+    void notificationGuiAndCommandsRespectConfigurationAndMasterSwitch() {
+        PlayerMock player = server.addPlayer("NotifyPlayer");
+        player.addAttachment(plugin, "nexauctions.use", true);
+        var guiConfig = plugin.getGuiConfig().getGui("notifications");
+        assertNotNull(guiConfig);
+        guiConfig.set("buttons.sale.enabled-material", "EMERALD");
+
+        assertTrue(server.dispatchCommand(player, "ah notifications"));
+        assertEquals(Material.EMERALD,
+                player.getOpenInventory().getTopInventory().getItem(20).getType());
+
+        assertTrue(server.dispatchCommand(player, "ah notifications off"));
+        var settings = plugin.getNotificationManager().getSettings(player.getUniqueId());
+        assertFalse(settings.isSaleNotifications());
+        assertFalse(settings.isBidNotifications());
+        assertFalse(settings.isSoundEffects());
+        assertFalse(settings.isLoginNotifications());
+        assertFalse(settings.isFavoriteNotifications());
+
+        assertTrue(server.dispatchCommand(player, "ah notifications on"));
+        assertTrue(settings.areAllEnabled());
+
+        plugin.getConfigManager().getConfig().set("notifications.enabled", false);
+        assertFalse(plugin.getNotificationManager().canReceiveSaleNotification(player.getUniqueId()));
+        assertFalse(plugin.getNotificationManager().hasSoundEnabled(player.getUniqueId()));
+    }
+
+    @Test
     void consoleCannotUsePlayerOnlyCommands() {
         assertTrue(server.dispatchCommand(server.getConsoleSender(), "ah"));
         assertTrue(server.dispatchCommand(server.getConsoleSender(), "ah sell 100"));
@@ -133,5 +161,9 @@ class CommandAndGuiIntegrationTest extends MockPluginTestSupport {
         assertTrue(completions.contains("history"));
         assertTrue(completions.contains("notifications"));
         assertTrue(completions.contains("theme"));
+
+        List<String> notificationOptions = server.getPluginCommand("ah")
+                .tabComplete(player, "ah", new String[]{"notifications", ""});
+        assertEquals(List.of("on", "off", "toggle"), notificationOptions);
     }
 }

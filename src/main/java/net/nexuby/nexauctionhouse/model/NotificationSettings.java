@@ -73,6 +73,19 @@ public class NotificationSettings {
         this.favoriteNotifications = favoriteNotifications;
     }
 
+    public boolean areAllEnabled() {
+        return saleNotifications && bidNotifications && soundEffects
+                && loginNotifications && favoriteNotifications;
+    }
+
+    public void setAll(boolean enabled) {
+        saleNotifications = enabled;
+        bidNotifications = enabled;
+        soundEffects = enabled;
+        loginNotifications = enabled;
+        favoriteNotifications = enabled;
+    }
+
     /**
      * Toggles the specified setting and returns the new value.
      */
@@ -97,6 +110,11 @@ public class NotificationSettings {
             case "favorite" -> {
                 favoriteNotifications = !favoriteNotifications;
                 yield favoriteNotifications;
+            }
+            case "all" -> {
+                boolean enabled = !areAllEnabled();
+                setAll(enabled);
+                yield enabled;
             }
             default -> false;
         };

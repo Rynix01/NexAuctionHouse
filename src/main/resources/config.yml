@@ -189,6 +189,9 @@ discord:
 
 # Notification preferences
 notifications:
+  # Master switch. When false no auction notification or notification sound is sent,
+  # and players cannot open the notification settings GUI.
+  enabled: true
   # Default preference states for new players (can be overridden per player)
   defaults:
     sale-notifications: true

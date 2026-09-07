@@ -1,0 +1,95 @@
+# NexAuctionHouse - Notification Settings GUI
+
+title: "<dark_gray>Notification Settings"
+size: 54
+
+buttons:
+  header:
+    slot: 4
+    material: BELL
+    name: "<gold>Notification Preferences"
+    lore:
+      - "<gray>Toggle your notification settings."
+      - "<gray>You can also use /ah notifications on|off."
+  sale:
+    slot: 20
+    enabled-material: GOLD_INGOT
+    disabled-material: GRAY_DYE
+    name: "<yellow>Sale Notifications"
+    lore:
+      - "<gray>Receive notifications when your items are sold."
+      - ""
+      - "<gray>Status: {status}"
+      - "<yellow>Click to toggle."
+  bid:
+    slot: 22
+    enabled-material: DIAMOND
+    disabled-material: GRAY_DYE
+    name: "<aqua>Bid Notifications"
+    lore:
+      - "<gray>Receive notifications about bids on your auctions."
+      - ""
+      - "<gray>Status: {status}"
+      - "<yellow>Click to toggle."
+  sound:
+    slot: 24
+    enabled-material: NOTE_BLOCK
+    disabled-material: GRAY_DYE
+    name: "<green>Sound Effects"
+    lore:
+      - "<gray>Play sounds for auction events."
+      - ""
+      - "<gray>Status: {status}"
+      - "<yellow>Click to toggle."
+  login:
+    slot: 29
+    enabled-material: OAK_DOOR
+    disabled-material: GRAY_DYE
+    name: "<white>Login Notifications"
+    lore:
+      - "<gray>Show pending items and revenue on login."
+      - ""
+      - "<gray>Status: {status}"
+      - "<yellow>Click to toggle."
+  favorite:
+    slot: 31
+    enabled-material: NETHER_STAR
+    disabled-material: GRAY_DYE
+    name: "<light_purple>Favorite Notifications"
+    lore:
+      - "<gray>Notify when watched listings change."
+      - ""
+      - "<gray>Status: {status}"
+      - "<yellow>Click to toggle."
+  all:
+    slot: 33
+    enabled-material: LIME_DYE
+    disabled-material: RED_DYE
+    name: "<gold>All Notifications"
+    lore:
+      - "<gray>Enable or disable every option at once."
+      - ""
+      - "<gray>Status: {status}"
+      - "<yellow>Click to toggle all."
+  theme:
+    slot: 40
+    material: PAINTING
+    name: "<gold>GUI Theme"
+    lore:
+      - "<gray>Customize the look of your menus."
+      - ""
+      - "<gray>Current: <yellow>{theme}"
+      - "<yellow>Click to browse themes."
+  back:
+    slot: 49
+    material: ARROW
+    name: "<yellow>Back"
+    lore:
+      - "<gray>Return to the previous menu."
+
+filler:
+  enabled: true
+  # false = use the material below instead of the player's selected theme.
+  use-theme: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "

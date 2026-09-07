@@ -4,172 +4,172 @@ import net.kyori.adventure.text.Component;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
 import net.nexuby.nexauctionhouse.manager.NotificationManager;
 import net.nexuby.nexauctionhouse.model.NotificationSettings;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 
+/** Player notification preferences, fully laid out through gui/notifications.yml. */
 public class NotificationSettingsGui extends AbstractGui {
 
-    private static final int SALE_SLOT = 20;
-    private static final int BID_SLOT = 22;
-    private static final int SOUND_SLOT = 24;
-    private static final int LOGIN_SLOT = 30;
-    private static final int FAVORITE_SLOT = 32;
-    private static final int THEME_SLOT = 40;
-    private static final int BACK_SLOT = 49;
+    private int saleSlot = -1;
+    private int bidSlot = -1;
+    private int soundSlot = -1;
+    private int loginSlot = -1;
+    private int favoriteSlot = -1;
+    private int allSlot = -1;
+    private int themeSlot = -1;
+    private int backSlot = -1;
 
     private final Runnable backAction;
 
     public NotificationSettingsGui(NexAuctionHouse plugin, Player viewer, Runnable backAction) {
         super(plugin, viewer);
         this.backAction = backAction;
-        this.inventory = org.bukkit.Bukkit.createInventory(this, 54, text("<dark_gray>Notification Settings"));
     }
 
     @Override
     protected void build() {
-        NotificationManager nm = plugin.getNotificationManager();
-        NotificationSettings settings = nm.getSettings(viewer.getUniqueId());
-
-        // Fill background using player's theme
-        ItemStack filler = createThemedFiller();
-        for (int i = 0; i < inventory.getSize(); i++) {
-            inventory.setItem(i, filler);
+        FileConfiguration cfg = plugin.getGuiConfig().getGui("notifications");
+        if (cfg == null) {
+            plugin.getLogger().warning("GUI config 'notifications' not found!");
+            return;
         }
 
-        // Title item
-        ItemStack titleItem = new ItemStack(Material.BELL);
-        ItemMeta titleMeta = titleItem.getItemMeta();
-        titleMeta.displayName(text("<gold>Notification Preferences"));
-        titleMeta.lore(List.of(
-                text("<gray>Toggle your notification settings."),
-                text("<gray>Click any option to toggle.")
-        ));
-        titleItem.setItemMeta(titleMeta);
-        inventory.setItem(4, titleItem);
+        inventory = Bukkit.createInventory(this, cfg.getInt("size", 54),
+                text(cfg.getString("title", "<dark_gray>Notification Settings")));
 
-        // Toggle buttons
-        setToggle(SALE_SLOT, Material.GOLD_INGOT, "<yellow>Sale Notifications",
-                "<gray>Receive notifications when your", "<gray>items are sold.",
-                settings.isSaleNotifications());
+        NotificationSettings settings = plugin.getNotificationManager().getSettings(viewer.getUniqueId());
+        ConfigurationSection buttons = cfg.getConfigurationSection("buttons");
+        if (buttons == null) {
+            applyFiller(cfg);
+            return;
+        }
 
-        setToggle(BID_SLOT, Material.DIAMOND, "<aqua>Bid Notifications",
-                "<gray>Receive notifications when someone", "<gray>bids on your auctions.",
-                settings.isBidNotifications());
+        placeButton(buttons, "header");
+        saleSlot = placeToggle(buttons, "sale", settings.isSaleNotifications());
+        bidSlot = placeToggle(buttons, "bid", settings.isBidNotifications());
+        soundSlot = placeToggle(buttons, "sound", settings.isSoundEffects());
+        loginSlot = placeToggle(buttons, "login", settings.isLoginNotifications());
+        favoriteSlot = placeToggle(buttons, "favorite", settings.isFavoriteNotifications());
+        allSlot = placeToggle(buttons, "all", settings.areAllEnabled());
 
-        setToggle(SOUND_SLOT, Material.NOTE_BLOCK, "<green>Sound Effects",
-                "<gray>Play sound effects for auction", "<gray>events and notifications.",
-                settings.isSoundEffects());
+        ConfigurationSection theme = buttons.getConfigurationSection("theme");
+        if (theme != null) {
+            themeSlot = theme.getInt("slot", -1);
+            String currentTheme = plugin.getThemeManager() != null
+                    ? plugin.getThemeManager().getThemeName(
+                    plugin.getThemeManager().getPlayerTheme(viewer.getUniqueId()))
+                    : "Default";
+            place(themeSlot, createConfiguredItem(theme, theme.getString("material", "PAINTING"),
+                    "{theme}", currentTheme));
+        }
 
-        setToggle(LOGIN_SLOT, Material.OAK_DOOR, "<white>Login Notifications",
-                "<gray>Receive notifications about pending", "<gray>items and revenue on login.",
-                settings.isLoginNotifications());
-
-        setToggle(FAVORITE_SLOT, Material.NETHER_STAR, "<light_purple>Favorite Notifications",
-                "<gray>Receive notifications when favorited", "<gray>items are sold, cancelled, or expired.",
-                settings.isFavoriteNotifications());
-
-        // Theme selection button
-        String currentTheme = plugin.getThemeManager() != null
-                ? plugin.getThemeManager().getThemeName(plugin.getThemeManager().getPlayerTheme(viewer.getUniqueId()))
-                : "Default";
-        ItemStack themeItem = new ItemStack(Material.PAINTING);
-        ItemMeta themeMeta = themeItem.getItemMeta();
-        themeMeta.displayName(text("<gold>GUI Theme"));
-        themeMeta.lore(List.of(
-                text("<gray>Customize the look of your menus."),
-                text(""),
-                text("<gray>Current: <yellow>" + currentTheme),
-                text(""),
-                text("<yellow>Click to browse themes.")
-        ));
-        themeItem.setItemMeta(themeMeta);
-        inventory.setItem(THEME_SLOT, themeItem);
-
-        // Back button
-        ItemStack back = new ItemStack(Material.ARROW);
-        ItemMeta backMeta = back.getItemMeta();
-        backMeta.displayName(text("<yellow>Back"));
-        backMeta.lore(List.of(text("<gray>Return to previous menu.")));
-        back.setItemMeta(backMeta);
-        inventory.setItem(BACK_SLOT, back);
+        backSlot = placeButton(buttons, "back");
+        applyFiller(cfg);
     }
 
-    private void setToggle(int slot, Material material, String name,
-                           String desc1, String desc2, boolean enabled) {
-        ItemStack item = new ItemStack(enabled ? material : Material.GRAY_DYE);
+    private int placeButton(ConfigurationSection buttons, String key) {
+        ConfigurationSection section = buttons.getConfigurationSection(key);
+        if (section == null) return -1;
+        int slot = section.getInt("slot", -1);
+        place(slot, createConfiguredItem(section, section.getString("material", "STONE")));
+        return slot;
+    }
+
+    private int placeToggle(ConfigurationSection buttons, String key, boolean enabled) {
+        ConfigurationSection section = buttons.getConfigurationSection(key);
+        if (section == null) return -1;
+        int slot = section.getInt("slot", -1);
+        String material = section.getString(enabled ? "enabled-material" : "disabled-material",
+                enabled ? section.getString("material", "LIME_DYE") : "GRAY_DYE");
+        String status = plugin.getLangManager().getRaw(
+                enabled ? "notifications.enabled" : "notifications.disabled");
+        place(slot, createConfiguredItem(section, material, "{status}", status));
+        return slot;
+    }
+
+    private ItemStack createConfiguredItem(ConfigurationSection section, String materialName,
+                                           String... replacements) {
+        Material material = Material.matchMaterial(materialName);
+        if (material == null) material = Material.STONE;
+        ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(text(name));
 
-        String status = enabled ? "<green>ENABLED" : "<red>DISABLED";
-        meta.lore(List.of(
-                text(desc1),
-                text(desc2),
-                text(""),
-                text("<gray>Status: " + status),
-                text(""),
-                text("<yellow>Click to toggle.")
-        ));
-
+        if (section.contains("name")) {
+            meta.displayName(text(replace(section.getString("name", " "), replacements)));
+        }
+        if (section.contains("lore")) {
+            List<Component> lore = new ArrayList<>();
+            for (String line : section.getStringList("lore")) {
+                lore.add(text(replace(line, replacements)));
+            }
+            meta.lore(lore);
+        }
         item.setItemMeta(meta);
-        inventory.setItem(slot, item);
+        return item;
+    }
+
+    private static String replace(String value, String... replacements) {
+        String result = value;
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            result = result.replace(replacements[i], replacements[i + 1]);
+        }
+        return result;
+    }
+
+    private void place(int slot, ItemStack item) {
+        if (slot >= 0 && slot < inventory.getSize()) inventory.setItem(slot, item);
     }
 
     @Override
     public void handleClick(InventoryClickEvent event) {
         event.setCancelled(true);
-
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= inventory.getSize()) return;
+        if (slot < 0 || slot >= inventory.getSize() || !checkCooldown(viewer)) return;
 
-        NotificationManager nm = plugin.getNotificationManager();
-        NotificationSettings settings = nm.getSettings(viewer.getUniqueId());
-
-        String toggleKey = switch (slot) {
-            case SALE_SLOT -> "sale";
-            case BID_SLOT -> "bid";
-            case SOUND_SLOT -> "sound";
-            case LOGIN_SLOT -> "login";
-            case FAVORITE_SLOT -> "favorite";
-            default -> null;
-        };
+        String toggleKey = null;
+        if (slot == saleSlot) toggleKey = "sale";
+        else if (slot == bidSlot) toggleKey = "bid";
+        else if (slot == soundSlot) toggleKey = "sound";
+        else if (slot == loginSlot) toggleKey = "login";
+        else if (slot == favoriteSlot) toggleKey = "favorite";
+        else if (slot == allSlot) toggleKey = "all";
 
         if (toggleKey != null) {
-            boolean newValue = settings.toggle(toggleKey);
-            nm.saveSettings(settings);
+            NotificationManager manager = plugin.getNotificationManager();
+            NotificationSettings settings = manager.getSettings(viewer.getUniqueId());
+            boolean enabled = settings.toggle(toggleKey);
+            manager.saveSettings(settings);
 
-            // Play feedback sound if sound is enabled (or was just enabled)
-            if (nm.hasSoundEnabled(viewer.getUniqueId())) {
+            if (manager.hasSoundEnabled(viewer.getUniqueId())) {
                 viewer.playSound(viewer.getLocation(),
-                        newValue ? org.bukkit.Sound.UI_BUTTON_CLICK : org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS,
-                        0.5f, newValue ? 1.2f : 0.8f);
+                        enabled ? org.bukkit.Sound.UI_BUTTON_CLICK : org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS,
+                        0.5f, enabled ? 1.2f : 0.8f);
             }
 
             viewer.sendMessage(plugin.getLangManager().prefixed("notifications.toggled",
                     "{setting}", plugin.getLangManager().getRaw("notifications." + toggleKey),
-                    "{status}", plugin.getLangManager().getRaw(newValue ? "notifications.enabled" : "notifications.disabled")));
-
-            // Rebuild the GUI in place
+                    "{status}", plugin.getLangManager().getRaw(
+                            enabled ? "notifications.enabled" : "notifications.disabled")));
             build();
             viewer.openInventory(inventory);
             return;
         }
 
-        if (slot == BACK_SLOT) {
-            if (backAction != null) {
-                backAction.run();
-            } else {
-                viewer.closeInventory();
-            }
-        }
-
-        if (slot == THEME_SLOT) {
+        if (slot == themeSlot) {
             new ThemeSelectGui(plugin, viewer, () ->
                     new NotificationSettingsGui(plugin, viewer, backAction).open()).open();
+        } else if (slot == backSlot) {
+            if (backAction != null) backAction.run();
+            else viewer.closeInventory();
         }
     }
 }

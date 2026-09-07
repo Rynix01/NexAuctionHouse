@@ -69,24 +69,28 @@ public class NotificationManager {
 
     // -- Notification check helpers --
 
+    public boolean isEnabled() {
+        return plugin.getConfigManager().getConfig().getBoolean("notifications.enabled", true);
+    }
+
     public boolean canReceiveSaleNotification(UUID playerUuid) {
-        return getSettings(playerUuid).isSaleNotifications();
+        return isEnabled() && getSettings(playerUuid).isSaleNotifications();
     }
 
     public boolean canReceiveBidNotification(UUID playerUuid) {
-        return getSettings(playerUuid).isBidNotifications();
+        return isEnabled() && getSettings(playerUuid).isBidNotifications();
     }
 
     public boolean canReceiveLoginNotification(UUID playerUuid) {
-        return getSettings(playerUuid).isLoginNotifications();
+        return isEnabled() && getSettings(playerUuid).isLoginNotifications();
     }
 
     public boolean canReceiveFavoriteNotification(UUID playerUuid) {
-        return getSettings(playerUuid).isFavoriteNotifications();
+        return isEnabled() && getSettings(playerUuid).isFavoriteNotifications();
     }
 
     public boolean hasSoundEnabled(UUID playerUuid) {
-        return getSettings(playerUuid).isSoundEffects();
+        return isEnabled() && getSettings(playerUuid).isSoundEffects();
     }
 
     // -- Sound effect helpers --

@@ -34,6 +34,7 @@ public class GuiConfig {
         saveDefault("bid.yml");
         saveDefault("favorites.yml");
         saveDefault("history.yml");
+        saveDefault("notifications.yml");
         saveDefault("sell-confirm.yml");
 
         // Load all GUI configs from the folder
