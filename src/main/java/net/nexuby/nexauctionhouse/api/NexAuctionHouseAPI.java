@@ -97,7 +97,7 @@ public final class NexAuctionHouseAPI {
     }
 
     /**
-     * Returns the cached average market price for a material (last 7 days).
+     * Returns the cached average market price for a material using the server's configured window.
      *
      * @param materialName the material name (e.g. "DIAMOND")
      * @return average price, or 0.0 if no data

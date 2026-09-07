@@ -150,6 +150,8 @@ public class MainMenu extends PaginatedGui {
                         .replace("{bidder}", bidderName)
                         .replace("{type}", auction.isBidAuction() ? "Auction" : "BIN")
                         .replace("{avg_price}", formatAvgPrice(auction))
+                        .replace("{avg_window}", String.valueOf(
+                                plugin.getConfigManager().getAveragePriceWindowDays()))
                         .replace("{relist}", auction.isAutoRelist()
                                 ? auction.getRelistCount() + "/" + auction.getMaxRelists()
                                 : "");

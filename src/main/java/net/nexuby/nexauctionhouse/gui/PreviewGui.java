@@ -10,6 +10,8 @@ import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -27,33 +29,27 @@ public class PreviewGui extends AbstractGui {
     private final ItemStack previewItem;
     private final Runnable backAction;
 
-    // Slot assignments
-    private static final int ITEM_SLOT = 13;
-    private static final int ENCHANT_SLOT = 29;
-    private static final int ATTRIBUTE_SLOT = 31;
-    private static final int CUSTOM_SLOT = 33;
-    private static final int BACK_SLOT = 45;
-    private static final int CLOSE_SLOT = 53;
-
-    // Shulker content slots (3 rows of 9)
-    private static final int[] SHULKER_SLOTS = {
-            28, 29, 30, 31, 32, 33, 34,
-            37, 38, 39, 40, 41, 42, 43,
-            46, 47, 48, 49, 50, 51, 52
-    };
+    private FileConfiguration gui;
+    private int itemSlot;
+    private int enchantSlot;
+    private int attributeSlot;
+    private int customSlot;
+    private int backSlot;
+    private int closeSlot;
+    private List<Integer> shulkerSlots;
 
     // Book page navigation
-    private static final int BOOK_SLOT = 22;
-    private static final int BOOK_PREV_SLOT = 29;
-    private static final int BOOK_NEXT_SLOT = 33;
+    private int bookSlot;
+    private int bookPrevSlot;
+    private int bookNextSlot;
     private int bookPage = 0;
     private List<Component> bookPages;
 
     // Armor slots
-    private static final int ARMOR_HELMET_SLOT = 20;
-    private static final int ARMOR_CHEST_SLOT = 29;
-    private static final int ARMOR_LEGS_SLOT = 38;
-    private static final int ARMOR_BOOTS_SLOT = 47;
+    private int armorHelmetSlot;
+    private int armorChestSlot;
+    private int armorLegsSlot;
+    private int armorBootsSlot;
 
     public PreviewGui(NexAuctionHouse plugin, Player viewer, ItemStack item, Runnable backAction) {
         super(plugin, viewer);
@@ -63,16 +59,17 @@ public class PreviewGui extends AbstractGui {
 
     @Override
     protected void build() {
-        inventory = Bukkit.createInventory(this, 54, text("<dark_gray>Item Preview"));
-
-        // Fill background
-        ItemStack filler = createThemedFiller();
-        for (int i = 0; i < 54; i++) {
-            inventory.setItem(i, filler);
+        gui = plugin.getGuiConfig().getGui("preview");
+        if (gui == null) {
+            plugin.getLogger().warning("GUI config 'preview' not found!");
+            return;
         }
+        loadLayout();
+        inventory = Bukkit.createInventory(this, gui.getInt("size", 54),
+                text(gui.getString("title", "<dark_gray>Item Preview")));
+        applyFiller(gui);
 
-        // Main item display (slot 13)
-        inventory.setItem(ITEM_SLOT, previewItem.clone());
+        inventory.setItem(itemSlot, previewItem.clone());
 
         // Decide layout based on item type
         if (isShulkerBox(previewItem)) {
@@ -85,43 +82,51 @@ public class PreviewGui extends AbstractGui {
             buildStandardPreview();
         }
 
-        // Back button
-        ItemStack back = new ItemStack(Material.DARK_OAK_DOOR);
-        ItemMeta backMeta = back.getItemMeta();
-        backMeta.displayName(text("<yellow>Back"));
-        backMeta.lore(List.of(text("<gray>Return to the previous menu.")));
-        back.setItemMeta(backMeta);
-        inventory.setItem(BACK_SLOT, back);
+        ConfigurationSection buttons = gui.getConfigurationSection("buttons");
+        if (buttons != null) {
+            if (backSlot >= 0) inventory.setItem(backSlot, createButton(buttons.getConfigurationSection("back")));
+            if (closeSlot >= 0) inventory.setItem(closeSlot, createButton(buttons.getConfigurationSection("close")));
+        }
+    }
 
-        // Close button
-        ItemStack close = new ItemStack(Material.BARRIER);
-        ItemMeta closeMeta = close.getItemMeta();
-        closeMeta.displayName(text("<red>Close"));
-        closeMeta.lore(List.of(text("<gray>Close the menu.")));
-        close.setItemMeta(closeMeta);
-        inventory.setItem(CLOSE_SLOT, close);
+    private void loadLayout() {
+        itemSlot = gui.getInt("slots.item", 13);
+        enchantSlot = gui.getInt("slots.enchantments", 29);
+        attributeSlot = gui.getInt("slots.attributes", 31);
+        customSlot = gui.getInt("slots.details", 33);
+        bookSlot = gui.getInt("slots.book-page", 22);
+        bookPrevSlot = gui.getInt("slots.book-previous", 29);
+        bookNextSlot = gui.getInt("slots.book-next", 33);
+        armorHelmetSlot = gui.getInt("slots.armor-helmet", 20);
+        armorChestSlot = gui.getInt("slots.armor-chestplate", 29);
+        armorLegsSlot = gui.getInt("slots.armor-leggings", 38);
+        armorBootsSlot = gui.getInt("slots.armor-boots", 47);
+        shulkerSlots = gui.getIntegerList("shulker-item-slots");
+        backSlot = gui.getInt("buttons.back.slot", 45);
+        closeSlot = gui.getInt("buttons.close.slot", 53);
     }
 
     // -- Standard Preview (enchants, attributes, custom item info) --
 
     private void buildStandardPreview() {
         // Enchantments panel
-        inventory.setItem(ENCHANT_SLOT, buildEnchantmentPanel());
+        inventory.setItem(enchantSlot, buildEnchantmentPanel());
 
         // Attributes panel
-        inventory.setItem(ATTRIBUTE_SLOT, buildAttributePanel());
+        inventory.setItem(attributeSlot, buildAttributePanel());
 
         // Custom item info panel
-        inventory.setItem(CUSTOM_SLOT, buildCustomItemPanel());
+        inventory.setItem(customSlot, buildCustomItemPanel());
     }
 
     private ItemStack buildEnchantmentPanel() {
-        ItemStack panel = new ItemStack(Material.ENCHANTED_BOOK);
+        ConfigurationSection section = gui.getConfigurationSection("panels.enchantments");
+        ItemStack panel = panelItem(section, Material.ENCHANTED_BOOK);
         ItemMeta meta = panel.getItemMeta();
-        meta.displayName(text("<aqua>Enchantments"));
+        meta.displayName(text(value(section, "name", "<aqua>Enchantments")));
 
         List<Component> lore = new ArrayList<>();
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(section, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
 
         Map<Enchantment, Integer> enchants = previewItem.getEnchantments();
         if (enchants.isEmpty()) {
@@ -132,7 +137,7 @@ public class PreviewGui extends AbstractGui {
         }
 
         if (enchants.isEmpty()) {
-            lore.add(text("<gray>No enchantments."));
+            lore.add(text(value(section, "empty", "<gray>No enchantments.")));
         } else {
             for (Map.Entry<Enchantment, Integer> entry : enchants.entrySet()) {
                 String name = formatEnchantmentName(entry.getKey());
@@ -140,23 +145,25 @@ public class PreviewGui extends AbstractGui {
                 String levelStr = toRoman(level);
                 boolean maxed = level >= entry.getKey().getMaxLevel();
                 String color = maxed ? "<gold>" : "<green>";
-                lore.add(text(color + name + " " + levelStr));
+                lore.add(text(replace(value(section, "entry", "{color}{name} {level}"),
+                        "{color}", color, "{name}", name, "{level}", levelStr)));
             }
         }
 
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(section, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
         meta.lore(lore);
         panel.setItemMeta(meta);
         return panel;
     }
 
     private ItemStack buildAttributePanel() {
-        ItemStack panel = new ItemStack(Material.IRON_SWORD);
+        ConfigurationSection section = gui.getConfigurationSection("panels.attributes");
+        ItemStack panel = panelItem(section, Material.IRON_SWORD);
         ItemMeta meta = panel.getItemMeta();
-        meta.displayName(text("<yellow>Attributes"));
+        meta.displayName(text(value(section, "name", "<yellow>Attributes")));
 
         List<Component> lore = new ArrayList<>();
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(section, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
 
         ItemMeta itemMeta = previewItem.getItemMeta();
         boolean hasAttributes = false;
@@ -179,70 +186,81 @@ public class PreviewGui extends AbstractGui {
                         formatted = sign + String.format("%.0f%%", amount * 100);
                     }
 
-                    lore.add(text("<green>" + formatted + " <gray>" + attrName));
+                    lore.add(text(replace(value(section, "entry", "<green>{amount} <gray>{attribute}"),
+                            "{amount}", formatted, "{attribute}", attrName)));
                 }
             }
         }
 
         if (!hasAttributes) {
-            lore.add(text("<gray>No custom attributes."));
+            lore.add(text(value(section, "empty", "<gray>No custom attributes.")));
         }
 
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(section, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
         meta.lore(lore);
         panel.setItemMeta(meta);
         return panel;
     }
 
     private ItemStack buildCustomItemPanel() {
-        ItemStack panel = new ItemStack(Material.NAME_TAG);
+        ConfigurationSection section = gui.getConfigurationSection("panels.details");
+        ItemStack panel = panelItem(section, Material.NAME_TAG);
         ItemMeta meta = panel.getItemMeta();
-        meta.displayName(text("<light_purple>Item Details"));
+        meta.displayName(text(value(section, "name", "<light_purple>Item Details")));
 
         List<Component> lore = new ArrayList<>();
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(section, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
 
         // Material type
-        lore.add(text("<gray>Type: <white>" + formatMaterialName(previewItem.getType().name())));
+        lore.add(text(replace(value(section, "type", "<gray>Type: <white>{type}"),
+                "{type}", formatMaterialName(previewItem.getType().name()))));
 
         // Stack size
         if (previewItem.getAmount() > 1) {
-            lore.add(text("<gray>Amount: <white>" + previewItem.getAmount()));
+            lore.add(text(replace(value(section, "amount", "<gray>Amount: <white>{amount}"),
+                    "{amount}", String.valueOf(previewItem.getAmount()))));
         }
 
         // Durability
         if (previewItem.getItemMeta() instanceof Damageable damageable && damageable.hasDamage()) {
             int maxDurability = previewItem.getType().getMaxDurability();
             int remaining = maxDurability - damageable.getDamage();
-            lore.add(text("<gray>Durability: <white>" + remaining + "/" + maxDurability));
+            lore.add(text(replace(value(section, "durability", "<gray>Durability: <white>{remaining}/{max}"),
+                    "{remaining}", String.valueOf(remaining), "{max}", String.valueOf(maxDurability))));
         }
 
         // Unbreakable
         ItemMeta itemMeta = previewItem.getItemMeta();
         if (itemMeta != null && itemMeta.isUnbreakable()) {
-            lore.add(text("<aqua>Unbreakable"));
+            lore.add(text(value(section, "unbreakable", "<aqua>Unbreakable")));
         }
 
         // Custom model data
         if (itemMeta != null && itemMeta.hasCustomModelData()) {
-            lore.add(text("<gray>Custom Model: <white>#" + itemMeta.getCustomModelData()));
+            lore.add(text(replace(value(section, "custom-model", "<gray>Custom Model: <white>#{model}"),
+                    "{model}", String.valueOf(itemMeta.getCustomModelData()))));
         }
 
         // Custom item hook info
         if (plugin.getItemHookManager() != null) {
             String customId = plugin.getItemHookManager().getCustomItemId(previewItem);
             if (customId != null) {
-                lore.add(text("<gray>Plugin Item: <yellow>" + customId));
+                lore.add(text(replace(value(section, "plugin-item", "<gray>Plugin Item: <yellow>{id}"),
+                        "{id}", escapeMiniMessage(customId))));
             }
         }
 
         // Average market price
         double avg = plugin.getAuctionManager().getAveragePrice(previewItem.getType().name());
         if (avg > 0) {
-            lore.add(text("<gray>Avg Market Price: <aqua>" + plugin.getEconomyManager().format(avg)));
+            lore.add(text(replace(value(section, "average-price", "<gray>Avg Market Price: <aqua>{price}"),
+                    "{price}", plugin.getEconomyManager().format(avg))));
+            lore.add(text(replace(value(section, "average-source",
+                            "<dark_gray>Completed sales, last {days} days"),
+                    "{days}", String.valueOf(plugin.getConfigManager().getAveragePriceWindowDays()))));
         }
 
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(section, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
         meta.lore(lore);
         panel.setItemMeta(meta);
         return panel;
@@ -263,24 +281,21 @@ public class PreviewGui extends AbstractGui {
         }
 
         // Label
-        ItemStack label = new ItemStack(Material.CHEST);
+        ConfigurationSection shulkerPanel = gui.getConfigurationSection("panels.shulker");
+        ItemStack label = panelItem(shulkerPanel, Material.CHEST);
         ItemMeta labelMeta = label.getItemMeta();
-        labelMeta.displayName(text("<gold>Shulker Box Contents"));
-        labelMeta.lore(List.of(
-                text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"),
-                text("<gray>Contents of the shulker box."),
-                text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")
-        ));
+        labelMeta.displayName(text(value(shulkerPanel, "name", "<gold>Shulker Box Contents")));
+        labelMeta.lore(configuredLore(shulkerPanel, "lore"));
         label.setItemMeta(labelMeta);
-        inventory.setItem(22, label);
+        inventory.setItem(gui.getInt("slots.shulker-info", 22), label);
 
         // Display shulker contents
         ItemStack[] contents = shulker.getInventory().getContents();
         int slotIdx = 0;
         for (ItemStack content : contents) {
-            if (slotIdx >= SHULKER_SLOTS.length) break;
+            if (slotIdx >= shulkerSlots.size()) break;
             if (content != null && content.getType() != Material.AIR) {
-                inventory.setItem(SHULKER_SLOTS[slotIdx], content.clone());
+                inventory.setItem(shulkerSlots.get(slotIdx), content.clone());
             }
             slotIdx++;
         }
@@ -310,12 +325,14 @@ public class PreviewGui extends AbstractGui {
         Component pageContent = bookPages.get(safeIndex);
 
         // Book display
-        ItemStack bookDisplay = new ItemStack(Material.WRITABLE_BOOK);
+        ConfigurationSection bookPanel = gui.getConfigurationSection("panels.book-page");
+        ItemStack bookDisplay = panelItem(bookPanel, Material.WRITABLE_BOOK);
         ItemMeta bookDisplayMeta = bookDisplay.getItemMeta();
-        bookDisplayMeta.displayName(text("<gold>Page " + (safeIndex + 1) + "/" + bookPages.size()));
+        bookDisplayMeta.displayName(text(replace(value(bookPanel, "name", "<gold>Page {page}/{pages}"),
+                "{page}", String.valueOf(safeIndex + 1), "{pages}", String.valueOf(bookPages.size()))));
 
         List<Component> lore = new ArrayList<>();
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(bookPanel, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
 
         // Convert page content to plain text and wrap lines
         String plainText = PlainTextComponentSerializer.plainText().serialize(pageContent);
@@ -323,47 +340,45 @@ public class PreviewGui extends AbstractGui {
             lore.add(text("<white>" + line));
         }
 
-        lore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        lore.add(text(value(bookPanel, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
         bookDisplayMeta.lore(lore);
         bookDisplay.setItemMeta(bookDisplayMeta);
-        inventory.setItem(BOOK_SLOT, bookDisplay);
+        inventory.setItem(bookSlot, bookDisplay);
 
         // Previous page button
         if (safeIndex > 0) {
-            ItemStack prev = new ItemStack(Material.ARROW);
-            ItemMeta prevMeta = prev.getItemMeta();
-            prevMeta.displayName(text("<yellow>Previous Page"));
-            prev.setItemMeta(prevMeta);
-            inventory.setItem(BOOK_PREV_SLOT, prev);
+            inventory.setItem(bookPrevSlot, createButton(
+                    gui.getConfigurationSection("buttons.book-previous")));
         }
 
         // Next page button
         if (safeIndex < bookPages.size() - 1) {
-            ItemStack next = new ItemStack(Material.ARROW);
-            ItemMeta nextMeta = next.getItemMeta();
-            nextMeta.displayName(text("<yellow>Next Page"));
-            next.setItemMeta(nextMeta);
-            inventory.setItem(BOOK_NEXT_SLOT, next);
+            inventory.setItem(bookNextSlot, createButton(
+                    gui.getConfigurationSection("buttons.book-next")));
         }
 
         // Book info
         BookMeta bookMeta = (BookMeta) previewItem.getItemMeta();
-        ItemStack info = new ItemStack(Material.NAME_TAG);
+        ConfigurationSection detailsPanel = gui.getConfigurationSection("panels.book-details");
+        ItemStack info = panelItem(detailsPanel, Material.NAME_TAG);
         ItemMeta infoMeta = info.getItemMeta();
-        infoMeta.displayName(text("<light_purple>Book Details"));
+        infoMeta.displayName(text(value(detailsPanel, "name", "<light_purple>Book Details")));
         List<Component> infoLore = new ArrayList<>();
-        infoLore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        infoLore.add(text(value(detailsPanel, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
         if (bookMeta.hasTitle()) {
-            infoLore.add(text("<gray>Title: <white>" + bookMeta.getTitle()));
+            infoLore.add(text(replace(value(detailsPanel, "title", "<gray>Title: <white>{title}"),
+                    "{title}", escapeMiniMessage(bookMeta.getTitle()))));
         }
         if (bookMeta.hasAuthor()) {
-            infoLore.add(text("<gray>Author: <white>" + bookMeta.getAuthor()));
+            infoLore.add(text(replace(value(detailsPanel, "author", "<gray>Author: <white>{author}"),
+                    "{author}", escapeMiniMessage(bookMeta.getAuthor()))));
         }
-        infoLore.add(text("<gray>Pages: <white>" + bookPages.size()));
-        infoLore.add(text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        infoLore.add(text(replace(value(detailsPanel, "pages", "<gray>Pages: <white>{pages}"),
+                "{pages}", String.valueOf(bookPages.size()))));
+        infoLore.add(text(value(detailsPanel, "separator", "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")));
         infoMeta.lore(infoLore);
         info.setItemMeta(infoMeta);
-        inventory.setItem(40, info);
+        inventory.setItem(gui.getInt("slots.book-details", 40), info);
     }
 
     // -- Armor Preview --
@@ -373,17 +388,17 @@ public class PreviewGui extends AbstractGui {
         buildStandardPreview();
 
         // Show armor set visualization
-        ItemStack label = new ItemStack(Material.ARMOR_STAND);
+        ConfigurationSection armorPanel = gui.getConfigurationSection("panels.armor");
+        ItemStack label = panelItem(armorPanel, Material.ARMOR_STAND);
         ItemMeta labelMeta = label.getItemMeta();
-        labelMeta.displayName(text("<gold>Armor Piece"));
-        labelMeta.lore(List.of(
-                text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"),
-                text("<gray>This is an armor piece."),
-                text("<gray>Slot: <white>" + getArmorSlotName(previewItem.getType())),
-                text("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━")
-        ));
+        labelMeta.displayName(text(value(armorPanel, "name", "<gold>Armor Piece")));
+        List<Component> armorLore = new ArrayList<>();
+        for (String line : armorPanel != null ? armorPanel.getStringList("lore") : List.<String>of()) {
+            armorLore.add(text(replace(line, "{slot}", getArmorSlotName(previewItem.getType()))));
+        }
+        labelMeta.lore(armorLore);
         label.setItemMeta(labelMeta);
-        inventory.setItem(22, label);
+        inventory.setItem(gui.getInt("slots.armor-info", 22), label);
 
         // Place the armor in its visual slot position
         int armorVisSlot = getArmorDisplaySlot(previewItem.getType());
@@ -392,18 +407,20 @@ public class PreviewGui extends AbstractGui {
         }
 
         // Show empty slots for other armor pieces as gray glass
-        ItemStack empty = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
+        ConfigurationSection emptyArmor = gui.getConfigurationSection("panels.empty-armor");
+        ItemStack empty = panelItem(emptyArmor, Material.LIGHT_GRAY_STAINED_GLASS_PANE);
         ItemMeta emptyMeta = empty.getItemMeta();
-        emptyMeta.displayName(text("<gray>Empty Slot"));
+        emptyMeta.displayName(text(value(emptyArmor, "name", "<gray>{slot}")));
         empty.setItemMeta(emptyMeta);
 
-        int[] armorSlots = {ARMOR_HELMET_SLOT, ARMOR_CHEST_SLOT, ARMOR_LEGS_SLOT, ARMOR_BOOTS_SLOT};
+        int[] armorSlots = {armorHelmetSlot, armorChestSlot, armorLegsSlot, armorBootsSlot};
         String[] slotLabels = {"Helmet", "Chestplate", "Leggings", "Boots"};
         for (int i = 0; i < armorSlots.length; i++) {
             if (armorSlots[i] != armorVisSlot) {
                 ItemStack placeholder = empty.clone();
                 ItemMeta phMeta = placeholder.getItemMeta();
-                phMeta.displayName(text("<gray>" + slotLabels[i]));
+                phMeta.displayName(text(replace(value(emptyArmor, "name", "<gray>{slot}"),
+                        "{slot}", slotLabels[i])));
                 placeholder.setItemMeta(phMeta);
                 inventory.setItem(armorSlots[i], placeholder);
             }
@@ -417,7 +434,7 @@ public class PreviewGui extends AbstractGui {
         event.setCancelled(true);
         int slot = event.getRawSlot();
 
-        if (slot == BACK_SLOT) {
+        if (slot == backSlot) {
             if (backAction != null) {
                 backAction.run();
             } else {
@@ -426,17 +443,17 @@ public class PreviewGui extends AbstractGui {
             return;
         }
 
-        if (slot == CLOSE_SLOT) {
+        if (slot == closeSlot) {
             viewer.closeInventory();
             return;
         }
 
         // Book page navigation
         if (bookPages != null && !bookPages.isEmpty()) {
-            if (slot == BOOK_PREV_SLOT && bookPage > 0) {
+            if (slot == bookPrevSlot && bookPage > 0) {
                 bookPage--;
                 rebuildBookPage();
-            } else if (slot == BOOK_NEXT_SLOT && bookPage < bookPages.size() - 1) {
+            } else if (slot == bookNextSlot && bookPage < bookPages.size() - 1) {
                 bookPage++;
                 rebuildBookPage();
             }
@@ -447,14 +464,42 @@ public class PreviewGui extends AbstractGui {
         // Clear book area
         ItemStack filler = createThemedFiller();
 
-        inventory.setItem(BOOK_SLOT, filler);
-        inventory.setItem(BOOK_PREV_SLOT, filler);
-        inventory.setItem(BOOK_NEXT_SLOT, filler);
+        inventory.setItem(bookSlot, filler);
+        inventory.setItem(bookPrevSlot, filler);
+        inventory.setItem(bookNextSlot, filler);
 
         renderBookPage();
     }
 
     // -- Utility Methods --
+
+    private ItemStack panelItem(ConfigurationSection section, Material fallback) {
+        Material material = fallback;
+        if (section != null) {
+            Material configured = Material.matchMaterial(section.getString("material", fallback.name()));
+            if (configured != null) material = configured;
+        }
+        return new ItemStack(material);
+    }
+
+    private static String value(ConfigurationSection section, String key, String fallback) {
+        return section == null ? fallback : section.getString(key, fallback);
+    }
+
+    private List<Component> configuredLore(ConfigurationSection section, String key) {
+        if (section == null) return List.of();
+        List<Component> lore = new ArrayList<>();
+        for (String line : section.getStringList(key)) lore.add(text(line));
+        return lore;
+    }
+
+    private static String replace(String value, String... replacements) {
+        String result = value;
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            result = result.replace(replacements[i], replacements[i + 1]);
+        }
+        return result;
+    }
 
     private boolean isShulkerBox(ItemStack item) {
         return item.getType().name().contains("SHULKER_BOX");
@@ -482,10 +527,10 @@ public class PreviewGui extends AbstractGui {
 
     private int getArmorDisplaySlot(Material mat) {
         String name = mat.name();
-        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET")) return ARMOR_HELMET_SLOT;
-        if (name.endsWith("_CHESTPLATE") || name.equals("ELYTRA")) return ARMOR_CHEST_SLOT;
-        if (name.endsWith("_LEGGINGS")) return ARMOR_LEGS_SLOT;
-        if (name.endsWith("_BOOTS")) return ARMOR_BOOTS_SLOT;
+        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET")) return armorHelmetSlot;
+        if (name.endsWith("_CHESTPLATE") || name.equals("ELYTRA")) return armorChestSlot;
+        if (name.endsWith("_LEGGINGS")) return armorLegsSlot;
+        if (name.endsWith("_BOOTS")) return armorBootsSlot;
         return -1;
     }
 

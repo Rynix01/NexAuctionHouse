@@ -1,0 +1,125 @@
+# NexAuctionHouse - Item Preview GUI
+# All positions, icons and player-facing panel text can be changed here.
+
+title: "<dark_gray>Item Preview"
+size: 54
+
+slots:
+  item: 13
+  enchantments: 29
+  attributes: 31
+  details: 33
+  shulker-info: 22
+  book-page: 22
+  book-previous: 29
+  book-next: 33
+  book-details: 40
+  armor-info: 22
+  armor-helmet: 20
+  armor-chestplate: 29
+  armor-leggings: 38
+  armor-boots: 47
+
+shulker-item-slots:
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+  - 37
+  - 38
+  - 39
+  - 40
+  - 41
+  - 42
+  - 43
+  - 46
+  - 47
+  - 48
+  - 49
+  - 50
+  - 51
+  - 52
+
+panels:
+  enchantments:
+    material: ENCHANTED_BOOK
+    name: "<aqua>Enchantments"
+    separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+    empty: "<gray>No enchantments."
+    entry: "{color}{name} {level}"
+  attributes:
+    material: IRON_SWORD
+    name: "<yellow>Attributes"
+    separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+    empty: "<gray>No custom attributes."
+    entry: "<green>{amount} <gray>{attribute}"
+  details:
+    material: NAME_TAG
+    name: "<light_purple>Item Details"
+    separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+    type: "<gray>Type: <white>{type}"
+    amount: "<gray>Amount: <white>{amount}"
+    durability: "<gray>Durability: <white>{remaining}/{max}"
+    unbreakable: "<aqua>Unbreakable"
+    custom-model: "<gray>Custom Model: <white>#{model}"
+    plugin-item: "<gray>Plugin Item: <yellow>{id}"
+    average-price: "<gray>Avg Market Price: <aqua>{price}"
+    average-source: "<dark_gray>Completed sales, last {days} days"
+  shulker:
+    material: CHEST
+    name: "<gold>Shulker Box Contents"
+    lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - "<gray>Contents of the shulker box."
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  book-page:
+    material: WRITABLE_BOOK
+    name: "<gold>Page {page}/{pages}"
+    separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  book-details:
+    material: NAME_TAG
+    name: "<light_purple>Book Details"
+    separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+    title: "<gray>Title: <white>{title}"
+    author: "<gray>Author: <white>{author}"
+    pages: "<gray>Pages: <white>{pages}"
+  armor:
+    material: ARMOR_STAND
+    name: "<gold>Armor Piece"
+    lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - "<gray>This is an armor piece."
+      - "<gray>Slot: <white>{slot}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━"
+  empty-armor:
+    material: LIGHT_GRAY_STAINED_GLASS_PANE
+    name: "<gray>{slot}"
+
+buttons:
+  book-previous:
+    material: ARROW
+    name: "<yellow>Previous Page"
+  book-next:
+    material: ARROW
+    name: "<yellow>Next Page"
+  back:
+    slot: 45
+    material: DARK_OAK_DOOR
+    name: "<yellow>Back"
+    lore:
+      - "<gray>Return to the previous menu."
+  close:
+    slot: 53
+    material: BARRIER
+    name: "<red>Close"
+    lore:
+      - "<gray>Close the menu."
+
+filler:
+  enabled: true
+  use-theme: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "

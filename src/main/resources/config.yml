@@ -113,6 +113,8 @@ favorites:
 
 # Price History & Statistics
 stats:
+  # Average market price uses completed SALE transactions from this many recent days.
+  average-price-window-days: 7
   # How often (in minutes) to refresh the average price cache
   cache-duration-minutes: 10
   # Maximum number of transactions shown in /ah history

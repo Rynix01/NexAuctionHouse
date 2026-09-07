@@ -2,6 +2,7 @@ package net.nexuby.nexauctionhouse;
 
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.nexuby.nexauctionhouse.gui.MyAuctionsGui;
+import net.nexuby.nexauctionhouse.gui.PreviewGui;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,22 @@ class CommandAndGuiIntegrationTest extends MockPluginTestSupport {
                 "Unavailable next page should use the active theme glass");
         assertEquals(Material.PINK_STAINED_GLASS_PANE, top.getItem(0).getType(),
                 "A GUI must be able to override theme glass through its config");
+    }
+
+    @Test
+    void previewLayoutAndPanelsAreReadFromItsGuiConfiguration() {
+        PlayerMock player = server.addPlayer("Previewer");
+        var config = plugin.getGuiConfig().getGui("preview");
+        assertNotNull(config);
+        config.set("slots.item", 12);
+        config.set("slots.details", 34);
+        config.set("panels.details.material", "DIAMOND");
+
+        new PreviewGui(plugin, player, new ItemStack(Material.NETHERITE_SWORD), null).open();
+
+        var top = player.getOpenInventory().getTopInventory();
+        assertEquals(Material.NETHERITE_SWORD, top.getItem(12).getType());
+        assertEquals(Material.DIAMOND, top.getItem(34).getType());
     }
 
     @Test

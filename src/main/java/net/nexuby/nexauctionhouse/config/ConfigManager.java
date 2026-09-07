@@ -140,6 +140,10 @@ public class ConfigManager {
         return config.getInt("stats.cache-duration-minutes", 10);
     }
 
+    public int getAveragePriceWindowDays() {
+        return Math.max(1, config.getInt("stats.average-price-window-days", 7));
+    }
+
     public int getHistoryLimit() {
         return config.getInt("stats.history-limit", 50);
     }

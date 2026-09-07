@@ -34,6 +34,7 @@ class SupportingFeaturesIntegrationTest extends MockPluginTestSupport {
         assertEquals(50, config.getMaxFavorites());
         assertEquals(5, config.getDefaultListingLimit());
         assertEquals(72, config.getMaxAuctionDuration());
+        assertEquals(7, config.getAveragePriceWindowDays());
     }
 
     @Test

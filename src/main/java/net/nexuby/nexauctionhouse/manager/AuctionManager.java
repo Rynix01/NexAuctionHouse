@@ -1341,14 +1341,15 @@ public class AuctionManager {
     /**
      * Forces a refresh of the statistics cache.
      * Computes average prices from transaction logs for all materials
-     * that have been sold in the last 7 days.
+     * sold within the configured rolling time window.
      */
     public void refreshStatsCache() {
         if (!statsRefreshInProgress.compareAndSet(false, true)) return;
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                Map<String, Double> freshCache = dao.getAllAveragePrices(7);
+                int windowDays = plugin.getConfigManager().getAveragePriceWindowDays();
+                Map<String, Double> freshCache = dao.getAllAveragePrices(windowDays);
                 avgPriceCache.clear();
                 avgPriceCache.putAll(freshCache);
                 lastStatsCacheRefresh = System.currentTimeMillis();

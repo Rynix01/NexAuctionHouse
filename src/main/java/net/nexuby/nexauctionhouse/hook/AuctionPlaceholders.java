@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  *   %nexauction_player_total_sales%  - Player's total completed sale count
  *   %nexauction_player_total_revenue% - Player's total revenue earned
  *   %nexauction_player_total_purchases% - Player's total purchase count
- *   %nexauction_avg_price_<MATERIAL>% - Average price for a material (last 7 days)
+ *   %nexauction_avg_price_<MATERIAL>% - Average price for a material (configured window)
  */
 public class AuctionPlaceholders extends PlaceholderExpansion {
 
