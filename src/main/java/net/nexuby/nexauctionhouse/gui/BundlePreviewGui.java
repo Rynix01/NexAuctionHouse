@@ -2,11 +2,12 @@ package net.nexuby.nexauctionhouse.gui;
 
 import net.kyori.adventure.text.Component;
 import net.nexuby.nexauctionhouse.NexAuctionHouse;
-import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -15,25 +16,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Preview GUI that shows all items contained in a bundle listing.
- * Items are laid out in a grid starting from slot 10 (skipping borders).
- */
+/** Displays all items inside one bundle using gui/bundle-preview.yml. */
 public class BundlePreviewGui extends AbstractGui {
 
     private final AuctionItem auctionItem;
     private final Runnable backAction;
-
-    private static final int BACK_SLOT = 45;
-    private static final int INFO_SLOT = 4;
-
-    // Inner slots (rows 1-4, columns 1-7) to display bundle items
-    private static final int[] ITEM_SLOTS = {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34,
-            37, 38, 39, 40, 41, 42, 43
-    };
+    private int backSlot = -1;
 
     public BundlePreviewGui(NexAuctionHouse plugin, Player viewer, AuctionItem auctionItem, Runnable backAction) {
         super(plugin, viewer);
@@ -43,55 +31,66 @@ public class BundlePreviewGui extends AbstractGui {
 
     @Override
     protected void build() {
-        inventory = Bukkit.createInventory(this, 54, text("<dark_gray>Bundle Preview"));
-
-        // Fill background
-        ItemStack filler = createThemedFiller();
-        for (int i = 0; i < 54; i++) {
-            inventory.setItem(i, filler);
+        FileConfiguration gui = plugin.getGuiConfig().getGui("bundle-preview");
+        if (gui == null) {
+            plugin.getLogger().warning("GUI config 'bundle-preview' not found!");
+            return;
         }
 
-        // Info item at top center
-        ItemStack info = new ItemStack(Material.CHEST);
-        ItemMeta infoMeta = info.getItemMeta();
-        infoMeta.displayName(text("<gold>Bundle Contents"));
+        inventory = Bukkit.createInventory(this, gui.getInt("size", 54),
+                text(gui.getString("title", "<dark_gray>Bundle Preview")));
 
-        List<Component> infoLore = new ArrayList<>();
-        infoLore.add(text("<gray>Seller: <yellow>" + auctionItem.getSellerName()));
-        infoLore.add(text("<gray>Items: <yellow>" + auctionItem.getBundleItems().size()));
-        infoLore.add(text("<gray>Price: <yellow>"
-                + plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency())));
-        infoLore.add(text("<gray>Time Left: <yellow>" + TimeUtil.formatDuration(auctionItem.getRemainingTime())));
-        infoMeta.lore(infoLore);
-        info.setItemMeta(infoMeta);
-        inventory.setItem(INFO_SLOT, info);
-
-        // Display bundle items
+        List<Integer> itemSlots = gui.getIntegerList("item-slots");
         List<ItemStack> items = auctionItem.getBundleItems();
-        for (int i = 0; i < items.size() && i < ITEM_SLOTS.length; i++) {
-            inventory.setItem(ITEM_SLOTS[i], items.get(i).clone());
+        for (int i = 0; i < items.size() && i < itemSlots.size(); i++) {
+            int slot = itemSlots.get(i);
+            if (slot >= 0 && slot < inventory.getSize()) inventory.setItem(slot, items.get(i).clone());
         }
 
-        // Back button
-        ItemStack back = new ItemStack(Material.DARK_OAK_DOOR);
-        ItemMeta backMeta = back.getItemMeta();
-        backMeta.displayName(text("<yellow>Back"));
-        backMeta.lore(List.of(text("<gray>Return to the previous menu.")));
-        back.setItemMeta(backMeta);
-        inventory.setItem(BACK_SLOT, back);
+        ConfigurationSection buttons = gui.getConfigurationSection("buttons");
+        if (buttons != null) {
+            placeButton(buttons.getConfigurationSection("info"),
+                    "{seller}", escapeMiniMessage(auctionItem.getSellerName()),
+                    "{count}", String.valueOf(items.size()),
+                    "{price}", plugin.getEconomyManager().format(auctionItem.getPrice(), auctionItem.getCurrency()),
+                    "{time}", TimeUtil.formatDuration(auctionItem.getRemainingTime()));
+            backSlot = placeButton(buttons.getConfigurationSection("back"));
+        }
+        applyFiller(gui);
+    }
+
+    private int placeButton(ConfigurationSection section, String... replacements) {
+        if (section == null) return -1;
+        int slot = section.getInt("slot", -1);
+        if (slot < 0 || slot >= inventory.getSize()) return -1;
+        Material material = Material.matchMaterial(section.getString("material", "STONE"));
+        if (material == null) material = Material.STONE;
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(text(replace(section.getString("name", " "), replacements)));
+        List<Component> lore = new ArrayList<>();
+        for (String line : section.getStringList("lore")) {
+            lore.add(text(replace(line, replacements)));
+        }
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        inventory.setItem(slot, item);
+        return slot;
+    }
+
+    private static String replace(String value, String... replacements) {
+        String result = value;
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            result = result.replace(replacements[i], replacements[i + 1]);
+        }
+        return result;
     }
 
     @Override
     public void handleClick(InventoryClickEvent event) {
         event.setCancelled(true);
-
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= 54) return;
-
-        if (!checkCooldown(viewer)) return;
-
-        if (slot == BACK_SLOT && backAction != null) {
-            backAction.run();
-        }
+        if (slot < 0 || slot >= inventory.getSize() || !checkCooldown(viewer)) return;
+        if (slot == backSlot && backAction != null) backAction.run();
     }
 }

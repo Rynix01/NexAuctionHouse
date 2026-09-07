@@ -111,8 +111,12 @@ class CommandAndGuiIntegrationTest extends MockPluginTestSupport {
         assertTrue(player.getOpenInventory().getTopInventory().getSize() > 0);
         player.closeInventory();
 
+        plugin.getGuiConfig().getGui("bundle-create")
+                .set("buttons.info.material", "BARREL");
         assertTrue(server.dispatchCommand(player, "ah bundle 100"));
         assertTrue(player.getOpenInventory().getTopInventory().getSize() > 0);
+        assertEquals(Material.BARREL,
+                player.getOpenInventory().getTopInventory().getItem(49).getType());
     }
 
     @Test

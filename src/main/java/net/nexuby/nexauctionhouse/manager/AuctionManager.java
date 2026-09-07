@@ -226,7 +226,8 @@ public class AuctionManager {
 
     /**
      * Lists a bundle of items as a single auction.
-     * The display item is the first item in the bundle.
+     * Bundles always use a chest as their marketplace representative so they
+     * cannot be mistaken for a normal single-item listing.
      * Returns the auction id, or -1 if it failed.
      */
     public int listBundle(Player seller, List<ItemStack> items, double price, String currency) {
@@ -240,8 +241,7 @@ public class AuctionManager {
         long now = System.currentTimeMillis();
         long expiresAt = now + (durationHours * 3600000L);
 
-        // Use the first item as the display representative
-        ItemStack displayItem = items.get(0).clone();
+        ItemStack displayItem = new ItemStack(Material.CHEST);
 
         AuctionItem auctionItem = new AuctionItem(
                 0, seller.getUniqueId(), seller.getName(), displayItem,

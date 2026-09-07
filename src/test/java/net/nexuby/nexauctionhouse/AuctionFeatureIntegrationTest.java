@@ -1,6 +1,7 @@
 package net.nexuby.nexauctionhouse;
 
 import net.kyori.adventure.text.Component;
+import net.nexuby.nexauctionhouse.gui.BundlePreviewGui;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionType;
@@ -124,6 +125,15 @@ class AuctionFeatureIntegrationTest extends MockPluginTestSupport {
         int id = plugin.getAuctionManager().listBundle(seller, items, 300, "money");
 
         assertTrue(plugin.getAuctionManager().getAuction(id).isBundle());
+        assertEquals(Material.CHEST, plugin.getAuctionManager().getAuction(id).getItemStack().getType(),
+                "Bundle listings must have a distinct chest symbol");
+
+        plugin.getGuiConfig().getGui("bundle-preview").set("buttons.info.material", "BARREL");
+        new BundlePreviewGui(plugin, buyer, plugin.getAuctionManager().getAuction(id), null).open();
+        assertEquals(Material.BARREL, buyer.getOpenInventory().getTopInventory().getItem(4).getType());
+        assertEquals(Material.DIAMOND, buyer.getOpenInventory().getTopInventory().getItem(10).getType());
+        buyer.closeInventory();
+
         assertTrue(plugin.getAuctionManager().purchaseItem(buyer, id));
         assertTrue(buyer.getInventory().contains(Material.DIAMOND, 2));
         assertTrue(buyer.getInventory().contains(Material.EMERALD, 4));

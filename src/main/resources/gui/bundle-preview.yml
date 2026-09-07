@@ -1,0 +1,57 @@
+# NexAuctionHouse - Bundle Preview GUI
+
+title: "<dark_gray>Bundle Preview"
+size: 54
+
+item-slots:
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+  - 37
+  - 38
+  - 39
+  - 40
+  - 41
+  - 42
+  - 43
+
+buttons:
+  info:
+    slot: 4
+    material: CHEST
+    name: "<gold>Bundle Contents"
+    lore:
+      - "<gray>Seller: <yellow>{seller}"
+      - "<gray>Items: <yellow>{count}"
+      - "<gray>Price: <yellow>{price}"
+      - "<gray>Time Left: <yellow>{time}"
+  back:
+    slot: 45
+    material: DARK_OAK_DOOR
+    name: "<yellow>Back"
+    lore:
+      - "<gray>Return to the previous menu."
+
+filler:
+  enabled: true
+  use-theme: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "

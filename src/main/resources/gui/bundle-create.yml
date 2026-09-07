@@ -1,0 +1,105 @@
+# NexAuctionHouse - Bundle Creation GUI
+
+title: "<dark_gray>Create Bundle"
+size: 54
+
+# Each entry maps, in order, to player storage slots 0-35.
+player-slots:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+  - 35
+
+item-lore:
+  selected:
+    - ""
+    - "<green>✔ Added to bundle"
+    - "<yellow>Click to remove from bundle."
+  available:
+    - ""
+    - "<gray>Click to add to bundle."
+  full:
+    - ""
+    - "<red>Bundle is full! ({max} items max)"
+
+buttons:
+  confirm:
+    slot: 48
+    material: LIME_STAINED_GLASS_PANE
+    name: "<green>Create Bundle"
+    lore:
+      - "<gray>Items: <yellow>{selected}/{max}"
+      - "<gray>Bundle Price: <yellow>{price}"
+      - ""
+      - "<yellow>Click to list this bundle."
+  info:
+    slot: 49
+    material: CHEST
+    name: "<gold>Bundle Info"
+    lore:
+      - "<gray>Select items above to bundle them."
+      - "<gray>All selected items are sold together."
+      - ""
+      - "<gray>Selected: <yellow>{selected}/{max}"
+      - "<gray>Minimum items: <yellow>{min}"
+  cancel:
+    slot: 50
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>Cancel"
+    lore:
+      - "<gray>Return without creating a bundle."
+
+filler:
+  enabled: true
+  use-theme: true
+  material: BLACK_STAINED_GLASS_PANE
+  name: " "
+  slots:
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
+    - 45
+    - 46
+    - 47
+    - 51
+    - 52
+    - 53
+

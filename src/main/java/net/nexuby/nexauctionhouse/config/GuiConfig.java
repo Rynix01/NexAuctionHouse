@@ -32,6 +32,8 @@ public class GuiConfig {
         saveDefault("expired.yml");
         saveDefault("categories.yml");
         saveDefault("bid.yml");
+        saveDefault("bundle-create.yml");
+        saveDefault("bundle-preview.yml");
         saveDefault("favorites.yml");
         saveDefault("history.yml");
         saveDefault("notifications.yml");
