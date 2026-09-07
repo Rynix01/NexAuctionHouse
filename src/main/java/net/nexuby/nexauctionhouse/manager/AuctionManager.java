@@ -1363,12 +1363,14 @@ public class AuctionManager {
      * Broadcasts a new listing to all online players except the seller.
      */
     private void broadcastNewListing(Player seller, ItemStack itemStack, double price, String currency, boolean isBid) {
+        if (!plugin.getConfigManager().areNewListingBroadcastsEnabled()) return;
         String itemName = getItemName(itemStack);
         String priceStr = plugin.getEconomyManager().format(price, currency);
         String langKey = isBid ? "auction.broadcast-bid" : "auction.broadcast";
 
         for (Player online : Bukkit.getOnlinePlayers()) {
-            if (online.getUniqueId().equals(seller.getUniqueId())) continue;
+            if (!plugin.getConfigManager().shouldBroadcastToSeller()
+                    && online.getUniqueId().equals(seller.getUniqueId())) continue;
             online.sendMessage(plugin.getLangManager().prefixed(langKey,
                     "{seller}", seller.getName(),
                     "{item}", itemName,

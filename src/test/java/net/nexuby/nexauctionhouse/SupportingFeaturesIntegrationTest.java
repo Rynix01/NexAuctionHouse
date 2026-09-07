@@ -7,6 +7,7 @@ import net.nexuby.nexauctionhouse.model.NotificationSettings;
 import net.nexuby.nexauctionhouse.util.ItemSerializer;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
 import org.bukkit.Material;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,6 +37,20 @@ class SupportingFeaturesIntegrationTest extends MockPluginTestSupport {
         assertEquals(5, config.getDefaultListingLimit());
         assertEquals(72, config.getMaxAuctionDuration());
         assertEquals(7, config.getAveragePriceWindowDays());
+        assertTrue(config.areNewListingBroadcastsEnabled());
+        assertFalse(config.shouldBroadcastToSeller());
+    }
+
+    @Test
+    void webhookTemplatesAreEditableAndTurkishDefaultsAreBundled() {
+        assertFalse(plugin.getLangManager().getRaw("discord-webhook.title.listing")
+                .startsWith("<red>Missing message"));
+
+        File turkishFile = new File(plugin.getDataFolder(), "lang/tr.yml");
+        YamlConfiguration turkish = YamlConfiguration.loadConfiguration(turkishFile);
+        assertEquals("📦 Yeni İlan", turkish.getString("discord-webhook.title.listing"));
+        assertTrue(turkish.getString("discord-webhook.description.sale", "").contains("{buyer}"));
+        assertEquals("Satıcı", turkish.getString("discord-webhook.field.seller"));
     }
 
     @Test

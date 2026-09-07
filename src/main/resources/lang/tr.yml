@@ -147,6 +147,43 @@ notifications:
   favorite: "<light_purple>Favori Bildirimleri"
   all: "<gold>Tum Bildirimler"
 
+# Discord webhook metinleri. Markdown kullanilabilir; degiskenler guvenli bicimde eklenir.
+discord-webhook:
+  footer: "NexAuctionHouse"
+  title:
+    listing: "📦 Yeni İlan"
+    sale: "💰 Eşya Satıldı"
+    cancel: "❌ İlan İptal Edildi"
+    admin-remove: "⚠️ İlan Yönetici Tarafından Kaldırıldı"
+    price-update: "✏️ Fiyat Güncellendi"
+    bid: "🔨 Yeni Teklif"
+    won: "🏆 Açık Artırma Kazanıldı"
+    relist: "🔄 Otomatik Yeniden Listelendi"
+  description:
+    listing: "**{seller}**, **{item} x{amount}** eşyasını **{price}** karşılığında listeledi."
+    sale: "**{buyer}**, **{seller}** adlı oyuncudan **{item} x{amount}** eşyasını **{price}** karşılığında aldı."
+    cancel: "**{seller}**, **{item} x{amount}** ilanını iptal etti."
+    admin-remove: "Bir yönetici, **{seller}** adlı oyuncunun **{item} x{amount}** ilanını kaldırdı."
+    price-update: "**{seller}**, **{item} x{amount}** ilanının fiyatını değiştirdi."
+    bid: "**{bidder}**, **{seller}** adlı oyuncunun **{item} x{amount}** ilanına **{price}** teklif verdi."
+    won: "**{winner}**, **{seller}** adlı oyuncunun **{item} x{amount}** ilanını **{price}** ile kazandı."
+    relist: "**{seller}** adlı oyuncunun **{item} x{amount}** ilanı **{price}** karşılığında otomatik yenilendi."
+  field:
+    item: "Eşya"
+    price: "Fiyat"
+    currency: "Para Birimi"
+    seller: "Satıcı"
+    buyer: "Alıcı"
+    tax: "Vergi"
+    seller-receives: "Satıcıya Kalan"
+    old-price: "Eski Fiyat"
+    new-price: "Yeni Fiyat"
+    bid-amount: "Teklif Tutarı"
+    bidder: "Teklif Veren"
+    final-price: "Son Fiyat"
+    winner: "Kazanan"
+    relist-count: "Yenileme No"
+
 # Otomatik yeniden listeleme mesajlari
 auto-relist:
   enabled: "<green>Otomatik Yeniden Listeleme aktif! Esyaniz en fazla <yellow>{max}<green> kez yeniden listelenecek."

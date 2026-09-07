@@ -148,6 +148,14 @@ public class ConfigManager {
         return config.getInt("stats.history-limit", 50);
     }
 
+    public boolean areNewListingBroadcastsEnabled() {
+        return config.getBoolean("broadcasts.new-listings-enabled", true);
+    }
+
+    public boolean shouldBroadcastToSeller() {
+        return config.getBoolean("broadcasts.include-seller", false);
+    }
+
     // -- Blacklist --
 
     public String getBlacklistMode() {

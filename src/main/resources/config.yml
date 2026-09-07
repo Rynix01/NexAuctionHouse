@@ -208,6 +208,12 @@ notifications:
     favorite: "BLOCK_NOTE_BLOCK_CHIME"
     rescued: "ENTITY_ITEM_PICKUP"
 
+# In-game announcements for newly created listings
+broadcasts:
+  new-listings-enabled: true
+  # false avoids showing the seller a duplicate of their success message.
+  include-seller: false
+
 # Auto-relist system
 auto-relist:
   # Enable the auto-relist feature globally

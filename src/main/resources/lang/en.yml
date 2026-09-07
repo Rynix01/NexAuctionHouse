@@ -147,6 +147,43 @@ notifications:
   favorite: "<light_purple>Favorite Notifications"
   all: "<gold>All Notifications"
 
+# Discord webhook embeds. Markdown is supported; placeholders are escaped safely.
+discord-webhook:
+  footer: "NexAuctionHouse"
+  title:
+    listing: "📦 New Listing"
+    sale: "💰 Item Sold"
+    cancel: "❌ Auction Cancelled"
+    admin-remove: "⚠️ Auction Removed (Admin)"
+    price-update: "✏️ Price Updated"
+    bid: "🔨 New Bid"
+    won: "🏆 Auction Won"
+    relist: "🔄 Auto-Relisted"
+  description:
+    listing: "**{seller}** listed **{item} x{amount}** for **{price}**."
+    sale: "**{buyer}** purchased **{item} x{amount}** from **{seller}** for **{price}**."
+    cancel: "**{seller}** cancelled their listing for **{item} x{amount}**."
+    admin-remove: "An admin removed **{seller}**'s listing for **{item} x{amount}**."
+    price-update: "**{seller}** changed the price of **{item} x{amount}**."
+    bid: "**{bidder}** bid **{price}** on **{item} x{amount}** listed by **{seller}**."
+    won: "**{winner}** won **{item} x{amount}** from **{seller}** for **{price}**."
+    relist: "**{seller}**'s **{item} x{amount}** was automatically relisted for **{price}**."
+  field:
+    item: "Item"
+    price: "Price"
+    currency: "Currency"
+    seller: "Seller"
+    buyer: "Buyer"
+    tax: "Tax"
+    seller-receives: "Seller Receives"
+    old-price: "Old Price"
+    new-price: "New Price"
+    bid-amount: "Bid Amount"
+    bidder: "Bidder"
+    final-price: "Final Price"
+    winner: "Winner"
+    relist-count: "Relist #"
+
 # Auto-relist messages
 auto-relist:
   enabled: "<green>Auto-Relist enabled! Your item will be relisted up to <yellow>{max}<green> times."

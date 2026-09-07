@@ -1,6 +1,7 @@
 package net.nexuby.nexauctionhouse;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.nexuby.nexauctionhouse.gui.BundlePreviewGui;
 import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
@@ -32,6 +33,27 @@ class AuctionFeatureIntegrationTest extends MockPluginTestSupport {
         assertTrue(manager.cancelAuction(seller, id, false));
         assertNull(manager.getAuction(id));
         assertTrue(seller.getInventory().contains(Material.DIAMOND, 3));
+    }
+
+    @Test
+    void newListingBroadcastReachesOtherPlayersAndSellerInclusionIsConfigurable() {
+        PlayerMock seller = server.addPlayer("Seller");
+        PlayerMock watcher = server.addPlayer("Watcher");
+
+        int first = plugin.getAuctionManager().listItem(
+                seller, new ItemStack(Material.DIAMOND), 125, "money");
+        assertTrue(first > 0);
+        Component watcherMessage = watcher.nextComponentMessage();
+        assertNotNull(watcherMessage);
+        assertTrue(PlainTextComponentSerializer.plainText().serialize(watcherMessage).contains("Seller"));
+        assertNull(seller.nextComponentMessage(),
+                "Seller is excluded by default to avoid duplicating the success message");
+
+        plugin.getConfigManager().getConfig().set("broadcasts.include-seller", true);
+        int second = plugin.getAuctionManager().listItem(
+                seller, new ItemStack(Material.EMERALD), 200, "money");
+        assertTrue(second > 0);
+        assertNotNull(seller.nextComponentMessage());
     }
 
     @Test
