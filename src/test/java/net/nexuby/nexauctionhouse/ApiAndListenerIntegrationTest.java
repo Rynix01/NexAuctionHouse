@@ -23,7 +23,7 @@ class ApiAndListenerIntegrationTest extends MockPluginTestSupport {
         PlayerMock seller = server.addPlayer("Seller");
         NexAuctionHouseAPI api = NexAuctionHouseAPI.getInstance();
         assertNotNull(api);
-        assertEquals("1.0.0", api.getVersion());
+        assertEquals("1.0.1", api.getVersion());
 
         int id = api.forceCreateAuction(seller, new ItemStack(Material.DIAMOND), 100, "money");
 

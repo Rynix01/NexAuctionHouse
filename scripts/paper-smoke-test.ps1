@@ -122,7 +122,7 @@ if ($UseOptionalPlugins) {
     Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\test-plugins\NexAuctionHouse-optional-smoke-probe.jar") `
         -Destination (Join-Path $pluginsRoot "NexAuctionHouse-optional-smoke-probe.jar") -Force
 }
-Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\libs\NexAuctionHouse-1.0.0.jar") `
+Copy-Item -LiteralPath (Join-Path $repositoryRoot "build\libs\NexAuctionHouse-1.0.1.jar") `
     -Destination $pluginJar -Force
 
 if ($UseExternalServices -or $UseMySql -or $UseOptionalPlugins) {
