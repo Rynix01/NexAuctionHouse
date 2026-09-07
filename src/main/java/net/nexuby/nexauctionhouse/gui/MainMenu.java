@@ -8,6 +8,7 @@ import net.nexuby.nexauctionhouse.manager.AuctionManager;
 import net.nexuby.nexauctionhouse.model.AuctionItem;
 import net.nexuby.nexauctionhouse.model.AuctionType;
 import net.nexuby.nexauctionhouse.model.SortType;
+import net.nexuby.nexauctionhouse.util.SearchTextNormalizer;
 import net.nexuby.nexauctionhouse.util.TimeUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -98,11 +99,11 @@ public class MainMenu extends PaginatedGui {
 
         // Apply search filter if set
         if (searchQuery != null && !searchQuery.isBlank()) {
-            String query = searchQuery.toLowerCase();
+            String query = SearchTextNormalizer.normalize(searchQuery);
             auctions.removeIf(item -> {
-                String itemName = AuctionManager.getItemName(item.getItemStack()).toLowerCase();
-                String materialName = item.getItemStack().getType().name().toLowerCase().replace("_", " ");
-                String sellerName = item.getSellerName().toLowerCase();
+                String itemName = SearchTextNormalizer.normalize(AuctionManager.getItemName(item.getItemStack()));
+                String materialName = SearchTextNormalizer.normalize(item.getItemStack().getType().name());
+                String sellerName = SearchTextNormalizer.normalize(item.getSellerName());
                 return !itemName.contains(query) && !materialName.contains(query) && !sellerName.contains(query);
             });
         }
